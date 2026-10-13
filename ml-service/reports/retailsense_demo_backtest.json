@@ -1,0 +1,490 @@
+{
+  "notice": "Synthetic/demo backtest — not evidence of real-world forecasting accuracy.",
+  "generatedAt": "2026-09-27T00:36:25.353Z",
+  "modelVersion": "freshretail-demand-v1-lightgbm",
+  "artifactSha256": "1823f5f9cf6be1086819db79ad40a5cf6b0c5dbb913367f7b9acaf8d911033b0",
+  "method": "Fixed-origin synthetic quantity backtest through the same NestJS history builder and HTTP FastAPI predictor. No fit, scaling coefficient or held-out actual feedback.",
+  "modelTargetSpace": "freshretailnet_normalized",
+  "realWorldAccuracyVerified": false,
+  "quantityInterpretation": "Uncalibrated direct numeric transfer to synthetic base-unit series; technical demonstration only.",
+  "outcomes": [
+    {
+      "origin": "2026-09-19",
+      "historyInputDays": 30,
+      "historyAvailableDays": 83,
+      "targetStart": "2026-09-20",
+      "targetEnd": "2026-09-26",
+      "horizonDays": 7,
+      "eligibleSeries": 33,
+      "skipped": [
+        {
+          "locationId": "d5202600-0000-4000-8000-000000000100",
+          "productId": "d5202600-0000-4000-8000-000000000211",
+          "store": "Synthetic Demo Riverside",
+          "product": "Demo Potatoes — new range",
+          "reason": "INSUFFICIENT_HISTORY"
+        },
+        {
+          "locationId": "d5202600-0000-4000-8000-000000000101",
+          "productId": "d5202600-0000-4000-8000-000000000211",
+          "store": "Synthetic Demo Garden",
+          "product": "Demo Potatoes — new range",
+          "reason": "INSUFFICIENT_HISTORY"
+        },
+        {
+          "locationId": "d5202600-0000-4000-8000-000000000102",
+          "productId": "d5202600-0000-4000-8000-000000000211",
+          "store": "Synthetic Demo Central",
+          "product": "Demo Potatoes — new range",
+          "reason": "INSUFFICIENT_HISTORY"
+        }
+      ],
+      "negativePredictionsClipped": 0,
+      "byBaseUnit": [
+        {
+          "unit": "CAN",
+          "series": 9,
+          "rows": 63,
+          "WAPE": 0.34866004634162323,
+          "MAE": 4.100906259351473,
+          "RMSE": 6.123775638490763,
+          "actualQuantity": 741,
+          "predictedQuantity": 783.5167361717616,
+          "example": [
+            {
+              "storeId": "d5202600-0000-4000-8000-000000000100",
+              "productId": "d5202600-0000-4000-8000-000000000200",
+              "date": "2026-09-20",
+              "unit": "CAN",
+              "actual": 9,
+              "predicted": 9.443557040071198
+            },
+            {
+              "storeId": "d5202600-0000-4000-8000-000000000100",
+              "productId": "d5202600-0000-4000-8000-000000000200",
+              "date": "2026-09-21",
+              "unit": "CAN",
+              "actual": 5,
+              "predicted": 5.368853568497709
+            },
+            {
+              "storeId": "d5202600-0000-4000-8000-000000000100",
+              "productId": "d5202600-0000-4000-8000-000000000200",
+              "date": "2026-09-22",
+              "unit": "CAN",
+              "actual": 5,
+              "predicted": 6.329173663172384
+            },
+            {
+              "storeId": "d5202600-0000-4000-8000-000000000100",
+              "productId": "d5202600-0000-4000-8000-000000000200",
+              "date": "2026-09-23",
+              "unit": "CAN",
+              "actual": 4,
+              "predicted": 5.867768648392138
+            },
+            {
+              "storeId": "d5202600-0000-4000-8000-000000000100",
+              "productId": "d5202600-0000-4000-8000-000000000200",
+              "date": "2026-09-24",
+              "unit": "CAN",
+              "actual": 4,
+              "predicted": 6.217066082740429
+            },
+            {
+              "storeId": "d5202600-0000-4000-8000-000000000100",
+              "productId": "d5202600-0000-4000-8000-000000000200",
+              "date": "2026-09-25",
+              "unit": "CAN",
+              "actual": 0,
+              "predicted": 6.405906814315757
+            },
+            {
+              "storeId": "d5202600-0000-4000-8000-000000000100",
+              "productId": "d5202600-0000-4000-8000-000000000200",
+              "date": "2026-09-26",
+              "unit": "CAN",
+              "actual": 11,
+              "predicted": 8.663891393184791
+            }
+          ]
+        },
+        {
+          "unit": "KG",
+          "series": 9,
+          "rows": 63,
+          "WAPE": 0.31170517364549294,
+          "MAE": 0.8989478253912635,
+          "RMSE": 1.2456011934202793,
+          "actualQuantity": 181.68999999999997,
+          "predictedQuantity": 192.79226399626103,
+          "example": [
+            {
+              "storeId": "d5202600-0000-4000-8000-000000000100",
+              "productId": "d5202600-0000-4000-8000-000000000206",
+              "date": "2026-09-20",
+              "unit": "KG",
+              "actual": 3.29,
+              "predicted": 2.733558210733039
+            },
+            {
+              "storeId": "d5202600-0000-4000-8000-000000000100",
+              "productId": "d5202600-0000-4000-8000-000000000206",
+              "date": "2026-09-21",
+              "unit": "KG",
+              "actual": 3.03,
+              "predicted": 1.9809454914556601
+            },
+            {
+              "storeId": "d5202600-0000-4000-8000-000000000100",
+              "productId": "d5202600-0000-4000-8000-000000000206",
+              "date": "2026-09-22",
+              "unit": "KG",
+              "actual": 2.85,
+              "predicted": 2.092721356944673
+            },
+            {
+              "storeId": "d5202600-0000-4000-8000-000000000100",
+              "productId": "d5202600-0000-4000-8000-000000000206",
+              "date": "2026-09-23",
+              "unit": "KG",
+              "actual": 2.38,
+              "predicted": 1.9461171720959964
+            },
+            {
+              "storeId": "d5202600-0000-4000-8000-000000000100",
+              "productId": "d5202600-0000-4000-8000-000000000206",
+              "date": "2026-09-24",
+              "unit": "KG",
+              "actual": 1.88,
+              "predicted": 1.8462063141756795
+            },
+            {
+              "storeId": "d5202600-0000-4000-8000-000000000100",
+              "productId": "d5202600-0000-4000-8000-000000000206",
+              "date": "2026-09-25",
+              "unit": "KG",
+              "actual": 2.3,
+              "predicted": 2.087728047608698
+            },
+            {
+              "storeId": "d5202600-0000-4000-8000-000000000100",
+              "productId": "d5202600-0000-4000-8000-000000000206",
+              "date": "2026-09-26",
+              "unit": "KG",
+              "actual": 4.43,
+              "predicted": 2.6283454645384605
+            }
+          ]
+        },
+        {
+          "unit": "PCS",
+          "series": 15,
+          "rows": 105,
+          "WAPE": 0.36175792948045266,
+          "MAE": 4.706298396859983,
+          "RMSE": 6.544146018788327,
+          "actualQuantity": 1366,
+          "predictedQuantity": 1271.8091395950403,
+          "example": [
+            {
+              "storeId": "d5202600-0000-4000-8000-000000000100",
+              "productId": "d5202600-0000-4000-8000-000000000202",
+              "date": "2026-09-20",
+              "unit": "PCS",
+              "actual": 16,
+              "predicted": 10.070221036128459
+            },
+            {
+              "storeId": "d5202600-0000-4000-8000-000000000100",
+              "productId": "d5202600-0000-4000-8000-000000000202",
+              "date": "2026-09-21",
+              "unit": "PCS",
+              "actual": 6,
+              "predicted": 4.654017513396297
+            },
+            {
+              "storeId": "d5202600-0000-4000-8000-000000000100",
+              "productId": "d5202600-0000-4000-8000-000000000202",
+              "date": "2026-09-22",
+              "unit": "PCS",
+              "actual": 6,
+              "predicted": 4.923401610360194
+            },
+            {
+              "storeId": "d5202600-0000-4000-8000-000000000100",
+              "productId": "d5202600-0000-4000-8000-000000000202",
+              "date": "2026-09-23",
+              "unit": "PCS",
+              "actual": 7,
+              "predicted": 5.8212662416530385
+            },
+            {
+              "storeId": "d5202600-0000-4000-8000-000000000100",
+              "productId": "d5202600-0000-4000-8000-000000000202",
+              "date": "2026-09-24",
+              "unit": "PCS",
+              "actual": 10,
+              "predicted": 5.266568443681606
+            },
+            {
+              "storeId": "d5202600-0000-4000-8000-000000000100",
+              "productId": "d5202600-0000-4000-8000-000000000202",
+              "date": "2026-09-25",
+              "unit": "PCS",
+              "actual": 11,
+              "predicted": 5.787756555802825
+            },
+            {
+              "storeId": "d5202600-0000-4000-8000-000000000100",
+              "productId": "d5202600-0000-4000-8000-000000000202",
+              "date": "2026-09-26",
+              "unit": "PCS",
+              "actual": 16,
+              "predicted": 7.290012657882464
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "origin": "2026-08-27",
+      "historyInputDays": 30,
+      "historyAvailableDays": 60,
+      "targetStart": "2026-08-28",
+      "targetEnd": "2026-09-26",
+      "horizonDays": 30,
+      "eligibleSeries": 33,
+      "skipped": [
+        {
+          "locationId": "d5202600-0000-4000-8000-000000000100",
+          "productId": "d5202600-0000-4000-8000-000000000211",
+          "store": "Synthetic Demo Riverside",
+          "product": "Demo Potatoes — new range",
+          "reason": "INSUFFICIENT_HISTORY"
+        },
+        {
+          "locationId": "d5202600-0000-4000-8000-000000000101",
+          "productId": "d5202600-0000-4000-8000-000000000211",
+          "store": "Synthetic Demo Garden",
+          "product": "Demo Potatoes — new range",
+          "reason": "INSUFFICIENT_HISTORY"
+        },
+        {
+          "locationId": "d5202600-0000-4000-8000-000000000102",
+          "productId": "d5202600-0000-4000-8000-000000000211",
+          "store": "Synthetic Demo Central",
+          "product": "Demo Potatoes — new range",
+          "reason": "INSUFFICIENT_HISTORY"
+        }
+      ],
+      "negativePredictionsClipped": 0,
+      "byBaseUnit": [
+        {
+          "unit": "CAN",
+          "series": 9,
+          "rows": 270,
+          "WAPE": 0.36555181133947423,
+          "MAE": 4.107719242977647,
+          "RMSE": 6.249669711287223,
+          "actualQuantity": 3034,
+          "predictedQuantity": 3333.7325473623655,
+          "example": [
+            {
+              "storeId": "d5202600-0000-4000-8000-000000000100",
+              "productId": "d5202600-0000-4000-8000-000000000200",
+              "date": "2026-08-28",
+              "unit": "CAN",
+              "actual": 7,
+              "predicted": 6.855611493632454
+            },
+            {
+              "storeId": "d5202600-0000-4000-8000-000000000100",
+              "productId": "d5202600-0000-4000-8000-000000000200",
+              "date": "2026-08-29",
+              "unit": "CAN",
+              "actual": 11,
+              "predicted": 8.197501730722824
+            },
+            {
+              "storeId": "d5202600-0000-4000-8000-000000000100",
+              "productId": "d5202600-0000-4000-8000-000000000200",
+              "date": "2026-08-30",
+              "unit": "CAN",
+              "actual": 8,
+              "predicted": 6.730555915190421
+            },
+            {
+              "storeId": "d5202600-0000-4000-8000-000000000100",
+              "productId": "d5202600-0000-4000-8000-000000000200",
+              "date": "2026-08-31",
+              "unit": "CAN",
+              "actual": 4,
+              "predicted": 6.450464853183069
+            },
+            {
+              "storeId": "d5202600-0000-4000-8000-000000000100",
+              "productId": "d5202600-0000-4000-8000-000000000200",
+              "date": "2026-09-01",
+              "unit": "CAN",
+              "actual": 4,
+              "predicted": 6.92061133797449
+            },
+            {
+              "storeId": "d5202600-0000-4000-8000-000000000100",
+              "productId": "d5202600-0000-4000-8000-000000000200",
+              "date": "2026-09-02",
+              "unit": "CAN",
+              "actual": 6,
+              "predicted": 6.6804730046326375
+            },
+            {
+              "storeId": "d5202600-0000-4000-8000-000000000100",
+              "productId": "d5202600-0000-4000-8000-000000000200",
+              "date": "2026-09-03",
+              "unit": "CAN",
+              "actual": 0,
+              "predicted": 5.862724338907151
+            }
+          ]
+        },
+        {
+          "unit": "KG",
+          "series": 9,
+          "rows": 270,
+          "WAPE": 0.37822456462615506,
+          "MAE": 1.051856522542545,
+          "RMSE": 1.3979262276062823,
+          "actualQuantity": 750.8799999999995,
+          "predictedQuantity": 781.8985984703238,
+          "example": [
+            {
+              "storeId": "d5202600-0000-4000-8000-000000000100",
+              "productId": "d5202600-0000-4000-8000-000000000206",
+              "date": "2026-08-28",
+              "unit": "KG",
+              "actual": 1.99,
+              "predicted": 1.2751984960398686
+            },
+            {
+              "storeId": "d5202600-0000-4000-8000-000000000100",
+              "productId": "d5202600-0000-4000-8000-000000000206",
+              "date": "2026-08-29",
+              "unit": "KG",
+              "actual": 2.13,
+              "predicted": 1.8538022698425611
+            },
+            {
+              "storeId": "d5202600-0000-4000-8000-000000000100",
+              "productId": "d5202600-0000-4000-8000-000000000206",
+              "date": "2026-08-30",
+              "unit": "KG",
+              "actual": 2.54,
+              "predicted": 1.9461451854258935
+            },
+            {
+              "storeId": "d5202600-0000-4000-8000-000000000100",
+              "productId": "d5202600-0000-4000-8000-000000000206",
+              "date": "2026-08-31",
+              "unit": "KG",
+              "actual": 2.92,
+              "predicted": 1.6837133985861183
+            },
+            {
+              "storeId": "d5202600-0000-4000-8000-000000000100",
+              "productId": "d5202600-0000-4000-8000-000000000206",
+              "date": "2026-09-01",
+              "unit": "KG",
+              "actual": 1.6,
+              "predicted": 1.62521220783924
+            },
+            {
+              "storeId": "d5202600-0000-4000-8000-000000000100",
+              "productId": "d5202600-0000-4000-8000-000000000206",
+              "date": "2026-09-02",
+              "unit": "KG",
+              "actual": 2.09,
+              "predicted": 1.5451262082435206
+            },
+            {
+              "storeId": "d5202600-0000-4000-8000-000000000100",
+              "productId": "d5202600-0000-4000-8000-000000000206",
+              "date": "2026-09-03",
+              "unit": "KG",
+              "actual": 2.36,
+              "predicted": 1.4971238614811548
+            }
+          ]
+        },
+        {
+          "unit": "PCS",
+          "series": 15,
+          "rows": 450,
+          "WAPE": 0.39382082021882187,
+          "MAE": 4.799363062400042,
+          "RMSE": 6.517952337881153,
+          "actualQuantity": 5484,
+          "predictedQuantity": 5951.239302922727,
+          "example": [
+            {
+              "storeId": "d5202600-0000-4000-8000-000000000100",
+              "productId": "d5202600-0000-4000-8000-000000000202",
+              "date": "2026-08-28",
+              "unit": "PCS",
+              "actual": 0,
+              "predicted": 9.476240852787278
+            },
+            {
+              "storeId": "d5202600-0000-4000-8000-000000000100",
+              "productId": "d5202600-0000-4000-8000-000000000202",
+              "date": "2026-08-29",
+              "unit": "PCS",
+              "actual": 8,
+              "predicted": 11.26071198241954
+            },
+            {
+              "storeId": "d5202600-0000-4000-8000-000000000100",
+              "productId": "d5202600-0000-4000-8000-000000000202",
+              "date": "2026-08-30",
+              "unit": "PCS",
+              "actual": 12,
+              "predicted": 11.210565070673033
+            },
+            {
+              "storeId": "d5202600-0000-4000-8000-000000000100",
+              "productId": "d5202600-0000-4000-8000-000000000202",
+              "date": "2026-08-31",
+              "unit": "PCS",
+              "actual": 6,
+              "predicted": 7.61025004204517
+            },
+            {
+              "storeId": "d5202600-0000-4000-8000-000000000100",
+              "productId": "d5202600-0000-4000-8000-000000000202",
+              "date": "2026-09-01",
+              "unit": "PCS",
+              "actual": 9,
+              "predicted": 9.558952476160963
+            },
+            {
+              "storeId": "d5202600-0000-4000-8000-000000000100",
+              "productId": "d5202600-0000-4000-8000-000000000202",
+              "date": "2026-09-02",
+              "unit": "PCS",
+              "actual": 6,
+              "predicted": 9.114377081286145
+            },
+            {
+              "storeId": "d5202600-0000-4000-8000-000000000100",
+              "productId": "d5202600-0000-4000-8000-000000000202",
+              "date": "2026-09-03",
+              "unit": "PCS",
+              "actual": 5,
+              "predicted": 8.794904705663797
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

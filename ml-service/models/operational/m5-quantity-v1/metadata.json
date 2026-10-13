@@ -1,0 +1,507 @@
+{
+  "model_version": "m5-quantity-v1",
+  "algorithm": "RollingMean28",
+  "target_space": "base_unit_quantity",
+  "operational_units_supported": true,
+  "real_world_accuracy_verified": false,
+  "minimum_history_days": 30,
+  "forecast_horizon_limit_days": 124,
+  "features": [
+    "lag_1",
+    "lag_7",
+    "lag_14",
+    "lag_30",
+    "rolling_mean_7",
+    "rolling_mean_14",
+    "rolling_mean_30",
+    "day_of_week",
+    "month"
+  ],
+  "activation_eligible": true,
+  "contains_synthetic": false,
+  "created_at": "2026-10-06T17:31:17.741365+00:00",
+  "artifact": {
+    "file": "model.joblib",
+    "bytes": 146,
+    "sha256": "5baab2a2d5f4b74fbbe30385e5815c27fd611e18bacd447c9f537529ebf41fea"
+  },
+  "validation_source": "M5 organizer unit-sales archive",
+  "provenance": {
+    "dataset": "M5 organizer unit-sales archive",
+    "source_kind": "EXTERNAL",
+    "source_url": "https://github.com/Mcompetitions/M5-methods",
+    "revision": "904bfacd2f6022259b015ac417a4978afdfcaf2e",
+    "original_competition": "https://www.kaggle.com/competitions/m5-forecasting-accuracy",
+    "terms": "Original M5 competition data terms apply; research subset, not a new license.",
+    "files": {
+      "sales_train_evaluation.csv": {
+        "url": "https://media.githubusercontent.com/media/Mcompetitions/M5-methods/904bfacd2f6022259b015ac417a4978afdfcaf2e/Dataset/sales_train_evaluation.csv",
+        "bytes": 121168898,
+        "sha256": "c21a519596680feb86f27a9e62f6c8b583f8be60c2c195f080ae8ca2990af2b7"
+      },
+      "calendar.csv": {
+        "url": "https://media.githubusercontent.com/media/Mcompetitions/M5-methods/904bfacd2f6022259b015ac417a4978afdfcaf2e/Dataset/calendar.csv",
+        "bytes": 112477,
+        "sha256": "568d0fe5f41790142379698732908e4e57432c1c6396f3f59fb880a9c2b54231"
+      }
+    },
+    "selection": "CA_1,TX_1,WI_1; lexicographically first 20 FOODS item IDs; no target-based selection",
+    "stores": [
+      "CA_1",
+      "TX_1",
+      "WI_1"
+    ],
+    "products": [
+      "FOODS_1_001",
+      "FOODS_1_002",
+      "FOODS_1_003",
+      "FOODS_1_004",
+      "FOODS_1_005",
+      "FOODS_1_006",
+      "FOODS_1_008",
+      "FOODS_1_009",
+      "FOODS_1_010",
+      "FOODS_1_011",
+      "FOODS_1_012",
+      "FOODS_1_013",
+      "FOODS_1_014",
+      "FOODS_1_015",
+      "FOODS_1_016",
+      "FOODS_1_017",
+      "FOODS_1_018",
+      "FOODS_1_019",
+      "FOODS_1_020",
+      "FOODS_1_021"
+    ],
+    "pairs": 60,
+    "rows": 116460,
+    "start_date": "2011-01-29",
+    "end_date": "2016-05-22",
+    "historical_dates_preserved": true,
+    "quantity_semantics": "original observed item-unit sales",
+    "snapshot_sha256": "efdee4b145a9d6aa592a9eb08f802d6acbca51010b0982bf6b593d7b841d0c01"
+  },
+  "training": {
+    "initial": {
+      "rows": 99780,
+      "first_target": "2011-02-28",
+      "last_target": "2015-09-17"
+    },
+    "deployed_fit": null,
+    "snapshot_sha256": "efdee4b145a9d6aa592a9eb08f802d6acbca51010b0982bf6b593d7b841d0c01",
+    "source_kind": "EXTERNAL",
+    "rows": 116460,
+    "pairs": 60,
+    "units": [
+      "UNIT"
+    ],
+    "start_date": "2011-01-29",
+    "end_date": "2016-05-22"
+  },
+  "validation": {
+    "evaluated_horizons_days": [
+      7,
+      30,
+      31,
+      90,
+      124
+    ],
+    "source_kind": "EXTERNAL",
+    "selected_on": "validation only",
+    "selection": {
+      "algorithm": "RollingMean28",
+      "scores": {
+        "SeasonalNaive": 0.720515014695627,
+        "RollingMean28": 0.592337225541,
+        "LightGBM": 0.6535784616965833
+      },
+      "selected_before_test": true,
+      "selected_at": "2026-10-06T17:31:14.805520+00:00"
+    },
+    "validation": {
+      "7": {
+        "origin": "2015-09-17",
+        "start": "2015-09-18",
+        "end": "2015-09-24",
+        "horizon_days": 7,
+        "by_unit": {
+          "UNIT": {
+            "daily": {
+              "wape": 0.7852741448692153,
+              "mae": 1.0619897959183673,
+              "rmse": 1.84783036040009,
+              "bias": 0.019806338028168814,
+              "actual_total": 568.0,
+              "predicted_total": 579.2499999999999,
+              "rows": 420
+            },
+            "period": {
+              "wape": 0.4432218309859155,
+              "mae": 4.195833333333334,
+              "rmse": 7.0787975673838845,
+              "bias": 0.019806338028169015,
+              "actual_total": 568.0,
+              "predicted_total": 579.25,
+              "rows": 60
+            },
+            "calendar_month_buckets": {
+              "wape": 0.4432218309859155,
+              "mae": 4.195833333333334,
+              "rmse": 7.0787975673838845,
+              "bias": 0.019806338028169015,
+              "actual_total": 568.0,
+              "predicted_total": 579.25,
+              "rows": 60
+            }
+          }
+        }
+      },
+      "30": {
+        "origin": "2015-09-17",
+        "start": "2015-09-18",
+        "end": "2015-10-17",
+        "horizon_days": 30,
+        "by_unit": {
+          "UNIT": {
+            "daily": {
+              "wape": 0.791472443103921,
+              "mae": 1.1454365079365079,
+              "rmse": 1.9994014835737737,
+              "bias": -0.04702495201535509,
+              "actual_total": 2605.0,
+              "predicted_total": 2482.5,
+              "rows": 1800
+            },
+            "period": {
+              "wape": 0.2895256375102825,
+              "mae": 12.570238095238098,
+              "rmse": 20.2401168458083,
+              "bias": -0.04702495201535526,
+              "actual_total": 2605.0,
+              "predicted_total": 2482.4999999999995,
+              "rows": 60
+            },
+            "calendar_month_buckets": {
+              "wape": 0.3506169454346038,
+              "mae": 7.611309523809524,
+              "rmse": 12.347158263214688,
+              "bias": -0.04702495201535509,
+              "actual_total": 2605.0,
+              "predicted_total": 2482.5,
+              "rows": 120
+            }
+          }
+        }
+      },
+      "31": {
+        "origin": "2015-09-17",
+        "start": "2015-09-18",
+        "end": "2015-10-18",
+        "horizon_days": 31,
+        "by_unit": {
+          "UNIT": {
+            "daily": {
+              "wape": 0.7937223858615611,
+              "mae": 1.159005376344086,
+              "rmse": 2.0639755147262555,
+              "bias": -0.05550441826215039,
+              "actual_total": 2716.0,
+              "predicted_total": 2565.2499999999995,
+              "rows": 1860
+            },
+            "period": {
+              "wape": 0.2969834841152957,
+              "mae": 13.443452380952383,
+              "rmse": 21.84616953379516,
+              "bias": -0.05550441826215022,
+              "actual_total": 2716.0,
+              "predicted_total": 2565.25,
+              "rows": 60
+            },
+            "calendar_month_buckets": {
+              "wape": 0.35705081001472755,
+              "mae": 8.08125,
+              "rmse": 13.487042234986117,
+              "bias": -0.05550441826215039,
+              "actual_total": 2716.0,
+              "predicted_total": 2565.2499999999995,
+              "rows": 120
+            }
+          }
+        }
+      },
+      "90": {
+        "origin": "2015-09-17",
+        "start": "2015-09-18",
+        "end": "2015-12-16",
+        "horizon_days": 90,
+        "by_unit": {
+          "UNIT": {
+            "daily": {
+              "wape": 0.9162477593328657,
+              "mae": 1.2440608465608465,
+              "rmse": 2.2221885981016283,
+              "bias": 0.015752864157119476,
+              "actual_total": 7332.0,
+              "predicted_total": 7447.5,
+              "rows": 5400
+            },
+            "period": {
+              "wape": 0.3697198191879042,
+              "mae": 45.1797619047619,
+              "rmse": 77.5488418620785,
+              "bias": 0.015752864157119476,
+              "actual_total": 7332.0,
+              "predicted_total": 7447.5,
+              "rows": 60
+            },
+            "calendar_month_buckets": {
+              "wape": 0.4654742420699868,
+              "mae": 14.220238095238097,
+              "rmse": 26.945282447461363,
+              "bias": 0.015752864157119476,
+              "actual_total": 7332.0,
+              "predicted_total": 7447.5,
+              "rows": 240
+            }
+          }
+        }
+      },
+      "124": {
+        "origin": "2015-09-17",
+        "start": "2015-09-18",
+        "end": "2016-01-19",
+        "horizon_days": 124,
+        "by_unit": {
+          "UNIT": {
+            "daily": {
+              "wape": 0.9038141084984262,
+              "mae": 1.312231182795699,
+              "rmse": 2.3748980724925834,
+              "bias": -0.05008331790409184,
+              "actual_total": 10802.0,
+              "predicted_total": 10261.0,
+              "rows": 7440
+            },
+            "period": {
+              "wape": 0.33339064194461343,
+              "mae": 60.02142857142857,
+              "rmse": 105.8497635754544,
+              "bias": -0.05008331790409184,
+              "actual_total": 10802.0,
+              "predicted_total": 10261.0,
+              "rows": 60
+            },
+            "calendar_month_buckets": {
+              "wape": 0.44423651704710765,
+              "mae": 15.99547619047619,
+              "rmse": 29.52865954786769,
+              "bias": -0.05008331790409184,
+              "actual_total": 10802.0,
+              "predicted_total": 10261.0,
+              "rows": 300
+            }
+          }
+        }
+      }
+    },
+    "test": {
+      "7": {
+        "origin": "2016-01-19",
+        "start": "2016-01-20",
+        "end": "2016-01-26",
+        "horizon_days": 7,
+        "by_unit": {
+          "UNIT": {
+            "daily": {
+              "wape": 0.7600033068783069,
+              "mae": 1.5634353741496598,
+              "rmse": 3.5626379911215107,
+              "bias": -0.19444444444444445,
+              "actual_total": 864.0,
+              "predicted_total": 696.0,
+              "rows": 420
+            },
+            "period": {
+              "wape": 0.4664351851851852,
+              "mae": 6.716666666666667,
+              "rmse": 12.121348247341686,
+              "bias": -0.19444444444444445,
+              "actual_total": 864.0,
+              "predicted_total": 696.0,
+              "rows": 60
+            },
+            "calendar_month_buckets": {
+              "wape": 0.4664351851851852,
+              "mae": 6.716666666666667,
+              "rmse": 12.121348247341686,
+              "bias": -0.19444444444444445,
+              "actual_total": 864.0,
+              "predicted_total": 696.0,
+              "rows": 60
+            }
+          }
+        }
+      },
+      "30": {
+        "origin": "2016-01-19",
+        "start": "2016-01-20",
+        "end": "2016-02-18",
+        "horizon_days": 30,
+        "by_unit": {
+          "UNIT": {
+            "daily": {
+              "wape": 0.9662569573283859,
+              "mae": 1.6533730158730158,
+              "rmse": 3.052942244656186,
+              "bias": -0.031539888682745744,
+              "actual_total": 3080.0,
+              "predicted_total": 2982.857142857143,
+              "rows": 1800
+            },
+            "period": {
+              "wape": 0.34146567717996285,
+              "mae": 17.528571428571425,
+              "rmse": 28.32803171687685,
+              "bias": -0.03153988868274589,
+              "actual_total": 3080.0,
+              "predicted_total": 2982.8571428571427,
+              "rows": 60
+            },
+            "calendar_month_buckets": {
+              "wape": 0.47847866419294993,
+              "mae": 12.280952380952382,
+              "rmse": 20.14700438562234,
+              "bias": -0.031539888682745744,
+              "actual_total": 3080.0,
+              "predicted_total": 2982.857142857143,
+              "rows": 120
+            }
+          }
+        }
+      },
+      "31": {
+        "origin": "2016-01-19",
+        "start": "2016-01-20",
+        "end": "2016-02-19",
+        "horizon_days": 31,
+        "by_unit": {
+          "UNIT": {
+            "daily": {
+              "wape": 0.9668087015025791,
+              "mae": 1.655529953917051,
+              "rmse": 3.0533168613176653,
+              "bias": -0.032249383269791314,
+              "actual_total": 3185.0,
+              "predicted_total": 3082.2857142857147,
+              "rows": 1860
+            },
+            "period": {
+              "wape": 0.3519623233908947,
+              "mae": 18.68333333333333,
+              "rmse": 30.27083599613268,
+              "bias": -0.03224938326979174,
+              "actual_total": 3185.0,
+              "predicted_total": 3082.2857142857133,
+              "rows": 60
+            },
+            "calendar_month_buckets": {
+              "wape": 0.4747252747252747,
+              "mae": 12.6,
+              "rmse": 21.22552862654286,
+              "bias": -0.03224938326979145,
+              "actual_total": 3185.0,
+              "predicted_total": 3082.285714285714,
+              "rows": 120
+            }
+          }
+        }
+      },
+      "90": {
+        "origin": "2016-01-19",
+        "start": "2016-01-20",
+        "end": "2016-04-18",
+        "horizon_days": 90,
+        "by_unit": {
+          "UNIT": {
+            "daily": {
+              "wape": 0.9831643590528844,
+              "mae": 1.613664021164021,
+              "rmse": 2.8565933664726697,
+              "bias": 0.00965490562692422,
+              "actual_total": 8863.0,
+              "predicted_total": 8948.57142857143,
+              "rows": 5400
+            },
+            "period": {
+              "wape": 0.43313292822488353,
+              "mae": 63.98095238095238,
+              "rmse": 119.96708377916082,
+              "bias": 0.009654905626924013,
+              "actual_total": 8863.0,
+              "predicted_total": 8948.571428571428,
+              "rows": 60
+            },
+            "calendar_month_buckets": {
+              "wape": 0.5309956319208265,
+              "mae": 19.60922619047619,
+              "rmse": 39.222543095836635,
+              "bias": 0.009654905626924013,
+              "actual_total": 8863.0,
+              "predicted_total": 8948.571428571428,
+              "rows": 240
+            }
+          }
+        }
+      },
+      "124": {
+        "origin": "2016-01-19",
+        "start": "2016-01-20",
+        "end": "2016-05-22",
+        "horizon_days": 124,
+        "by_unit": {
+          "UNIT": {
+            "daily": {
+              "wape": 0.9178053830227743,
+              "mae": 1.6172619047619046,
+              "rmse": 2.902685935040303,
+              "bias": -0.059561948349133725,
+              "actual_total": 13110.0,
+              "predicted_total": 12329.142857142857,
+              "rows": 7440
+            },
+            "period": {
+              "wape": 0.3901928734880679,
+              "mae": 85.25714285714284,
+              "rmse": 151.1585418092698,
+              "bias": -0.059561948349134,
+              "actual_total": 13110.0,
+              "predicted_total": 12329.142857142853,
+              "rows": 60
+            },
+            "calendar_month_buckets": {
+              "wape": 0.5007791217173367,
+              "mae": 21.884047619047617,
+              "rmse": 42.484034816454454,
+              "bias": -0.059561948349133725,
+              "actual_total": 13110.0,
+              "predicted_total": 12329.142857142857,
+              "rows": 300
+            }
+          }
+        }
+      }
+    },
+    "pairs": 60,
+    "skipped_pairs": 0,
+    "independent_test": true,
+    "calendar_buckets_include_partial_boundary_months": true
+  },
+  "limitations": [
+    "Observed sales, not recovered demand lost during stockouts.",
+    "External unit-sales evaluation does not establish accuracy for this store, CAN or KG products.",
+    "One validation origin and one independent test origin; not the official M5 competition score.",
+    "Long-range recursive forecasts are planning estimates; no calibrated confidence interval.",
+    "Revenue assumes the current selling price remains unchanged."
+  ]
+}

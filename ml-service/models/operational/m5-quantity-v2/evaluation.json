@@ -1,0 +1,1250 @@
+{
+  "protocol": {
+    "selection": "mean across horizons/units of 0.5 daily WAPE + 0.5 period WAPE; tie favors simpler baseline",
+    "horizons": [
+      7,
+      30,
+      31,
+      90,
+      124
+    ],
+    "validation_origin": "2015-09-17",
+    "test_origin": "2016-01-19",
+    "test_end": "2016-05-22",
+    "parameters": {
+      "objective": "regression",
+      "n_estimators": 200,
+      "learning_rate": 0.05,
+      "num_leaves": 31,
+      "min_child_samples": 80,
+      "n_jobs": 4,
+      "random_state": 20261006,
+      "deterministic": true,
+      "force_col_wise": true,
+      "verbosity": -1
+    },
+    "snapshot_sha256": "efdee4b145a9d6aa592a9eb08f802d6acbca51010b0982bf6b593d7b841d0c01",
+    "source_kind": "EXTERNAL",
+    "contains_synthetic": false,
+    "created_at": "2026-10-06T17:33:47.941870+00:00"
+  },
+  "selection": {
+    "algorithm": "RollingMean28",
+    "scores": {
+      "SeasonalNaive": 0.720515014695627,
+      "RollingMean28": 0.592337225541,
+      "LightGBM": 0.6535784616965833
+    },
+    "selected_before_test": true,
+    "selected_at": "2026-10-06T17:33:50.667116+00:00"
+  },
+  "validation": {
+    "SeasonalNaive": {
+      "7": {
+        "origin": "2015-09-17",
+        "start": "2015-09-18",
+        "end": "2015-09-24",
+        "horizon_days": 7,
+        "by_unit": {
+          "UNIT": {
+            "daily": {
+              "wape": 1.0,
+              "mae": 1.3523809523809525,
+              "rmse": 2.520393015460278,
+              "bias": 0.0035211267605633804,
+              "actual_total": 568.0,
+              "predicted_total": 570.0,
+              "rows": 420
+            },
+            "period": {
+              "wape": 0.4753521126760563,
+              "mae": 4.5,
+              "rmse": 7.563068160475615,
+              "bias": 0.0035211267605633804,
+              "actual_total": 568.0,
+              "predicted_total": 570.0,
+              "rows": 60
+            },
+            "calendar_month_buckets": {
+              "wape": 0.4753521126760563,
+              "mae": 4.5,
+              "rmse": 7.563068160475615,
+              "bias": 0.0035211267605633804,
+              "actual_total": 568.0,
+              "predicted_total": 570.0,
+              "rows": 60
+            }
+          }
+        }
+      },
+      "30": {
+        "origin": "2015-09-17",
+        "start": "2015-09-18",
+        "end": "2015-10-17",
+        "horizon_days": 30,
+        "by_unit": {
+          "UNIT": {
+            "daily": {
+              "wape": 0.9854126679462571,
+              "mae": 1.426111111111111,
+              "rmse": 2.7673693886673916,
+              "bias": -0.05873320537428023,
+              "actual_total": 2605.0,
+              "predicted_total": 2452.0,
+              "rows": 1800
+            },
+            "period": {
+              "wape": 0.34664107485604606,
+              "mae": 15.05,
+              "rmse": 27.12102505437433,
+              "bias": -0.05873320537428023,
+              "actual_total": 2605.0,
+              "predicted_total": 2452.0,
+              "rows": 60
+            },
+            "calendar_month_buckets": {
+              "wape": 0.400383877159309,
+              "mae": 8.691666666666666,
+              "rmse": 15.641025115594779,
+              "bias": -0.05873320537428023,
+              "actual_total": 2605.0,
+              "predicted_total": 2452.0,
+              "rows": 120
+            }
+          }
+        }
+      },
+      "31": {
+        "origin": "2015-09-17",
+        "start": "2015-09-18",
+        "end": "2015-10-18",
+        "horizon_days": 31,
+        "by_unit": {
+          "UNIT": {
+            "daily": {
+              "wape": 0.9830633284241531,
+              "mae": 1.435483870967742,
+              "rmse": 2.795926376190058,
+              "bias": -0.06774668630338733,
+              "actual_total": 2716.0,
+              "predicted_total": 2532.0,
+              "rows": 1860
+            },
+            "period": {
+              "wape": 0.34609720176730485,
+              "mae": 15.666666666666666,
+              "rmse": 28.407745422683583,
+              "bias": -0.06774668630338733,
+              "actual_total": 2716.0,
+              "predicted_total": 2532.0,
+              "rows": 60
+            },
+            "calendar_month_buckets": {
+              "wape": 0.39690721649484534,
+              "mae": 8.983333333333333,
+              "rmse": 16.52321599043802,
+              "bias": -0.06774668630338733,
+              "actual_total": 2716.0,
+              "predicted_total": 2532.0,
+              "rows": 120
+            }
+          }
+        }
+      },
+      "90": {
+        "origin": "2015-09-17",
+        "start": "2015-09-18",
+        "end": "2015-12-16",
+        "horizon_days": 90,
+        "by_unit": {
+          "UNIT": {
+            "daily": {
+              "wape": 1.0906983087834152,
+              "mae": 1.480925925925926,
+              "rmse": 2.886270180623352,
+              "bias": 0.0004091653027823241,
+              "actual_total": 7332.0,
+              "predicted_total": 7335.0,
+              "rows": 5400
+            },
+            "period": {
+              "wape": 0.4611292962356792,
+              "mae": 56.35,
+              "rmse": 89.36526170722044,
+              "bias": 0.0004091653027823241,
+              "actual_total": 7332.0,
+              "predicted_total": 7335.0,
+              "rows": 60
+            },
+            "calendar_month_buckets": {
+              "wape": 0.5061374795417348,
+              "mae": 15.4625,
+              "rmse": 29.32184907766448,
+              "bias": 0.0004091653027823241,
+              "actual_total": 7332.0,
+              "predicted_total": 7335.0,
+              "rows": 240
+            }
+          }
+        }
+      },
+      "124": {
+        "origin": "2015-09-17",
+        "start": "2015-09-18",
+        "end": "2016-01-19",
+        "horizon_days": 124,
+        "by_unit": {
+          "UNIT": {
+            "daily": {
+              "wape": 1.0748009627846695,
+              "mae": 1.560483870967742,
+              "rmse": 3.017288892046056,
+              "bias": -0.06387705980374005,
+              "actual_total": 10802.0,
+              "predicted_total": 10112.0,
+              "rows": 7440
+            },
+            "period": {
+              "wape": 0.4419551934826884,
+              "mae": 79.56666666666666,
+              "rmse": 123.30044606569759,
+              "bias": -0.06387705980374005,
+              "actual_total": 10802.0,
+              "predicted_total": 10112.0,
+              "rows": 60
+            },
+            "calendar_month_buckets": {
+              "wape": 0.48194778744676914,
+              "mae": 17.35333333333333,
+              "rmse": 32.44256463351811,
+              "bias": -0.06387705980374005,
+              "actual_total": 10802.0,
+              "predicted_total": 10112.0,
+              "rows": 300
+            }
+          }
+        }
+      }
+    },
+    "RollingMean28": {
+      "7": {
+        "origin": "2015-09-17",
+        "start": "2015-09-18",
+        "end": "2015-09-24",
+        "horizon_days": 7,
+        "by_unit": {
+          "UNIT": {
+            "daily": {
+              "wape": 0.7852741448692153,
+              "mae": 1.0619897959183673,
+              "rmse": 1.84783036040009,
+              "bias": 0.019806338028168814,
+              "actual_total": 568.0,
+              "predicted_total": 579.2499999999999,
+              "rows": 420
+            },
+            "period": {
+              "wape": 0.4432218309859155,
+              "mae": 4.195833333333334,
+              "rmse": 7.0787975673838845,
+              "bias": 0.019806338028169015,
+              "actual_total": 568.0,
+              "predicted_total": 579.25,
+              "rows": 60
+            },
+            "calendar_month_buckets": {
+              "wape": 0.4432218309859155,
+              "mae": 4.195833333333334,
+              "rmse": 7.0787975673838845,
+              "bias": 0.019806338028169015,
+              "actual_total": 568.0,
+              "predicted_total": 579.25,
+              "rows": 60
+            }
+          }
+        }
+      },
+      "30": {
+        "origin": "2015-09-17",
+        "start": "2015-09-18",
+        "end": "2015-10-17",
+        "horizon_days": 30,
+        "by_unit": {
+          "UNIT": {
+            "daily": {
+              "wape": 0.791472443103921,
+              "mae": 1.1454365079365079,
+              "rmse": 1.9994014835737737,
+              "bias": -0.04702495201535509,
+              "actual_total": 2605.0,
+              "predicted_total": 2482.5,
+              "rows": 1800
+            },
+            "period": {
+              "wape": 0.2895256375102825,
+              "mae": 12.570238095238098,
+              "rmse": 20.2401168458083,
+              "bias": -0.04702495201535526,
+              "actual_total": 2605.0,
+              "predicted_total": 2482.4999999999995,
+              "rows": 60
+            },
+            "calendar_month_buckets": {
+              "wape": 0.3506169454346038,
+              "mae": 7.611309523809524,
+              "rmse": 12.347158263214688,
+              "bias": -0.04702495201535509,
+              "actual_total": 2605.0,
+              "predicted_total": 2482.5,
+              "rows": 120
+            }
+          }
+        }
+      },
+      "31": {
+        "origin": "2015-09-17",
+        "start": "2015-09-18",
+        "end": "2015-10-18",
+        "horizon_days": 31,
+        "by_unit": {
+          "UNIT": {
+            "daily": {
+              "wape": 0.7937223858615611,
+              "mae": 1.159005376344086,
+              "rmse": 2.0639755147262555,
+              "bias": -0.05550441826215039,
+              "actual_total": 2716.0,
+              "predicted_total": 2565.2499999999995,
+              "rows": 1860
+            },
+            "period": {
+              "wape": 0.2969834841152957,
+              "mae": 13.443452380952383,
+              "rmse": 21.84616953379516,
+              "bias": -0.05550441826215022,
+              "actual_total": 2716.0,
+              "predicted_total": 2565.25,
+              "rows": 60
+            },
+            "calendar_month_buckets": {
+              "wape": 0.35705081001472755,
+              "mae": 8.08125,
+              "rmse": 13.487042234986117,
+              "bias": -0.05550441826215039,
+              "actual_total": 2716.0,
+              "predicted_total": 2565.2499999999995,
+              "rows": 120
+            }
+          }
+        }
+      },
+      "90": {
+        "origin": "2015-09-17",
+        "start": "2015-09-18",
+        "end": "2015-12-16",
+        "horizon_days": 90,
+        "by_unit": {
+          "UNIT": {
+            "daily": {
+              "wape": 0.9162477593328657,
+              "mae": 1.2440608465608465,
+              "rmse": 2.2221885981016283,
+              "bias": 0.015752864157119476,
+              "actual_total": 7332.0,
+              "predicted_total": 7447.5,
+              "rows": 5400
+            },
+            "period": {
+              "wape": 0.3697198191879042,
+              "mae": 45.1797619047619,
+              "rmse": 77.5488418620785,
+              "bias": 0.015752864157119476,
+              "actual_total": 7332.0,
+              "predicted_total": 7447.5,
+              "rows": 60
+            },
+            "calendar_month_buckets": {
+              "wape": 0.4654742420699868,
+              "mae": 14.220238095238097,
+              "rmse": 26.945282447461363,
+              "bias": 0.015752864157119476,
+              "actual_total": 7332.0,
+              "predicted_total": 7447.5,
+              "rows": 240
+            }
+          }
+        }
+      },
+      "124": {
+        "origin": "2015-09-17",
+        "start": "2015-09-18",
+        "end": "2016-01-19",
+        "horizon_days": 124,
+        "by_unit": {
+          "UNIT": {
+            "daily": {
+              "wape": 0.9038141084984262,
+              "mae": 1.312231182795699,
+              "rmse": 2.3748980724925834,
+              "bias": -0.05008331790409184,
+              "actual_total": 10802.0,
+              "predicted_total": 10261.0,
+              "rows": 7440
+            },
+            "period": {
+              "wape": 0.33339064194461343,
+              "mae": 60.02142857142857,
+              "rmse": 105.8497635754544,
+              "bias": -0.05008331790409184,
+              "actual_total": 10802.0,
+              "predicted_total": 10261.0,
+              "rows": 60
+            },
+            "calendar_month_buckets": {
+              "wape": 0.44423651704710765,
+              "mae": 15.99547619047619,
+              "rmse": 29.52865954786769,
+              "bias": -0.05008331790409184,
+              "actual_total": 10802.0,
+              "predicted_total": 10261.0,
+              "rows": 300
+            }
+          }
+        }
+      }
+    },
+    "LightGBM": {
+      "7": {
+        "origin": "2015-09-17",
+        "start": "2015-09-18",
+        "end": "2015-09-24",
+        "horizon_days": 7,
+        "by_unit": {
+          "UNIT": {
+            "daily": {
+              "wape": 0.8451753772791919,
+              "mae": 1.1429990816537643,
+              "rmse": 1.8194710393295215,
+              "bias": 0.10684410246831133,
+              "actual_total": 568.0,
+              "predicted_total": 628.6874502020008,
+              "rows": 420
+            },
+            "period": {
+              "wape": 0.4898005282676596,
+              "mae": 4.636778334267177,
+              "rmse": 6.943602088925224,
+              "bias": 0.10684410246831112,
+              "actual_total": 568.0,
+              "predicted_total": 628.6874502020007,
+              "rows": 60
+            },
+            "calendar_month_buckets": {
+              "wape": 0.4898005282676596,
+              "mae": 4.636778334267177,
+              "rmse": 6.943602088925224,
+              "bias": 0.10684410246831112,
+              "actual_total": 568.0,
+              "predicted_total": 628.6874502020007,
+              "rows": 60
+            }
+          }
+        }
+      },
+      "30": {
+        "origin": "2015-09-17",
+        "start": "2015-09-18",
+        "end": "2015-10-17",
+        "horizon_days": 30,
+        "by_unit": {
+          "UNIT": {
+            "daily": {
+              "wape": 0.8589737741229954,
+              "mae": 1.2431259342168903,
+              "rmse": 1.9642971871646413,
+              "bias": 0.08609608534516505,
+              "actual_total": 2605.0,
+              "predicted_total": 2829.280302324155,
+              "rows": 1800
+            },
+            "period": {
+              "wape": 0.3517184998610959,
+              "mae": 15.270444868969244,
+              "rmse": 20.858398549889667,
+              "bias": 0.08609608534516505,
+              "actual_total": 2605.0,
+              "predicted_total": 2829.280302324155,
+              "rows": 60
+            },
+            "calendar_month_buckets": {
+              "wape": 0.4054952939082703,
+              "mae": 8.802627005258701,
+              "rmse": 12.584100290032524,
+              "bias": 0.08609608534516522,
+              "actual_total": 2605.0,
+              "predicted_total": 2829.2803023241554,
+              "rows": 120
+            }
+          }
+        }
+      },
+      "31": {
+        "origin": "2015-09-17",
+        "start": "2015-09-18",
+        "end": "2015-10-18",
+        "horizon_days": 31,
+        "by_unit": {
+          "UNIT": {
+            "daily": {
+              "wape": 0.8617404021705664,
+              "mae": 1.2583263076856226,
+              "rmse": 2.026432797414359,
+              "bias": 0.07926219949668886,
+              "actual_total": 2716.0,
+              "predicted_total": 2931.276133833007,
+              "rows": 1860
+            },
+            "period": {
+              "wape": 0.34979456575432666,
+              "mae": 15.83403400981252,
+              "rmse": 22.21380609436235,
+              "bias": 0.0792621994966887,
+              "actual_total": 2716.0,
+              "predicted_total": 2931.2761338330065,
+              "rows": 60
+            },
+            "calendar_month_buckets": {
+              "wape": 0.41319471820915876,
+              "mae": 9.351973788800626,
+              "rmse": 13.588218175630322,
+              "bias": 0.07926219949668903,
+              "actual_total": 2716.0,
+              "predicted_total": 2931.2761338330074,
+              "rows": 120
+            }
+          }
+        }
+      },
+      "90": {
+        "origin": "2015-09-17",
+        "start": "2015-09-18",
+        "end": "2015-12-16",
+        "horizon_days": 90,
+        "by_unit": {
+          "UNIT": {
+            "daily": {
+              "wape": 0.9943163100748723,
+              "mae": 1.35006058990166,
+              "rmse": 2.181729984090561,
+              "bias": 0.2004139798211681,
+              "actual_total": 7332.0,
+              "predicted_total": 8801.435300048804,
+              "rows": 5400
+            },
+            "period": {
+              "wape": 0.4055281330299814,
+              "mae": 49.55553785626373,
+              "rmse": 70.45618134011244,
+              "bias": 0.20041397982116785,
+              "actual_total": 7332.0,
+              "predicted_total": 8801.435300048803,
+              "rows": 60
+            },
+            "calendar_month_buckets": {
+              "wape": 0.517233637117898,
+              "mae": 15.801487613951785,
+              "rmse": 25.24394838550324,
+              "bias": 0.2004139798211681,
+              "actual_total": 7332.0,
+              "predicted_total": 8801.435300048804,
+              "rows": 240
+            }
+          }
+        }
+      },
+      "124": {
+        "origin": "2015-09-17",
+        "start": "2015-09-18",
+        "end": "2016-01-19",
+        "horizon_days": 124,
+        "by_unit": {
+          "UNIT": {
+            "daily": {
+              "wape": 0.9944050710591187,
+              "mae": 1.4437585453737367,
+              "rmse": 2.371442176852747,
+              "bias": 0.1717761774314731,
+              "actual_total": 10802.0,
+              "predicted_total": 12657.526268614773,
+              "rows": 7440
+            },
+            "period": {
+              "wape": 0.3843319553460247,
+              "mae": 69.19256302746265,
+              "rmse": 98.04838638649372,
+              "bias": 0.17177617743147294,
+              "actual_total": 10802.0,
+              "predicted_total": 12657.52626861477,
+              "rows": 60
+            },
+            "calendar_month_buckets": {
+              "wape": 0.5076260172885461,
+              "mae": 18.27792079583625,
+              "rmse": 29.072859601634335,
+              "bias": 0.1717761774314731,
+              "actual_total": 10802.0,
+              "predicted_total": 12657.526268614773,
+              "rows": 300
+            }
+          }
+        }
+      }
+    }
+  },
+  "test": {
+    "SeasonalNaive": {
+      "7": {
+        "origin": "2016-01-19",
+        "start": "2016-01-20",
+        "end": "2016-01-26",
+        "horizon_days": 7,
+        "by_unit": {
+          "UNIT": {
+            "daily": {
+              "wape": 0.8634259259259259,
+              "mae": 1.776190476190476,
+              "rmse": 3.672290060127915,
+              "bias": -0.125,
+              "actual_total": 864.0,
+              "predicted_total": 756.0,
+              "rows": 420
+            },
+            "period": {
+              "wape": 0.40046296296296297,
+              "mae": 5.766666666666667,
+              "rmse": 9.869143833180262,
+              "bias": -0.125,
+              "actual_total": 864.0,
+              "predicted_total": 756.0,
+              "rows": 60
+            },
+            "calendar_month_buckets": {
+              "wape": 0.40046296296296297,
+              "mae": 5.766666666666667,
+              "rmse": 9.869143833180262,
+              "bias": -0.125,
+              "actual_total": 864.0,
+              "predicted_total": 756.0,
+              "rows": 60
+            }
+          }
+        }
+      },
+      "30": {
+        "origin": "2016-01-19",
+        "start": "2016-01-20",
+        "end": "2016-02-18",
+        "horizon_days": 30,
+        "by_unit": {
+          "UNIT": {
+            "daily": {
+              "wape": 1.1331168831168832,
+              "mae": 1.9388888888888889,
+              "rmse": 3.700900791248891,
+              "bias": 0.03701298701298701,
+              "actual_total": 3080.0,
+              "predicted_total": 3194.0,
+              "rows": 1800
+            },
+            "period": {
+              "wape": 0.5084415584415585,
+              "mae": 26.1,
+              "rmse": 43.001162774976216,
+              "bias": 0.03701298701298701,
+              "actual_total": 3080.0,
+              "predicted_total": 3194.0,
+              "rows": 60
+            },
+            "calendar_month_buckets": {
+              "wape": 0.5240259740259741,
+              "mae": 13.45,
+              "rmse": 25.517314383244436,
+              "bias": 0.03701298701298701,
+              "actual_total": 3080.0,
+              "predicted_total": 3194.0,
+              "rows": 120
+            }
+          }
+        }
+      },
+      "31": {
+        "origin": "2016-01-19",
+        "start": "2016-01-20",
+        "end": "2016-02-19",
+        "horizon_days": 31,
+        "by_unit": {
+          "UNIT": {
+            "daily": {
+              "wape": 1.1372056514913658,
+              "mae": 1.9473118279569892,
+              "rmse": 3.7142561738161226,
+              "bias": 0.04270015698587127,
+              "actual_total": 3185.0,
+              "predicted_total": 3321.0,
+              "rows": 1860
+            },
+            "period": {
+              "wape": 0.5111459968602826,
+              "mae": 27.133333333333333,
+              "rmse": 45.57155545586158,
+              "bias": 0.04270015698587127,
+              "actual_total": 3185.0,
+              "predicted_total": 3321.0,
+              "rows": 60
+            },
+            "calendar_month_buckets": {
+              "wape": 0.5262166405023548,
+              "mae": 13.966666666666667,
+              "rmse": 27.168302609229503,
+              "bias": 0.04270015698587127,
+              "actual_total": 3185.0,
+              "predicted_total": 3321.0,
+              "rows": 120
+            }
+          }
+        }
+      },
+      "90": {
+        "origin": "2016-01-19",
+        "start": "2016-01-20",
+        "end": "2016-04-18",
+        "horizon_days": 90,
+        "by_unit": {
+          "UNIT": {
+            "daily": {
+              "wape": 1.1828951822182106,
+              "mae": 1.9414814814814816,
+              "rmse": 3.5983020687232163,
+              "bias": 0.10086878032268984,
+              "actual_total": 8863.0,
+              "predicted_total": 9757.0,
+              "rows": 5400
+            },
+            "period": {
+              "wape": 0.5770055286020535,
+              "mae": 85.23333333333333,
+              "rmse": 169.5350504566337,
+              "bias": 0.10086878032268984,
+              "actual_total": 8863.0,
+              "predicted_total": 9757.0,
+              "rows": 60
+            },
+            "calendar_month_buckets": {
+              "wape": 0.6248448606566626,
+              "mae": 23.075,
+              "rmse": 50.57741590868398,
+              "bias": 0.10086878032268984,
+              "actual_total": 8863.0,
+              "predicted_total": 9757.0,
+              "rows": 240
+            }
+          }
+        }
+      },
+      "124": {
+        "origin": "2016-01-19",
+        "start": "2016-01-20",
+        "end": "2016-05-22",
+        "horizon_days": 124,
+        "by_unit": {
+          "UNIT": {
+            "daily": {
+              "wape": 1.1094584286803966,
+              "mae": 1.95497311827957,
+              "rmse": 3.600981795632008,
+              "bias": 0.02616323417238749,
+              "actual_total": 13110.0,
+              "predicted_total": 13453.0,
+              "rows": 7440
+            },
+            "period": {
+              "wape": 0.537070938215103,
+              "mae": 117.35,
+              "rmse": 215.84002563627226,
+              "bias": 0.02616323417238749,
+              "actual_total": 13110.0,
+              "predicted_total": 13453.0,
+              "rows": 60
+            },
+            "calendar_month_buckets": {
+              "wape": 0.5826849733028223,
+              "mae": 25.463333333333335,
+              "rmse": 53.80913800957355,
+              "bias": 0.02616323417238749,
+              "actual_total": 13110.0,
+              "predicted_total": 13453.0,
+              "rows": 300
+            }
+          }
+        }
+      }
+    },
+    "RollingMean28": {
+      "7": {
+        "origin": "2016-01-19",
+        "start": "2016-01-20",
+        "end": "2016-01-26",
+        "horizon_days": 7,
+        "by_unit": {
+          "UNIT": {
+            "daily": {
+              "wape": 0.7600033068783069,
+              "mae": 1.5634353741496598,
+              "rmse": 3.5626379911215107,
+              "bias": -0.19444444444444445,
+              "actual_total": 864.0,
+              "predicted_total": 696.0,
+              "rows": 420
+            },
+            "period": {
+              "wape": 0.4664351851851852,
+              "mae": 6.716666666666667,
+              "rmse": 12.121348247341686,
+              "bias": -0.19444444444444445,
+              "actual_total": 864.0,
+              "predicted_total": 696.0,
+              "rows": 60
+            },
+            "calendar_month_buckets": {
+              "wape": 0.4664351851851852,
+              "mae": 6.716666666666667,
+              "rmse": 12.121348247341686,
+              "bias": -0.19444444444444445,
+              "actual_total": 864.0,
+              "predicted_total": 696.0,
+              "rows": 60
+            }
+          }
+        }
+      },
+      "30": {
+        "origin": "2016-01-19",
+        "start": "2016-01-20",
+        "end": "2016-02-18",
+        "horizon_days": 30,
+        "by_unit": {
+          "UNIT": {
+            "daily": {
+              "wape": 0.9662569573283859,
+              "mae": 1.6533730158730158,
+              "rmse": 3.052942244656186,
+              "bias": -0.031539888682745744,
+              "actual_total": 3080.0,
+              "predicted_total": 2982.857142857143,
+              "rows": 1800
+            },
+            "period": {
+              "wape": 0.34146567717996285,
+              "mae": 17.528571428571425,
+              "rmse": 28.32803171687685,
+              "bias": -0.03153988868274589,
+              "actual_total": 3080.0,
+              "predicted_total": 2982.8571428571427,
+              "rows": 60
+            },
+            "calendar_month_buckets": {
+              "wape": 0.47847866419294993,
+              "mae": 12.280952380952382,
+              "rmse": 20.14700438562234,
+              "bias": -0.031539888682745744,
+              "actual_total": 3080.0,
+              "predicted_total": 2982.857142857143,
+              "rows": 120
+            }
+          }
+        }
+      },
+      "31": {
+        "origin": "2016-01-19",
+        "start": "2016-01-20",
+        "end": "2016-02-19",
+        "horizon_days": 31,
+        "by_unit": {
+          "UNIT": {
+            "daily": {
+              "wape": 0.9668087015025791,
+              "mae": 1.655529953917051,
+              "rmse": 3.0533168613176653,
+              "bias": -0.032249383269791314,
+              "actual_total": 3185.0,
+              "predicted_total": 3082.2857142857147,
+              "rows": 1860
+            },
+            "period": {
+              "wape": 0.3519623233908947,
+              "mae": 18.68333333333333,
+              "rmse": 30.27083599613268,
+              "bias": -0.03224938326979174,
+              "actual_total": 3185.0,
+              "predicted_total": 3082.2857142857133,
+              "rows": 60
+            },
+            "calendar_month_buckets": {
+              "wape": 0.4747252747252747,
+              "mae": 12.6,
+              "rmse": 21.22552862654286,
+              "bias": -0.03224938326979145,
+              "actual_total": 3185.0,
+              "predicted_total": 3082.285714285714,
+              "rows": 120
+            }
+          }
+        }
+      },
+      "90": {
+        "origin": "2016-01-19",
+        "start": "2016-01-20",
+        "end": "2016-04-18",
+        "horizon_days": 90,
+        "by_unit": {
+          "UNIT": {
+            "daily": {
+              "wape": 0.9831643590528844,
+              "mae": 1.613664021164021,
+              "rmse": 2.8565933664726697,
+              "bias": 0.00965490562692422,
+              "actual_total": 8863.0,
+              "predicted_total": 8948.57142857143,
+              "rows": 5400
+            },
+            "period": {
+              "wape": 0.43313292822488353,
+              "mae": 63.98095238095238,
+              "rmse": 119.96708377916082,
+              "bias": 0.009654905626924013,
+              "actual_total": 8863.0,
+              "predicted_total": 8948.571428571428,
+              "rows": 60
+            },
+            "calendar_month_buckets": {
+              "wape": 0.5309956319208265,
+              "mae": 19.60922619047619,
+              "rmse": 39.222543095836635,
+              "bias": 0.009654905626924013,
+              "actual_total": 8863.0,
+              "predicted_total": 8948.571428571428,
+              "rows": 240
+            }
+          }
+        }
+      },
+      "124": {
+        "origin": "2016-01-19",
+        "start": "2016-01-20",
+        "end": "2016-05-22",
+        "horizon_days": 124,
+        "by_unit": {
+          "UNIT": {
+            "daily": {
+              "wape": 0.9178053830227743,
+              "mae": 1.6172619047619046,
+              "rmse": 2.902685935040303,
+              "bias": -0.059561948349133725,
+              "actual_total": 13110.0,
+              "predicted_total": 12329.142857142857,
+              "rows": 7440
+            },
+            "period": {
+              "wape": 0.3901928734880679,
+              "mae": 85.25714285714284,
+              "rmse": 151.1585418092698,
+              "bias": -0.059561948349134,
+              "actual_total": 13110.0,
+              "predicted_total": 12329.142857142853,
+              "rows": 60
+            },
+            "calendar_month_buckets": {
+              "wape": 0.5007791217173367,
+              "mae": 21.884047619047617,
+              "rmse": 42.484034816454454,
+              "bias": -0.059561948349133725,
+              "actual_total": 13110.0,
+              "predicted_total": 12329.142857142857,
+              "rows": 300
+            }
+          }
+        }
+      }
+    },
+    "LightGBM": {
+      "7": {
+        "origin": "2016-01-19",
+        "start": "2016-01-20",
+        "end": "2016-01-26",
+        "horizon_days": 7,
+        "by_unit": {
+          "UNIT": {
+            "daily": {
+              "wape": 0.7533912895144311,
+              "mae": 1.5498335098582583,
+              "rmse": 3.446701739300893,
+              "bias": -0.11919843410802013,
+              "actual_total": 864.0,
+              "predicted_total": 761.0125529306706,
+              "rows": 420
+            },
+            "period": {
+              "wape": 0.4211054520057563,
+              "mae": 6.063918508882891,
+              "rmse": 10.526769059956955,
+              "bias": -0.11919843410802013,
+              "actual_total": 864.0,
+              "predicted_total": 761.0125529306706,
+              "rows": 60
+            },
+            "calendar_month_buckets": {
+              "wape": 0.4211054520057563,
+              "mae": 6.063918508882891,
+              "rmse": 10.526769059956955,
+              "bias": -0.11919843410802013,
+              "actual_total": 864.0,
+              "predicted_total": 761.0125529306706,
+              "rows": 60
+            }
+          }
+        }
+      },
+      "30": {
+        "origin": "2016-01-19",
+        "start": "2016-01-20",
+        "end": "2016-02-18",
+        "horizon_days": 30,
+        "by_unit": {
+          "UNIT": {
+            "daily": {
+              "wape": 1.0007488193230694,
+              "mae": 1.71239242417503,
+              "rmse": 3.0709462038107675,
+              "bias": 0.09676565782080598,
+              "actual_total": 3080.0,
+              "predicted_total": 3378.0382260880824,
+              "rows": 1800
+            },
+            "period": {
+              "wape": 0.37221959765697377,
+              "mae": 19.10727267972465,
+              "rmse": 30.630362683430132,
+              "bias": 0.09676565782080583,
+              "actual_total": 3080.0,
+              "predicted_total": 3378.038226088082,
+              "rows": 60
+            },
+            "calendar_month_buckets": {
+              "wape": 0.46887765835439194,
+              "mae": 12.034526564429394,
+              "rmse": 21.320899524093463,
+              "bias": 0.09676565782080568,
+              "actual_total": 3080.0,
+              "predicted_total": 3378.0382260880815,
+              "rows": 120
+            }
+          }
+        }
+      },
+      "31": {
+        "origin": "2016-01-19",
+        "start": "2016-01-20",
+        "end": "2016-02-19",
+        "horizon_days": 31,
+        "by_unit": {
+          "UNIT": {
+            "daily": {
+              "wape": 1.0024599634158218,
+              "mae": 1.7165779481072,
+              "rmse": 3.0728593219266616,
+              "bias": 0.10011022474107883,
+              "actual_total": 3185.0,
+              "predicted_total": 3503.851065800336,
+              "rows": 1860
+            },
+            "period": {
+              "wape": 0.37912682070185255,
+              "mae": 20.12531539892334,
+              "rmse": 32.602134758050205,
+              "bias": 0.10011022474107897,
+              "actual_total": 3185.0,
+              "predicted_total": 3503.8510658003365,
+              "rows": 60
+            },
+            "calendar_month_buckets": {
+              "wape": 0.46983299609850515,
+              "mae": 12.470150771447825,
+              "rmse": 22.547445101962154,
+              "bias": 0.10011022474107868,
+              "actual_total": 3185.0,
+              "predicted_total": 3503.8510658003356,
+              "rows": 120
+            }
+          }
+        }
+      },
+      "90": {
+        "origin": "2016-01-19",
+        "start": "2016-01-20",
+        "end": "2016-04-18",
+        "horizon_days": 90,
+        "by_unit": {
+          "UNIT": {
+            "daily": {
+              "wape": 1.0693024330390317,
+              "mae": 1.755042122967581,
+              "rmse": 3.043158421488255,
+              "bias": 0.21695493238288246,
+              "actual_total": 8863.0,
+              "predicted_total": 10785.871565709487,
+              "rows": 5400
+            },
+            "period": {
+              "wape": 0.5160454842121422,
+              "mae": 76.22851877620361,
+              "rmse": 148.9984848604921,
+              "bias": 0.21695493238288224,
+              "actual_total": 8863.0,
+              "predicted_total": 10785.871565709485,
+              "rows": 60
+            },
+            "calendar_month_buckets": {
+              "wape": 0.5893039966360719,
+              "mae": 21.762505509106273,
+              "rmse": 47.19185185491257,
+              "bias": 0.21695493238288224,
+              "actual_total": 8863.0,
+              "predicted_total": 10785.871565709485,
+              "rows": 240
+            }
+          }
+        }
+      },
+      "124": {
+        "origin": "2016-01-19",
+        "start": "2016-01-20",
+        "end": "2016-05-22",
+        "horizon_days": 124,
+        "by_unit": {
+          "UNIT": {
+            "daily": {
+              "wape": 0.9914661448716475,
+              "mae": 1.7470592956004434,
+              "rmse": 3.0316279134269952,
+              "bias": 0.15283565699141866,
+              "actual_total": 13110.0,
+              "predicted_total": 15113.675463157499,
+              "rows": 7440
+            },
+            "period": {
+              "wape": 0.47496464741852695,
+              "mae": 103.77977546094813,
+              "rmse": 186.07544858056247,
+              "bias": 0.15283565699141852,
+              "actual_total": 13110.0,
+              "predicted_total": 15113.675463157497,
+              "rows": 60
+            },
+            "calendar_month_buckets": {
+              "wape": 0.5418319084347832,
+              "mae": 23.67805439860003,
+              "rmse": 49.72931946986442,
+              "bias": 0.15283565699141866,
+              "actual_total": 13110.0,
+              "predicted_total": 15113.675463157499,
+              "rows": 300
+            }
+          }
+        }
+      }
+    }
+  },
+  "skipped": [],
+  "provenance": {
+    "dataset": "M5 organizer unit-sales archive",
+    "source_kind": "EXTERNAL",
+    "source_url": "https://github.com/Mcompetitions/M5-methods",
+    "revision": "904bfacd2f6022259b015ac417a4978afdfcaf2e",
+    "original_competition": "https://www.kaggle.com/competitions/m5-forecasting-accuracy",
+    "terms": "Original M5 competition data terms apply; research subset, not a new license.",
+    "files": {
+      "sales_train_evaluation.csv": {
+        "url": "https://media.githubusercontent.com/media/Mcompetitions/M5-methods/904bfacd2f6022259b015ac417a4978afdfcaf2e/Dataset/sales_train_evaluation.csv",
+        "bytes": 121168898,
+        "sha256": "c21a519596680feb86f27a9e62f6c8b583f8be60c2c195f080ae8ca2990af2b7"
+      },
+      "calendar.csv": {
+        "url": "https://media.githubusercontent.com/media/Mcompetitions/M5-methods/904bfacd2f6022259b015ac417a4978afdfcaf2e/Dataset/calendar.csv",
+        "bytes": 112477,
+        "sha256": "568d0fe5f41790142379698732908e4e57432c1c6396f3f59fb880a9c2b54231"
+      }
+    },
+    "selection": "CA_1,TX_1,WI_1; lexicographically first 20 FOODS item IDs; no target-based selection",
+    "stores": [
+      "CA_1",
+      "TX_1",
+      "WI_1"
+    ],
+    "products": [
+      "FOODS_1_001",
+      "FOODS_1_002",
+      "FOODS_1_003",
+      "FOODS_1_004",
+      "FOODS_1_005",
+      "FOODS_1_006",
+      "FOODS_1_008",
+      "FOODS_1_009",
+      "FOODS_1_010",
+      "FOODS_1_011",
+      "FOODS_1_012",
+      "FOODS_1_013",
+      "FOODS_1_014",
+      "FOODS_1_015",
+      "FOODS_1_016",
+      "FOODS_1_017",
+      "FOODS_1_018",
+      "FOODS_1_019",
+      "FOODS_1_020",
+      "FOODS_1_021"
+    ],
+    "pairs": 60,
+    "rows": 116460,
+    "start_date": "2011-01-29",
+    "end_date": "2016-05-22",
+    "historical_dates_preserved": true,
+    "quantity_semantics": "original observed item-unit sales",
+    "snapshot_sha256": "efdee4b145a9d6aa592a9eb08f802d6acbca51010b0982bf6b593d7b841d0c01"
+  },
+  "artifact": {
+    "file": "model.joblib",
+    "bytes": 146,
+    "sha256": "f914cde4ecd9f21d9879542f95371b718454f478e36d817641033169927c58c7"
+  },
+  "trained_candidate": {
+    "algorithm": "LightGBM",
+    "file": "candidates/lightgbm.joblib",
+    "sha256": "f50afe2f4f4f05104addf74cca6e6a9da4f5c5dc114d1611b3b3648878988633",
+    "fit": {
+      "rows": 107220,
+      "first_target": "2011-02-28",
+      "last_target": "2016-01-19"
+    },
+    "parameters": {
+      "objective": "regression",
+      "n_estimators": 200,
+      "learning_rate": 0.05,
+      "num_leaves": 31,
+      "min_child_samples": 80,
+      "n_jobs": 4,
+      "random_state": 20261006,
+      "deterministic": true,
+      "force_col_wise": true,
+      "verbosity": -1
+    }
+  }
+}

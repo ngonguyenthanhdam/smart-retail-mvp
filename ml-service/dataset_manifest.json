@@ -1,0 +1,14 @@
+{
+  "dataset": "Dingdong-Inc/FreshRetailNet-50K",
+  "revision": "08c1fab7f9257bc73679d415d65d644165d351d4",
+  "source": "https://huggingface.co/datasets/Dingdong-Inc/FreshRetailNet-50K",
+  "paper": "https://arxiv.org/abs/2505.16319",
+  "license": "CC-BY-4.0",
+  "license_url": "https://creativecommons.org/licenses/by/4.0/",
+  "publisher": "Dingdong-Inc",
+  "target_scale": "Published globally normalized sales; original physical-unit coefficient is not supplied by the dataset card.",
+  "files": [
+    {"name": "train.parquet", "bytes": 106436287, "sha256": "6706832db892bbae4969c19d87e07975d2543d2ba7d7d4756360654785de5a3d"},
+    {"name": "eval.parquet", "bytes": 8440124, "sha256": "1b118840664280c6b88bffc84c80ee1f54c05d911e354b7599e5da10995e960e"}
+  ]
+}

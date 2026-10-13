@@ -1,0 +1,21 @@
+const assert = require('node:assert/strict');
+const { test } = require('node:test');
+require('./test-database.cjs').prepareTestEnvironment();
+const { catalogFixture } = require('./catalog-fixture.cjs');
+test('Opening inventory rejects existing pairs, preserves expiry and prevents concurrent loads', async (t) => {
+  const f = await catalogFixture(t);
+  const makeProduct = () => f.fixture('product', { sku: f.code(), name: 'Milk', trackExpiry: true, createdAt: new Date() });
+  const product = await makeProduct(); const occupied = await makeProduct(); const racing = await makeProduct();
+  await f.fixture('inventoryLot', { locationId: f.storeA.id, productId: occupied.id, lotNumber: f.code(), quantityOnHand: 0, unitCost: 4, receivedDate: new Date('2025-01-01'), expiryDate: new Date('2025-02-01'), createdAt: new Date() });
+  const header = 'store_code,product_sku,lot_number,quantity_on_hand,unit_cost,received_date,expiry_date';
+  const line = (p, lot, expiry = '2025-02-01') => `${f.storeA.code},${p.sku},${lot},2.5,3.25,2025-01-01,${expiry}`;
+  const preview = await f.upload('INVENTORY', [header,line(product,'A'),line(product,'B'),line(occupied,'C'),line(product,'NO-DATE','')].join('\n'));
+  assert.equal(preview.body.validRows, 2); assert.equal(preview.body.invalidRows, 2);
+  assert.equal(await f.prisma.inventoryLot.count({ where: { productId: product.id } }), 0);
+  assert.equal((await f.request(`/imports/${preview.body.id}/confirm`, f.cookies.ADMIN, 'POST', { previewToken: preview.body.previewToken })).status, 201);
+  const lots = await f.prisma.inventoryLot.findMany({ where: { productId: product.id } }); assert.equal(lots.length, 2); assert.ok(lots.every((lot) => lot.quantityOnHand.toString() === '2.5' && lot.purchaseOrderItemId === null));
+  assert.equal((await f.upload('INVENTORY', [header,line(product,'NEW')].join('\n'))).body.validRows, 0);
+  const first = await f.upload('INVENTORY', [header,line(racing,'FIRST')].join('\n')); const second = await f.upload('INVENTORY', [header,line(racing,'SECOND')].join('\n'));
+  const results = await Promise.all([first,second].map((r) => f.request(`/imports/${r.body.id}/confirm`, f.cookies.ADMIN, 'POST', { previewToken: r.body.previewToken })));
+  assert.deepEqual(results.map((r) => r.status).sort(), [201,409]); assert.equal(await f.prisma.inventoryLot.count({ where: { productId: racing.id } }), 1);
+});

@@ -1,0 +1,393 @@
+generator client {
+  provider     = "prisma-client"
+  output       = "../generated/prisma"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Category {
+  id             String     @id @default(uuid()) @db.Uuid
+  parentId       String?    @map("parent_id") @db.Uuid
+  code           String     @unique @db.VarChar(50)
+  name           String     @db.VarChar(150)
+  externalSource String?    @map("external_source") @db.VarChar(50)
+  externalId     String?    @map("external_id") @db.VarChar(100)
+  isActive       Boolean?   @default(true) @map("is_active")
+  createdAt      DateTime   @map("created_at") @db.Timestamptz(6)
+  parent         Category?  @relation("CategoryTree", fields: [parentId], references: [id], onDelete: Restrict)
+  children       Category[] @relation("CategoryTree")
+  products       Product[]
+
+  @@map("categories")
+}
+
+model Unit {
+  id     String  @id @default(uuid()) @db.Uuid
+  code   String  @unique @db.VarChar(30)
+  name   String  @db.VarChar(100)
+  symbol String? @db.VarChar(20)
+  allowFraction Boolean @default(true) @map("allow_fraction")
+  baseProducts Product[] @relation("BaseUnit")
+  purchaseProducts Product[] @relation("PurchaseUnit")
+
+  @@map("units")
+}
+
+model Product {
+  id String @id @default(uuid()) @db.Uuid
+  sku String @unique @db.VarChar(50)
+  barcode String? @unique @db.VarChar(100)
+  name String @db.VarChar(200)
+  imageKey String? @map("image_key") @db.VarChar(100)
+  categoryId String? @map("category_id") @db.Uuid
+  baseUnitId String? @map("base_unit_id") @db.Uuid
+  purchaseUnitId String? @map("purchase_unit_id") @db.Uuid
+  purchaseToBaseRatio Decimal? @default(1) @map("purchase_to_base_ratio") @db.Decimal(14,4)
+  defaultCost Decimal? @default(0) @map("default_cost") @db.Decimal(14,2)
+  trackExpiry Boolean? @default(false) @map("track_expiry")
+  shelfLifeDays Int? @map("shelf_life_days")
+  externalSource String? @map("external_source") @db.VarChar(50)
+  externalId String? @map("external_id") @db.VarChar(100)
+  isActive Boolean? @default(true) @map("is_active")
+  createdAt DateTime @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
+  category Category? @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  baseUnit Unit? @relation("BaseUnit", fields: [baseUnitId], references: [id], onDelete: Restrict)
+  purchaseUnit Unit? @relation("PurchaseUnit", fields: [purchaseUnitId], references: [id], onDelete: Restrict)
+  storeProducts StoreProduct[]
+  inventoryLots InventoryLot[]
+  purchaseItems PurchaseOrderItem[]
+  saleItems SaleItem[]
+  demandForecasts DemandForecast[]
+  recommendations ReplenishmentRecommendation[]
+  inventoryAlerts InventoryAlert[]
+  @@index([categoryId])
+  @@map("products")
+}
+
+model StoreProduct {
+  id String @id @default(uuid()) @db.Uuid
+  locationId String? @map("location_id") @db.Uuid
+  productId String? @map("product_id") @db.Uuid
+  sellingPrice Decimal @map("selling_price") @db.Decimal(14,2)
+  safetyStock Decimal? @default(0) @map("safety_stock") @db.Decimal(14,4)
+  minStockLevel Decimal? @default(0) @map("min_stock_level") @db.Decimal(14,4)
+  isActive Boolean? @default(true) @map("is_active")
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  location Location? @relation(fields: [locationId], references: [id], onDelete: Restrict)
+  product Product? @relation(fields: [productId], references: [id], onDelete: Restrict)
+  @@unique([locationId, productId])
+  @@map("store_products")
+}
+
+model InventoryLot {
+  id String @id @default(uuid()) @db.Uuid
+  locationId String? @map("location_id") @db.Uuid
+  productId String? @map("product_id") @db.Uuid
+  lotNumber String? @map("lot_number") @db.VarChar(100)
+  quantityOnHand Decimal @map("quantity_on_hand") @db.Decimal(14,4)
+  unitCost Decimal @map("unit_cost") @db.Decimal(14,2)
+  receivedDate DateTime @map("received_date") @db.Date
+  expiryDate DateTime? @map("expiry_date") @db.Date
+  purchaseOrderItemId String? @map("purchase_order_item_id") @db.Uuid
+  purchaseOrderItem PurchaseOrderItem? @relation(fields: [purchaseOrderItemId], references: [id], onDelete: Restrict)
+  alerts InventoryAlert[]
+  createdAt DateTime @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  location Location? @relation(fields: [locationId], references: [id], onDelete: Restrict)
+  product Product? @relation(fields: [productId], references: [id], onDelete: Restrict)
+  @@index([locationId, productId])
+  @@index([expiryDate])
+  @@map("inventory_lots")
+}
+
+model Role {
+  id    Int    @id @default(autoincrement()) @db.SmallInt
+  code  String @unique @db.VarChar(30)
+  name  String @db.VarChar(100)
+  users User[]
+
+  @@map("roles")
+}
+
+model Location {
+  id             String    @id @default(uuid()) @db.Uuid
+  code           String    @unique @db.VarChar(30)
+  name           String    @db.VarChar(150)
+  locationType   String    @map("location_type") @db.VarChar(30)
+  address        String?   @db.Text
+  district       String?   @db.VarChar(100)
+  city           String?   @db.VarChar(100)
+  externalSource String?   @map("external_source") @db.VarChar(50)
+  externalId     String?   @map("external_id") @db.VarChar(100)
+  externalCityId String?   @map("external_city_id") @db.VarChar(100)
+  isActive       Boolean?  @default(true) @map("is_active")
+  createdAt      DateTime  @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt      DateTime? @map("deleted_at") @db.Timestamptz(6)
+  users          User[]
+  storeProducts  StoreProduct[]
+  inventoryLots  InventoryLot[]
+  purchaseOrders PurchaseOrder[]
+  sales Sale[]
+  expenses Expense[]
+
+  demandForecasts DemandForecast[]
+  recommendations ReplenishmentRecommendation[]
+  inventoryAlerts InventoryAlert[]
+  @@map("locations")
+}
+
+model User {
+  id                     String    @id @default(uuid()) @db.Uuid
+  roleId                 Int       @map("role_id") @db.SmallInt
+  locationId             String?   @map("location_id") @db.Uuid
+  username               String    @unique @db.VarChar(100)
+  email                  String    @unique @db.VarChar(255)
+  passwordHash           String    @map("password_hash") @db.Text
+  passwordResetTokenHash String?   @map("password_reset_token_hash") @db.Text
+  passwordResetExpiresAt DateTime? @map("password_reset_expires_at") @db.Timestamptz(6)
+  fullName               String    @map("full_name") @db.VarChar(150)
+  isActive               Boolean?  @default(true) @map("is_active")
+  createdAt              DateTime  @map("created_at") @db.Timestamptz(6)
+  updatedAt              DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt              DateTime? @map("deleted_at") @db.Timestamptz(6)
+  role                   Role      @relation(fields: [roleId], references: [id], onDelete: Restrict)
+  location               Location? @relation(fields: [locationId], references: [id], onDelete: Restrict)
+  purchaseOrders PurchaseOrder[]
+  sales Sale[]
+  expenses Expense[]
+  importJobs ImportJob[]
+  forecastRuns ForecastRun[]
+  decisions ReplenishmentRecommendation[]
+
+  @@index([locationId])
+  @@map("users")
+}
+
+model PurchaseOrder {
+  id String @id @default(uuid()) @db.Uuid
+  orderNumber String @unique @map("order_number") @db.VarChar(50)
+  importJobId String? @map("import_job_id") @db.Uuid
+  replenishmentRecommendationId String? @unique @map("replenishment_recommendation_id") @db.Uuid
+  recommendation ReplenishmentRecommendation? @relation(fields: [replenishmentRecommendationId], references: [id], onDelete: Restrict)
+  importJob ImportJob? @relation(fields: [importJobId], references: [id], onDelete: Restrict)
+  locationId String? @map("location_id") @db.Uuid
+  status String @db.VarChar(20)
+  orderedAt DateTime @map("ordered_at") @db.Timestamptz(6)
+  receivedAt DateTime? @map("received_at") @db.Timestamptz(6)
+  totalCost Decimal? @default(0) @map("total_cost") @db.Decimal(14,2)
+  note String? @db.Text
+  createdBy String? @map("created_by") @db.Uuid
+  createdAt DateTime @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  location Location? @relation(fields: [locationId], references: [id], onDelete: Restrict)
+  creator User? @relation(fields: [createdBy], references: [id], onDelete: Restrict)
+  items PurchaseOrderItem[]
+  @@index([locationId, orderedAt])
+  @@index([importJobId])
+  @@index([status])
+  @@map("purchase_orders")
+}
+
+model PurchaseOrderItem {
+  id String @id @default(uuid()) @db.Uuid
+  purchaseOrderId String? @map("purchase_order_id") @db.Uuid
+  productId String? @map("product_id") @db.Uuid
+  purchaseQuantity Decimal @map("purchase_quantity") @db.Decimal(14,4)
+  baseQuantity Decimal @map("base_quantity") @db.Decimal(14,4)
+  unitCost Decimal @map("unit_cost") @db.Decimal(14,2)
+  lotNumber String? @map("lot_number") @db.VarChar(100)
+  expiryDate DateTime? @map("expiry_date") @db.Date
+  lineTotal Decimal @map("line_total") @db.Decimal(14,2)
+  purchaseOrder PurchaseOrder? @relation(fields: [purchaseOrderId], references: [id], onDelete: Restrict)
+  product Product? @relation(fields: [productId], references: [id], onDelete: Restrict)
+  inventoryLots InventoryLot[]
+  @@map("purchase_order_items")
+}
+
+model Sale {
+  id String @id @default(uuid()) @db.Uuid
+  invoiceNumber String @unique @map("invoice_number") @db.VarChar(50)
+  clientRequestId String? @unique @map("client_request_id") @db.VarChar(100)
+  requestHash String? @map("request_hash") @db.Char(64)
+  importJobId String? @map("import_job_id") @db.Uuid
+  importJob ImportJob? @relation(fields: [importJobId], references: [id], onDelete: Restrict)
+  locationId String? @map("location_id") @db.Uuid
+  soldAt DateTime @map("sold_at") @db.Timestamptz(6)
+  subtotal Decimal @db.Decimal(14,2)
+  discountAmount Decimal? @default(0) @map("discount_amount") @db.Decimal(14,2)
+  totalAmount Decimal @map("total_amount") @db.Decimal(14,2)
+  status String @db.VarChar(20)
+  createdBy String? @map("created_by") @db.Uuid
+  createdAt DateTime @map("created_at") @db.Timestamptz(6)
+  location Location? @relation(fields: [locationId], references: [id], onDelete: Restrict)
+  creator User? @relation(fields: [createdBy], references: [id], onDelete: Restrict)
+  items SaleItem[]
+  @@index([locationId, soldAt])
+  @@index([importJobId])
+  @@index([status])
+  @@map("sales")
+}
+
+model SaleItem {
+  id String @id @default(uuid()) @db.Uuid
+  saleId String? @map("sale_id") @db.Uuid
+  productId String? @map("product_id") @db.Uuid
+  quantity Decimal @db.Decimal(14,4)
+  unitPrice Decimal @map("unit_price") @db.Decimal(14,2)
+  discountAmount Decimal? @default(0) @map("discount_amount") @db.Decimal(14,2)
+  lineTotal Decimal @map("line_total") @db.Decimal(14,2)
+  costOfGoodsSold Decimal @map("cost_of_goods_sold") @db.Decimal(14,2)
+  promotionFlag Boolean? @default(false) @map("promotion_flag")
+  sale Sale? @relation(fields: [saleId], references: [id], onDelete: Restrict)
+  product Product? @relation(fields: [productId], references: [id], onDelete: Restrict)
+  @@index([saleId])
+  @@index([productId])
+  @@map("sale_items")
+}
+
+model Expense {
+  id String @id @default(uuid()) @db.Uuid
+  locationId String? @map("location_id") @db.Uuid
+  expenseType String @map("expense_type") @db.VarChar(30)
+  amount Decimal @db.Decimal(14,2)
+  expenseDate DateTime @map("expense_date") @db.Date
+  description String? @db.Text
+  createdBy String? @map("created_by") @db.Uuid
+  createdAt DateTime @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  location Location? @relation(fields: [locationId], references: [id], onDelete: Restrict)
+  creator User? @relation(fields: [createdBy], references: [id], onDelete: Restrict)
+  @@index([locationId, expenseDate])
+  @@map("expenses")
+}
+
+model ImportJob {
+  id String @id @default(uuid()) @db.Uuid
+  importType String @map("import_type") @db.VarChar(30)
+  fileName String @map("file_name") @db.VarChar(255)
+  fileHash String @map("file_hash") @db.Char(64)
+  status String @db.VarChar(20)
+  totalRows Int? @default(0) @map("total_rows")
+  successRows Int? @default(0) @map("success_rows")
+  failedRows Int? @default(0) @map("failed_rows")
+  errorReport Json? @map("error_report")
+  createdBy String? @map("created_by") @db.Uuid
+  createdAt DateTime @map("created_at") @db.Timestamptz(6)
+  completedAt DateTime? @map("completed_at") @db.Timestamptz(6)
+  creator User? @relation(fields: [createdBy], references: [id], onDelete: Restrict)
+  sales Sale[]
+  purchaseOrders PurchaseOrder[]
+  @@unique([importType, fileHash])
+  @@map("import_jobs")
+}
+
+model ForecastRun {
+  id String @id @default(uuid()) @db.Uuid
+  modelVersion String @map("model_version") @db.VarChar(100)
+  algorithm String @db.VarChar(100)
+  horizonMonths Int @map("horizon_months") @db.SmallInt
+  metrics Json?
+  dailyPredictions Json? @map("daily_predictions")
+  status String @db.VarChar(20)
+  requestedBy String @map("requested_by") @db.Uuid
+  startedAt DateTime @map("started_at") @db.Timestamptz(6)
+  completedAt DateTime? @map("completed_at") @db.Timestamptz(6)
+  requester User @relation(fields: [requestedBy], references: [id], onDelete: Restrict)
+  forecasts DemandForecast[]
+  @@map("forecast_runs")
+}
+
+model DemandForecast {
+  id String @id @default(uuid()) @db.Uuid
+  forecastRunId String @map("forecast_run_id") @db.Uuid
+  locationId String @map("location_id") @db.Uuid
+  productId String @map("product_id") @db.Uuid
+  periodStart DateTime @map("period_start") @db.Date
+  periodEnd DateTime @map("period_end") @db.Date
+  predictedQuantity Decimal @map("predicted_quantity") @db.Decimal(14,4)
+  estimatedUnitPrice Decimal @map("estimated_unit_price") @db.Decimal(14,2)
+  predictedRevenue Decimal @map("predicted_revenue") @db.Decimal(14,2)
+  actualQuantity Decimal? @map("actual_quantity") @db.Decimal(14,4)
+  actualRevenue Decimal? @map("actual_revenue") @db.Decimal(14,2)
+  forecastError Decimal? @map("forecast_error") @db.Decimal(14,4)
+  createdAt DateTime @map("created_at") @db.Timestamptz(6)
+  run ForecastRun @relation(fields: [forecastRunId], references: [id], onDelete: Restrict)
+  location Location @relation(fields: [locationId], references: [id], onDelete: Restrict)
+  product Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+  recommendation ReplenishmentRecommendation?
+  alerts InventoryAlert[]
+  @@unique([forecastRunId, locationId, productId, periodStart, periodEnd], map: "demand_forecasts_grain_key")
+  @@index([locationId, productId, periodStart])
+  @@index([forecastRunId])
+  @@map("demand_forecasts")
+}
+
+model ReplenishmentRecommendation {
+  id String @id @default(uuid()) @db.Uuid
+  demandForecastId String @unique @map("demand_forecast_id") @db.Uuid
+  locationId String @map("location_id") @db.Uuid
+  productId String @map("product_id") @db.Uuid
+  currentStockSnapshot Decimal @map("current_stock_snapshot") @db.Decimal(14,4)
+  incomingStockSnapshot Decimal @default(0) @map("incoming_stock_snapshot") @db.Decimal(14,4)
+  safetyStockSnapshot Decimal @default(0) @map("safety_stock_snapshot") @db.Decimal(14,4)
+  recommendedQuantity Decimal @map("recommended_quantity") @db.Decimal(14,4)
+  demandQuantitySnapshot Decimal? @map("demand_quantity_snapshot") @db.Decimal(14,4)
+  demandPeriodStart DateTime? @map("demand_period_start") @db.Date
+  demandPeriodEnd DateTime? @map("demand_period_end") @db.Date
+  managerQuantity Decimal? @map("manager_quantity") @db.Decimal(14,4)
+  decisionStatus String @map("decision_status") @db.VarChar(20)
+  decidedBy String? @map("decided_by") @db.Uuid
+  decidedAt DateTime? @map("decided_at") @db.Timestamptz(6)
+  decisionNote String? @map("decision_note") @db.Text
+  forecast DemandForecast @relation(fields: [demandForecastId], references: [id], onDelete: Restrict)
+  location Location @relation(fields: [locationId], references: [id], onDelete: Restrict)
+  product Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+  decider User? @relation(fields: [decidedBy], references: [id], onDelete: Restrict)
+  purchaseOrder PurchaseOrder?
+  @@index([locationId, decisionStatus])
+  @@map("replenishment_recommendations")
+}
+
+// A confirmed interval distinguishes a day with no sales from an unimported day.
+// UUID references remain scalar so audit evidence survives catalog deactivation.
+model SalesHistoryCoverage {
+  id String @id @default(uuid()) @db.Uuid
+  locationId String @map("location_id") @db.Uuid
+  productId String @map("product_id") @db.Uuid
+  periodStart DateTime @map("period_start") @db.Date
+  periodEnd DateTime @map("period_end") @db.Date
+  source String @db.VarChar(30)
+  note String @db.VarChar(500)
+  confirmedBy String? @map("confirmed_by") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  @@unique([locationId, productId, periodStart, periodEnd])
+  @@index([locationId, productId, periodEnd])
+  @@map("sales_history_coverage")
+}
+
+model InventoryAlert {
+  id String @id @default(uuid()) @db.Uuid
+  locationId String @map("location_id") @db.Uuid
+  productId String @map("product_id") @db.Uuid
+  demandForecastId String? @map("demand_forecast_id") @db.Uuid
+  inventoryLotId String? @map("inventory_lot_id") @db.Uuid
+  alertType String @map("alert_type") @db.VarChar(30)
+  severity String @db.VarChar(20)
+  message String @db.Text
+  status String @db.VarChar(20)
+  detectedAt DateTime @map("detected_at") @db.Timestamptz(6)
+  resolvedAt DateTime? @map("resolved_at") @db.Timestamptz(6)
+  location Location @relation(fields: [locationId], references: [id], onDelete: Restrict)
+  product Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+  forecast DemandForecast? @relation(fields: [demandForecastId], references: [id], onDelete: Restrict)
+  lot InventoryLot? @relation(fields: [inventoryLotId], references: [id], onDelete: Restrict)
+  @@unique([locationId, productId, alertType])
+  @@index([locationId, status, alertType])
+  @@map("inventory_alerts")
+}

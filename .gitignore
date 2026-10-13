@@ -1,0 +1,64 @@
+# JavaScript
+node_modules/
+.next/
+dist/
+coverage/
+*.tsbuildinfo
+backend/generated/
+frontend/next-env.d.ts
+
+# Local configuration
+/docs/
+.env
+.env.*
+!.env.example
+!**/.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+
+# Datasets and training output
+**/data/raw/
+**/data/processed/
+*.csv
+*.parquet
+*.pkl
+*.pickle
+*.joblib
+*.onnx
+*.pt
+*.pth
+ml-service/models/*
+!ml-service/models/.gitkeep
+!ml-service/models/model_metadata.json
+!ml-service/models/demand_model.joblib
+!ml-service/models/active-model.json
+!ml-service/models/operational/
+!ml-service/models/operational/**/
+!ml-service/models/operational/**/*.json
+!ml-service/models/operational/**/*.joblib
+training-runs/
+
+# Local output
+*.log
+logs/
+tmp/
+.cache/
+.test-artifacts/
+.local/
+
+# Editor and OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+.idea/
+.vscode/
+*.swp
+*.swo
+*~

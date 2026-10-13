@@ -1,0 +1,72 @@
+{
+  "name": "retailsense-backend",
+  "version": "0.1.0",
+  "private": true,
+  "description": "RetailSense backend service",
+  "author": "phamhuuluan <huu12026@gmail.com>",
+  "license": "UNLICENSED",
+  "engines": {
+    "node": ">=22.13.0 <23"
+  },
+  "scripts": {
+    "predev": "prisma generate",
+    "dev": "tsc-watch --noClear -p tsconfig.build.json --onSuccess \"node dist/src/main.js\"",
+    "prebuild": "prisma generate",
+    "build": "tsc -p tsconfig.build.json",
+    "start": "node dist/src/main.js",
+    "lint": "eslint . --max-warnings=0",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "prisma:generate": "prisma generate",
+    "prisma:validate": "prisma validate",
+    "prisma:migrate": "prisma migrate deploy",
+    "prisma:status": "prisma migrate status",
+    "prisma:seed": "npm run build && prisma db seed",
+    "seed:demo": "npm run build && node dist/prisma/demo.js",
+    "seed:forecast-demo": "npm run build && node dist/prisma/forecast-demo.js",
+    "forecast:backtest": "npm run build && node dist/prisma/forecast-backtest.js",
+    "test": "npm run build && node --test --test-concurrency=1 test/*.test.cjs",
+    "prisma:migrate:test": "node test/migrate-test.cjs"
+  },
+  "dependencies": {
+    "@nestjs/common": "12.0.4",
+    "@nestjs/config": "12.0.1",
+    "@nestjs/core": "12.0.4",
+    "@nestjs/jwt": "12.0.2",
+    "@nestjs/platform-express": "12.0.4",
+    "@prisma/adapter-pg": "7.10.0",
+    "@prisma/client": "7.10.0",
+    "bcrypt": "6.0.0",
+    "csv-parse": "7.0.3",
+    "dotenv": "18.0.3",
+    "exceljs": "4.4.0",
+    "fflate": "0.8.3",
+    "nodemailer": "10.0.10",
+    "reflect-metadata": "0.2.2",
+    "rxjs": "7.8.2"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@types/bcrypt": "6.0.0",
+    "@types/express": "5.0.6",
+    "@types/multer": "2.2.0",
+    "@types/node": "^22.0.0",
+    "@types/nodemailer": "8.0.2",
+    "eslint": "10.11.0",
+    "globals": "^17.0.0",
+    "prisma": "7.10.0",
+    "tsc-watch": "7.2.1",
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.70.1"
+  },
+  "overrides": {
+    "exceljs": {
+      "uuid": "11.1.1"
+    },
+    "@prisma/config": {
+      "deepmerge-ts": "8.0.2"
+    },
+    "prisma": {
+      "mysql2": "3.24.4"
+    }
+  }
+}

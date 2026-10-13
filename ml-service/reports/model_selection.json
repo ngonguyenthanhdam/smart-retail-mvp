@@ -1,0 +1,37 @@
+{
+  "algorithm": "LightGBM",
+  "selected_at": "2026-09-26T12:22:50.772415+00:00",
+  "rule": "validation_7d WAPE, then MAE, then RMSE; exact tie favors SeasonalNaive",
+  "test_evaluated": false,
+  "validation_7d": {
+    "SeasonalNaive": {
+      "rows": 350000,
+      "actual_sum": 369024.627,
+      "prediction_sum": 368508.31,
+      "WAPE": 0.4039165304813112,
+      "MAE": 0.42587184857142857,
+      "RMSE": 0.7199303417712419,
+      "mean_error": -0.0014751914285714282
+    },
+    "LightGBM": {
+      "rows": 350000,
+      "actual_sum": 369024.627,
+      "prediction_sum": 367148.2176334752,
+      "WAPE": 0.32597772489525856,
+      "MAE": 0.34369659525651824,
+      "RMSE": 0.5911467584795516,
+      "mean_error": -0.005361169618642344
+    }
+  },
+  "config_sha256": "8525c48c5cdd3f4d5fe708dfb94c2b2bb78c30c506f94b062a3f4d9a4a799b65",
+  "source_sha256": {
+    "__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "dataset.py": "29ae87f21fbf124ee9926d2d5c83a5018109c5a3b3921702365fe02c9ca6aa9e",
+    "eda.py": "549ba10619087aceca411acf70242fa3916ee8b3bcf3a8c8cb0c310b6c46dbcd",
+    "evaluation.py": "6185e43edbbd25b378913cb4698299c6d38c57ebc2f786a10671dd77e1711dd1",
+    "features.py": "2040e51d9156a7bd1e53e58681c722c564faa1f6e1b8dd12057befdf96431c4e",
+    "forecasting.py": "45cb03587d036bfcbf037c5d0cb5bfd0e73afeaefe574e20217cfd9b26db2d94",
+    "preprocessing.py": "aadbc0575b4ae82b99b8a48f2ec2a8af195ddcab2e64457bc3b1e5f9cc956a3a",
+    "train.py": "5ab00386c4b3fa3c74acd96857dda6c3fe9733c3342f8fafc9f6b3df61817157"
+  }
+}

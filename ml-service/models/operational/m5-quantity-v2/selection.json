@@ -1,0 +1,10 @@
+{
+  "algorithm": "RollingMean28",
+  "scores": {
+    "SeasonalNaive": 0.720515014695627,
+    "RollingMean28": 0.592337225541,
+    "LightGBM": 0.6535784616965833
+  },
+  "selected_before_test": true,
+  "selected_at": "2026-10-06T17:33:50.667116+00:00"
+}
