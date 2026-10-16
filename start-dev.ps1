@@ -1,9 +1,9 @@
-# Windows PowerShell 5.1; uses only the development tools already installed.
+# Windows PowerShell 5.1; run Setup-SmartRetail.bat once on a new machine.
 [CmdletBinding()]
 param(
     [switch]$NoBrowser,
     # Internal mode used by the three visible service windows.
-    [ValidateSet('ML', 'Backend', 'Frontend')]
+    [ValidateSet('ML', 'Backend', 'Frontend', 'Mailpit')]
     [string]$Service
 )
 
@@ -12,15 +12,19 @@ $ProjectRoot = $PSScriptRoot
 $LauncherPath = $PSCommandPath
 $PowerShellExe = Join-Path $env:SystemRoot 'System32\WindowsPowerShell\v1.0\powershell.exe'
 $LocalDirectory = Join-Path $ProjectRoot '.local'
+. (Join-Path $ProjectRoot 'scripts/windows-runtime.ps1')
 $Services = @(
     @{ Name = 'ML'; Title = 'ML Service'; Directory = 'ml-service'; Port = 8000; Url = 'http://127.0.0.1:8000/health' },
     @{ Name = 'Backend'; Title = 'Backend'; Directory = 'backend'; Port = 3001; Url = 'http://127.0.0.1:3001/health' },
     @{ Name = 'Frontend'; Title = 'Frontend'; Directory = 'frontend'; Port = 3000; Url = 'http://127.0.0.1:3000' }
 )
+if (Test-Path -LiteralPath (Join-Path $LocalDirectory 'mailpit/mailpit.exe')) {
+    $Services = @(@{ Name = 'Mailpit'; Title = 'Local Mail'; Directory = '.local/mailpit'; Port = 8025; Url = 'http://127.0.0.1:8025/api/v1/info' }) + $Services
+}
 
 function Require-Path([string]$RelativePath, [string]$Label, [string]$PathType = 'Leaf') {
     if (-not (Test-Path -LiteralPath (Join-Path $ProjectRoot $RelativePath) -PathType $PathType)) {
-        throw "$Label not found: $RelativePath. Follow README setup; the launcher does not install or seed anything."
+        throw "$Label not found: $RelativePath. Run Setup-SmartRetail.bat once, then retry this launcher."
     }
 }
 
@@ -47,6 +51,18 @@ function Test-ServiceHealth($Entry) {
         if ($Entry.Name -eq 'Frontend') { return $response.Content -match '<title>[^<]*RetailSense' }
         $body = $response.Content | ConvertFrom-Json
         if ($Entry.Name -eq 'ML') { return $body.status -eq 'ok' -and $body.service -eq 'ml-service' }
+        if ($Entry.Name -eq 'Mailpit') {
+            if ($body.Version -notmatch '^v\d+\.' -or $null -eq $body.RuntimeStats) { return $false }
+            $client = [Net.Sockets.TcpClient]::new()
+            try {
+                if (-not $client.ConnectAsync('127.0.0.1', 1025).Wait(1000)) { return $false }
+                $stream = $client.GetStream()
+                $stream.ReadTimeout = 1000
+                $buffer = New-Object byte[] 1024
+                $length = $stream.Read($buffer, 0, $buffer.Length)
+                return [Text.Encoding]::ASCII.GetString($buffer, 0, $length) -match '^220 .*Mailpit'
+            } finally { $client.Dispose() }
+        }
         return $body.status -eq 'ok'
     } catch { return $false }
 }
@@ -55,6 +71,9 @@ function Start-ServiceConsole($Entry) {
     if (Test-Listening $Entry.Port) {
         Write-Host "[SKIP] $($Entry.Title) already has a listener on port $($Entry.Port); checking health."
         return
+    }
+    if ($Entry.Name -eq 'Mailpit' -and (Test-Listening 1025)) {
+        throw 'SMTP port 1025 belongs to another process. It was left untouched.'
     }
     $probe = Open-LaunchLock $Entry.Name
     if ($null -eq $probe) {
@@ -69,43 +88,7 @@ function Start-ServiceConsole($Entry) {
 }
 
 function Start-ProjectPostgres {
-    $pgCtl = Join-Path $ProjectRoot '.local\postgresql\pgsql\bin\pg_ctl.exe'
-    $pgReady = Join-Path $ProjectRoot '.local\postgresql\pgsql\bin\pg_isready.exe'
-    $pgData = Join-Path $ProjectRoot '.local\postgresql\data'
-    & $pgCtl -D $pgData status | Out-Host
-    $status = $LASTEXITCODE
-    if ($status -eq 0) {
-        Write-Host '[OK] PostgreSQL for this project is already running.'
-    } elseif ($status -eq 3) {
-        if (Test-Listening 5432) {
-            throw 'Port 5432 is occupied, but this project PostgreSQL is not running. The existing process was left untouched.'
-        }
-        Write-Host '[START] PostgreSQL in the background'
-        $pgLog = Join-Path $ProjectRoot '.local\postgresql\runtime.log'
-        $arguments = '-D "{0}" -l "{1}" -w -t 60 start' -f $pgData, $pgLog
-        $process = Start-Process -FilePath $pgCtl -ArgumentList $arguments -WindowStyle Hidden -PassThru
-        # Wait only for pg_ctl, not the background postgres descendants.
-        if (-not $process.WaitForExit(60000)) {
-            throw 'PostgreSQL startup timed out. Check .local\postgresql\runtime.log; no process was stopped.'
-        }
-        if ($process.ExitCode -ne 0) {
-            throw 'PostgreSQL could not start. Check .local\postgresql\runtime.log and file permissions.'
-        }
-    } else {
-        throw "Cannot determine project PostgreSQL status (pg_ctl exit $status). Check its data directory and permissions."
-    }
-    $pidFile = Join-Path $pgData 'postmaster.pid'
-    $postmaster = @(Get-Content -LiteralPath $pidFile)
-    if ($postmaster.Count -lt 4 -or $postmaster[3].Trim() -ne '5432') {
-        throw 'The project PostgreSQL must listen on port 5432. No configuration was changed.'
-    }
-    $readyDeadline = [DateTime]::UtcNow.AddSeconds(60)
-    do {
-        & $pgReady -h localhost -p 5432 -t 3 | Out-Host
-        if ($LASTEXITCODE -eq 0) { return }
-        Start-Sleep -Milliseconds 500
-    } while ([DateTime]::UtcNow -lt $readyDeadline)
-    throw 'PostgreSQL is not accepting connections on localhost:5432. Check .local\postgresql\runtime.log.'
+    Start-ProjectDatabase $ProjectRoot
 }
 
 # Service consoles retain their own lock while npm/Python runs, even before a
@@ -124,7 +107,21 @@ if ($Service) {
         Write-Host "[INFO] Working directory: $((Get-Location).Path)"
         if ($Service -eq 'ML') {
             & (Join-Path $ProjectRoot 'ml-service\.venv\Scripts\python.exe') -m uvicorn app:app --host 127.0.0.1 --port 8000
+        } elseif ($Service -eq 'Mailpit') {
+            & (Join-Path $LocalDirectory 'mailpit/mailpit.exe') --smtp 127.0.0.1:1025 --listen 127.0.0.1:8025 --allowed-hosts localhost,127.0.0.1 --database (Join-Path $LocalDirectory 'mailpit/mailpit.db') --disable-version-check --smtp-disable-rdns
         } else {
+            Use-ProjectNode $ProjectRoot
+            if ($Service -eq 'Backend') {
+                $configuration = Read-ProjectEnvironment (Join-Path $ProjectRoot 'backend/.env')
+                foreach ($key in $configuration.Keys) { [Environment]::SetEnvironmentVariable($key, $configuration[$key], 'Process') }
+            } else {
+                $env:NODE_ENV = $null
+                $env:NEXT_PUBLIC_API_URL = $null
+                $frontendEnv = Join-Path $ProjectRoot 'frontend/.env.local'
+                if (Test-Path -LiteralPath $frontendEnv) {
+                    $env:NEXT_PUBLIC_API_URL = (Read-ProjectEnvironment $frontendEnv).NEXT_PUBLIC_API_URL
+                }
+            }
             & npm.cmd run dev
         }
         if ($LASTEXITCODE -ne 0) { Write-Host "[ERROR] $($entry.Title) exited with code $LASTEXITCODE. Review the logs above." -ForegroundColor Red }
@@ -152,9 +149,7 @@ try {
     Require-Path 'backend\node_modules\.bin\prisma.cmd' 'Installed Prisma dependency'
     Require-Path 'backend\node_modules\.bin\tsc-watch.cmd' 'Installed backend dependencies'
     Require-Path 'frontend\node_modules\.bin\next.cmd' 'Installed frontend dependencies'
-    foreach ($command in @('node.exe', 'npm.cmd')) {
-        if (-not (Get-Command $command -ErrorAction SilentlyContinue)) { throw "$command not found on PATH. Follow README prerequisites." }
-    }
+    Use-ProjectNode $ProjectRoot
     $launchLock = Open-LaunchLock 'main'
     if ($null -eq $launchLock) {
         Write-Host '[SKIP] Another launcher is still starting this project. See its window.'
@@ -163,8 +158,8 @@ try {
     Start-ProjectPostgres
     foreach ($entry in $Services) { Start-ServiceConsole $entry }
 
-    Write-Host '[WAIT] Checking service health for up to about 60 seconds...'
-    $deadline = [DateTime]::UtcNow.AddSeconds(60)
+    Write-Host '[WAIT] Checking service health for up to about 120 seconds...'
+    $deadline = [DateTime]::UtcNow.AddSeconds(120)
     $pending = @($Services)
     do {
         $pending = @($pending | Where-Object {
@@ -184,7 +179,8 @@ try {
     Write-Host 'Frontend : http://localhost:3000'
     Write-Host 'Backend  : http://localhost:3001/health'
     Write-Host 'ML       : http://localhost:8000'
-    Write-Host 'Database : PostgreSQL localhost:5432'
+    Write-Host "Database : PostgreSQL localhost:$(Get-ProjectDatabasePort $ProjectRoot)"
+    if ($Services.Name -contains 'Mailpit') { Write-Host 'Local mail: http://localhost:8025 (no external email delivery)' }
     if (-not $NoBrowser) { Start-Process 'http://localhost:3000' | Out-Null }
 } catch {
     Write-Host "[ERROR] $($_.Exception.Message)" -ForegroundColor Red

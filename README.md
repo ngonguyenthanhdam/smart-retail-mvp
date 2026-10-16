@@ -30,11 +30,33 @@ frontend/           Authentication, retail operations, import center and dashboa
 backend/            Business modules, authorization, migrations and database access
 ml-service/         Offline demand experiments and model service
 .env.example        Backend environment template
+Setup-SmartRetail.bat First-time Windows installation (double-click once)
+setup.ps1           Download tools, install dependencies and initialize local configuration
+scripts/            Windows setup/runtime helpers and pinned download manifest
 Start-SmartRetail.bat Windows development launcher (double-click)
 start-dev.ps1       Launcher checks and service consoles
 ```
 
 ## Local setup
+
+### Automatic setup on Windows 10/11 (64-bit Intel/AMD)
+
+1. Clone or download and **extract the complete repository** to a writable local folder, for example `D:\RetailSense`. Keep the project in that folder after installation; Python virtual environments and local database paths are tied to it.
+2. With an Internet connection, double-click **`Setup-SmartRetail.bat`**. Wait for **SMART RETAIL SETUP COMPLETE**. The first run downloads the required tools and libraries; leave its window open. If Windows requests approval for the Microsoft Visual C++ runtime, approve that installer. The rest of setup runs in the current user account.
+3. Open **`.local\first-login.txt`** in the project folder for the initial `admin` account and its randomly generated password. Keep this file private. Each new installation gets different database passwords, an ADMIN password and a JWT secret.
+4. Double-click **`Start-SmartRetail.bat`** to open [localhost:3000](http://localhost:3000). Use only this launcher for daily operation; setup is not required every time.
+
+Setup installs project-local Node.js 22 (including npm), Python 3.11, PostgreSQL 17 and Mailpit. It runs `npm ci` for both applications, creates the Python virtual environment, installs the pinned runtime and offline-training requirements, checks the included model artifacts, applies migrations and builds both applications. Tools and downloads live under ignored `.local/`; it does not require Node, Python, PostgreSQL, Docker, winget or Git to already be installed. Git is only needed if you choose to clone/update using Git commands. The download URLs and SHA-256 checksums are pinned in [the Windows tool manifest](scripts/windows-tools.json); downloads come from the [Node.js distribution](https://nodejs.org/dist/), [CPython's documented NuGet distribution](https://docs.python.org/3.11/using/windows.html#the-nuget-org-packages), [PostgreSQL's Windows binary distributor](https://www.postgresql.org/download/windows/) and [Mailpit releases](https://github.com/axllent/mailpit/releases/tag/v1.31.2). A missing Visual C++ runtime uses the signed [Microsoft installer](https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist).
+
+The new application database contains **three roles and one ADMIN only**. No stores, products, inventory, sales or synthetic history are added. A separate empty `retailsense_test` database is created for developer tests; it is not the application database. Create stores, accounts, units, categories and products through the website, or import your own history. Forecasting will require sufficient confirmed sales history; an empty database cannot demonstrate forecasts immediately. Setup never trains or replaces the included models.
+
+PostgreSQL listens on loopback only. Setup chooses an unused port between **5432 and 5442** and writes it into private `backend/.env`; daily startup uses that same port. Frontend, backend, model service and local mail retain ports **3000, 3001, 8000, 1025 and 8025**. An unrelated listener on those ports must be stopped by its owner before launching; no process is killed automatically. Mailpit keeps password-recovery emails on this machine, visible at [localhost:8025](http://localhost:8025).
+
+If a download or dependency install fails, fix the reported error and run the **same setup file again**. Verified downloads are cached, unchanged Node dependencies are reused, and applied migrations are not repeated. Existing configuration, ADMIN passwords and business data are preserved. Setup refuses to replace an existing database whose matching configuration is missing, or to clear a partially initialized data directory. Logs are in `.local\setup.log`; do not publish private configuration or the first-login file. Stop application service commands before rerunning setup after dependency/schema updates. Re-cloning into a new folder is a new installation; preserve/restore a database backup separately if existing data is needed.
+
+For a read-only prerequisite check, run `powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\setup.ps1 -CheckOnly`. The source package must include the `.bat`, `.ps1`, `scripts/` and application directories together. `docs/` is not needed. macOS/Linux continue to use the manual instructions below; the automatic installer targets Windows only.
+
+### Manual installation
 
 Prerequisites: Node.js 22.13 or later in the 22.x line, npm, Python 3.11, and PostgreSQL 17 running locally. Each application runs in its own terminal.
 
@@ -60,7 +82,7 @@ If this checkout already has a project-local installation under `.local/postgres
 & .\.local\postgresql\pgsql\bin\pg_ctl.exe -D .\.local\postgresql\data -m fast stop
 ```
 
-The binaries, database files, and local credentials under `.local/` are excluded from Git. A fresh clone needs its own PostgreSQL installation; this directory is not distributed with the source code. Keep an existing `backend/.env` when it already contains the matching local credentials.
+The binaries, database files, and local credentials under `.local/` are excluded from Git. The automatic Windows setup creates this installation on a fresh clone; manual installations must provision PostgreSQL themselves. Keep an existing `backend/.env` when it already contains the matching local credentials. If automatic setup chose another port, use the port from `DATABASE_URL` for manual PostgreSQL commands.
 
 ### 2. Backend
 
@@ -99,7 +121,7 @@ npm run prisma:seed
 npm run dev
 ```
 
-The twelve migrations create 18 business tables: `roles`, `locations`, `users`, `categories`, `units`, `products`, `store_products`, `inventory_lots`, `purchase_orders`, `purchase_order_items`, `sales`, `sale_items`, `expenses`, `import_jobs`, `forecast_runs`, `demand_forecasts`, `replenishment_recommendations`, and `inventory_alerts`, plus the `v_inventory_balance` and `v_sales_daily_facts` views and Prisma's migration history. The authentication seed creates the three roles and one ADMIN with a bcrypt password hash. Running it again preserves the existing administrator and password; changing the bootstrap identity does not create another administrator. It does not create stores or staff accounts. Application and seed connections use UTC; screens and business-date filters use Vietnam time.
+The fourteen migrations create 19 business tables: `roles`, `locations`, `users`, `categories`, `units`, `products`, `store_products`, `inventory_lots`, `purchase_orders`, `purchase_order_items`, `sales`, `sale_items`, `expenses`, `import_jobs`, `forecast_runs`, `demand_forecasts`, `replenishment_recommendations`, `sales_history_coverage`, and `inventory_alerts`, plus the `v_inventory_balance` and `v_sales_daily_facts` views and Prisma's migration history. The authentication seed creates the three roles and one ADMIN with a bcrypt password hash. Running it again preserves the existing administrator and password; changing the bootstrap identity does not create another administrator. It does not create stores or staff accounts. Application and seed connections use UTC; screens and business-date filters use Vietnam time.
 
 ### Products and inventory demo
 
@@ -151,7 +173,7 @@ npm ci
 npm run dev
 ```
 
-Open [localhost:3000](http://localhost:3000) and sign in with the administrator username or email and the password configured above. Use **Cửa hàng** to create a store, then **Người dùng** to create individual manager/staff accounts assigned to that store. The interface defaults to Vietnamese; product illustrations are served locally. See [the current upgrade guide](docs/UPGRADE_2026_10.md) for calendar-month forecasts and the sales counter.
+Open [localhost:3000](http://localhost:3000) and sign in with the administrator username or email and the password configured above. Use **Cửa hàng** to create a store, then **Người dùng** to create individual manager/staff accounts assigned to that store. The interface defaults to Vietnamese; product illustrations are served locally. The forecasting and demonstration sections below cover calendar-month forecasts and the sales counter.
 
 The frontend defaults to `http://localhost:3001`. For another address, copy `frontend/.env.example` to `frontend/.env.local`, set `NEXT_PUBLIC_API_URL`, and restart the development server or rebuild. Use `localhost` consistently for the browser and API; mixing it with `127.0.0.1` prevents the intended local cookie behavior. Keep the backend `FRONTEND_ORIGIN` equal to the browser origin.
 
@@ -286,7 +308,7 @@ On macOS or Linux, replace `.\.venv\Scripts\python` with `.venv/bin/python`. If 
 
 The website now uses a versioned model on quantity scale. The current M5 benchmark selected **RollingMean28** over trained LightGBM and SeasonalNaive using a chronological validation split. LightGBM remains saved as a candidate; do not describe current predictions as LightGBM output. Independent test period WAPE is 34.15% at 30 days and 43.31% at 90 days on the fixed 60-series M5 subset. These are error measures, not accuracy percentages or evidence for this project's stores or kg/can products.
 
-Read [the Vietnamese upgrade guide](docs/UPGRADE_2026_10.md), [quantity training/activation commands](ml-service/QUANTITY_FORECASTING.md) and [the evaluation report](ml-service/reports/quantity_forecasting_report.md). Original normalized FreshRetailNet research is retained separately below.
+Read [quantity training/activation commands](ml-service/QUANTITY_FORECASTING.md) and [the evaluation report](ml-service/reports/quantity_forecasting_report.md). Original normalized FreshRetailNet research is retained separately below.
 
 Existing installations should back up their database, apply additive migrations with `npm run prisma:migrate` in `backend`, rebuild both applications and restart services. The catalog migration changes only matching original sample labels, retaining UUIDs, user edits and provenance. It does not reset data. New sample names use Vietnamese and codes `FC-*` / `RETAIL-*`.
 
@@ -334,7 +356,7 @@ Alerts evaluate when explicitly refreshed, after forecast completion or recommen
 
 STAFF uses an individual account assigned to one store to view products, prices, stock and sales history. The counter offers product pictures, name/SKU/barcode search, category filters, quantity controls, a cart and confirmation before saving. Whole-unit settings reject fractions; weight-based units can accept them. The backend fixes selling prices, checks price changes at checkout and prevents STAFF from applying manual invoice discounts. Saving an invoice and consuming eligible stock is atomic; a repeated checkout reference returns the saved invoice without consuming stock again.
 
-Local WebP assets provide a retail hero and 12 category illustrations. No user image collection or paid runtime image API is required. These are category illustrations, not exact branded SKU photographs. [Asset source and prompts](docs/IMAGE_ASSETS.md).
+Local WebP assets provide a retail hero and 12 category illustrations. No user image collection or paid runtime image API is required. These are category illustrations, not exact branded SKU photographs.
 
 Chatbox is deferred. Promotion campaigns, payment-provider integration, receipt printing and returns/void-with-restock are not part of this upgrade. A manager's manual invoice discount is not a promotion campaign.
 
@@ -390,6 +412,15 @@ Use `Ctrl+C` in each application terminal to stop it. PostgreSQL is managed sepa
 
 ## Checks
 
+On an automatically installed Windows copy, enable the project-local Node/npm in a developer PowerShell terminal before running manual npm commands:
+
+```powershell
+# From the project root; affects this terminal only.
+. .\scripts\windows-runtime.ps1
+Use-ProjectNode (Get-Location).Path
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\test-windows-setup.ps1
+```
+
 Run `npm run lint`, `npm run typecheck`, and `npm run build` in both `frontend/` and `backend/`. Backend builds generate the Prisma client. In `ml-service/`, run `.venv`'s Python with `-m pip check` and `-m compileall app.py src`, then verify `/health` while Uvicorn is running.
 
 For backend integration tests, provision a separate database and role:
@@ -412,13 +443,13 @@ For the complete Python suite, install `requirements-training.txt` (including in
 
 ## Daily operation
 
-On this prepared Windows checkout, **double-click `Start-SmartRetail.bat` in the project root**. No administrator terminal or manual execution-policy setup is required. The launcher uses its own directory, so you can open it from Explorer or another working directory.
+After the one-time Windows setup, **double-click `Start-SmartRetail.bat` in the project root**. No administrator terminal or manual execution-policy setup is required. The launcher uses its own directory and project-local Node/npm, so you can open it from Explorer or another working directory without changing PATH.
 
-It checks existing tools/configuration, starts the project-local PostgreSQL in the background when needed, waits for database readiness, opens separate **Smart Retail - ML Service**, **Smart Retail - Backend** and **Smart Retail - Frontend** PowerShell windows, then checks service health for about 60 seconds. After **SMART RETAIL READY**, it opens [localhost:3000](http://localhost:3000). The ML window runs the existing virtual-environment Python/Uvicorn command; the other two run `npm run dev` and retain their logs. The backend's existing predev hook generates the Prisma client; no migration or seed is run.
+It checks existing tools/configuration, starts the project-local PostgreSQL in the background when needed, waits for database readiness, opens separate **Smart Retail - ML Service**, **Smart Retail - Backend** and **Smart Retail - Frontend** PowerShell windows, then checks service health for about 120 seconds. When Mailpit is installed, it also opens **Smart Retail - Local Mail**. After **SMART RETAIL READY**, it opens [localhost:3000](http://localhost:3000). The ML window runs the virtual-environment Python/Uvicorn command; the Node applications run `npm run dev` and retain their logs. The backend's predev hook generates the Prisma client; no migration or seed is run.
 
-Ports checked: PostgreSQL **5432**, ML **8000**, backend **3001**, frontend **3000**. Existing listeners are reused only after health checks pass; they are never killed or restarted. A listener on 5432 with no running project PostgreSQL produces an error. Existing service windows are also recognized while compiling, before they bind a port, and repeated clicks do not launch another active instance. Handle-based lock files under `.local/` are harmless after exit; do not delete them to stop a running service.
+Ports checked: PostgreSQL's port in **backend/.env**, ML **8000**, backend **3001**, frontend **3000**, and local mail **1025/8025** when installed. Existing listeners are reused only after health checks pass; they are never killed or restarted. An occupied database port with no running project PostgreSQL produces an error. Existing service windows are also recognized while compiling, before they bind a port, and repeated clicks do not launch another active instance. Handle-based lock files under `.local/` are harmless after exit; do not delete them to stop a running service.
 
-The launcher requires the existing `.local/postgresql/` installation, `ml-service/.venv/`, installed Node dependencies, Node/npm on PATH and `backend/.env`. It does not install dependencies, change configuration/schema, seed data or reset databases. It uses the default local ports/URLs documented here. Missing prerequisites, conflicts and failed health checks are reported; the `.bat` pauses on failure so you can read the error. Already started windows remain available for diagnosis after a timeout. Check them before retrying. Mailpit is **not** started by this launcher; use the separate local-inbox command above when needed.
+The launcher requires the `.local/postgresql/` installation, `ml-service/.venv/`, installed Node dependencies, project-local Node/npm (or a compatible Node 22 on PATH) and `backend/.env`. `Setup-SmartRetail.bat` prepares these on a new machine. Daily startup does not install dependencies, change configuration/schema, seed data or reset databases. Missing prerequisites, conflicts and failed health checks are reported; the `.bat` pauses on failure so you can read the error. Already started windows remain available for diagnosis after a timeout. Check them before retrying.
 
 For a terminal-only readiness check without opening the browser, run `powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\start-dev.ps1 -NoBrowser` from the root. Execution-policy bypass applies only to that PowerShell process. The manual startup/stop commands below remain available; stop the three service commands with Ctrl+C in their own windows, then stop PostgreSQL explicitly when finished.
 
