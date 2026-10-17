@@ -25,6 +25,21 @@ def sha256(path: Path) -> str:
         return hashlib.file_digest(stream, "sha256").hexdigest()
 
 
+def metadata_sha256(path: Path) -> str:
+    """Hash metadata with LF endings, matching Git's stored text on every OS."""
+    return hashlib.sha256(path.read_bytes().replace(b"\r\n", b"\n")).hexdigest()
+
+
+def verify_metadata(path: Path, expected: str) -> None:
+    raw = path.read_bytes()
+    lf = raw.replace(b"\r\n", b"\n")
+    # Earlier Windows activations hashed CRLF bytes before Git normalized them.
+    # Accept only that newline conversion; all other bytes still bind to SHA-256.
+    candidates = (raw, lf, lf.replace(b"\n", b"\r\n"))
+    if expected not in {hashlib.sha256(value).hexdigest() for value in candidates}:
+        raise ValueError("Active model metadata integrity failure")
+
+
 @dataclass
 class QuantityModel:
     algorithm: str
@@ -103,10 +118,10 @@ def require_operational_evidence(metadata: dict):
 def activate(version: str, model_root: Path = ROOT / "models"):
     _, metadata = load_version(version, model_root)
     require_operational_evidence(metadata)
-    pointer = {"model_version": version, "metadata_sha256": sha256(version_path(version, model_root) / "metadata.json")}
+    pointer = {"model_version": version, "metadata_sha256": metadata_sha256(version_path(version, model_root) / "metadata.json")}
     destination = model_root / "active-model.json"
     temporary = destination.with_suffix(".tmp")
-    temporary.write_text(json.dumps(pointer, indent=2) + "\n", encoding="utf-8")
+    temporary.write_text(json.dumps(pointer, indent=2) + "\n", encoding="utf-8", newline="\n")
     temporary.replace(destination)
     return pointer
 
@@ -123,8 +138,7 @@ class ModelRegistry:
         if signature != self.signature:
             pointer = json.loads(pointer_bytes)
             metadata_path = version_path(pointer["model_version"], self.model_root) / "metadata.json"
-            if sha256(metadata_path) != pointer["metadata_sha256"]:
-                raise ValueError("Active model metadata integrity failure")
+            verify_metadata(metadata_path, pointer["metadata_sha256"])
             current = load_version(pointer["model_version"], self.model_root)
             require_operational_evidence(current[1])
             self.current, self.signature = current, signature

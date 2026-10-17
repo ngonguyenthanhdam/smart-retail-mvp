@@ -72,6 +72,9 @@ class QuantityModelTests(unittest.TestCase):
             self.assertLess(metadata["training"]["initial"]["last_target"], metadata["validation"]["test"]["30"]["start"])
             registry = ModelRegistry(root / "models")
             self.assertEqual(registry.get()[0].version, "store-test")
+            for filename in ("metadata.json", "protocol.json", "selection.json", "evaluation.json"):
+                self.assertNotIn(b"\r", (version_path("store-test", root / "models") / filename).read_bytes())
+            self.assertNotIn(b"\r", (root / "models/active-model.json").read_bytes())
             self.assertFalse(metadata["real_world_accuracy_verified"])
             changed = pd.read_csv(snapshot)
             changed.loc[changed.index[-124:], "quantity"] += 1000

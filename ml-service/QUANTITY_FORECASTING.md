@@ -51,6 +51,8 @@ Mỗi lần chạy tạo phiên bản mới và từ chối ghi đè. Quy trình
 
 `--activate` trên lệnh huấn luyện gộp bước cuối khi người quản trị chủ động yêu cầu. Không tự chạy sau import hay mỗi lần dự báo. Kích hoạt xác minh checksum, hợp đồng mô hình và bằng chứng kiểm chứng đủ 124 ngày rồi thay con trỏ bằng thao tác atomic; dịch vụ nhận phiên bản mới ở lần gọi tiếp theo. Khi tải phiên bản, dịch vụ cũng kiểm tra điều kiện này để không phục vụ một bản cũ chỉ kiểm chứng ngắn hạn. Quay lại bản trước bằng cùng lệnh `--activate <version>`. Dữ liệu mô phỏng chỉ được dùng với `--allow-synthetic`; phiên bản có dữ liệu này không được phép kích hoạt. Không nhận artifact pickle/joblib tải lên từ người dùng.
 
+Metadata và con trỏ kích hoạt mới được ghi bằng UTF-8 với xuống dòng LF. Checksum metadata được tính trên bản LF để không đổi khi Git checkout trên Windows. Bộ nạp vẫn đọc được checksum CRLF của những phiên bản cũ; chỉ chấp nhận khác biệt LF/CRLF, không bỏ qua thay đổi nội dung metadata. Các file `.joblib` luôn được kiểm tra SHA-256 theo đúng từng byte và được Git giữ dưới dạng nhị phân.
+
 ## Hợp đồng HTTP
 
 - `GET /model-info`: phiên bản, thuật toán thực dùng, loại thang đo, đơn vị nguồn, lựa chọn/kiểm chứng, dữ liệu huấn luyện và giới hạn. Thiếu hoặc hỏng bản kích hoạt trả `MODEL_UNAVAILABLE`.

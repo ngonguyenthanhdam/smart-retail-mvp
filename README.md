@@ -538,6 +538,7 @@ The target owner role must already exist. PostgreSQL database dumps do not recre
 
 | Symptom | Check / recovery |
 | --- | --- |
+| Setup stops with `Active model metadata integrity failure`, then startup reports missing `PG_VERSION` | Update branch `smart-retail-mvp` with `git pull --ff-only`, then rerun `Setup-SmartRetail.bat` to completion before starting the launcher. The earlier release hashed Windows CRLF metadata before Git normalized it to LF. The fix handles both newline styles while retaining model integrity checks. Keep `.local/` and private `.env` files; PostgreSQL has not been initialized if setup stopped at model verification. Do not reset the database or activate/retrain a model to bypass this error. |
 | Backend cannot start or `/health` returns 503 | Confirm PostgreSQL is running with `pg_isready`; check private DATABASE_URL, port and URL-encoded password; run migration status |
 | Port already in use | Stop the service in its own terminal, or choose a free port and update matching origins/URLs; do not terminate unrelated processes |
 | Login succeeds but the browser returns to login | Use `localhost` consistently; verify FRONTEND_ORIGIN and NEXT_PUBLIC_API_URL; use the local backend environment for HTTP and rebuild the frontend after URL changes |

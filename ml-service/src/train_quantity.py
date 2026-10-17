@@ -125,7 +125,7 @@ def run(snapshot: Path, version: str, source_kind: str = "EXTERNAL", evaluation_
                 "created_at": datetime.now(timezone.utc).isoformat()}
     # Persist precommitted protocol before fitting or inspecting held-out performance.
     destination.mkdir(parents=True)
-    (destination / "protocol.json").write_text(json.dumps(protocol, indent=2) + "\n", encoding="utf-8")
+    (destination / "protocol.json").write_text(json.dumps(protocol, indent=2) + "\n", encoding="utf-8", newline="\n")
     regressor, initial_fit = fit(features, validation_origin)
     validation = {}
     for name in ALGORITHMS:
@@ -137,7 +137,7 @@ def run(snapshot: Path, version: str, source_kind: str = "EXTERNAL", evaluation_
         raise ValueError("All-zero evaluation targets cannot establish an activation score")
     selection = {"algorithm": selected, "scores": {name: selection_score(validation[name]) for name in ALGORITHMS},
                  "selected_before_test": True, "selected_at": datetime.now(timezone.utc).isoformat()}
-    (destination / "selection.json").write_text(json.dumps(selection, indent=2) + "\n", encoding="utf-8")
+    (destination / "selection.json").write_text(json.dumps(selection, indent=2) + "\n", encoding="utf-8", newline="\n")
     refitted, refit_info = fit(features, test_origin)
     candidate_directory = destination / "candidates"
     candidate_directory.mkdir()
@@ -194,7 +194,7 @@ def run(snapshot: Path, version: str, source_kind: str = "EXTERNAL", evaluation_
               "skipped": skipped, "provenance": provenance, "artifact": metadata["artifact"],
               "trained_candidate": metadata["trained_candidate"]}
     for name, value in [("metadata.json", metadata), ("evaluation.json", report)]:
-        (destination / name).write_text(json.dumps(value, indent=2, allow_nan=False) + "\n", encoding="utf-8")
+        (destination / name).write_text(json.dumps(value, indent=2, allow_nan=False) + "\n", encoding="utf-8", newline="\n")
     if activate_model:
         activate(version, model_root)
     print(json.dumps({"model_version": version, "algorithm": selected, "scores": selection["scores"],
