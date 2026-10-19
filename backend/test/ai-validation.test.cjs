@@ -1,0 +1,31 @@
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const { validateCsv } = require('../dist/src/ai-center/dataset-validation.js');
+const validate = (text, kind, mapping, name = 'sales.csv') => validateCsv(name, Buffer.from(text), kind, mapping);
+const header = 'date,store_id,product_id,quantity,unit_code\n';
+test('AI CSV distinguishes unsupported, malformed, missing, mapping and duplicate data', () => {
+  assert.equal(validate('first_name,last_name\nAlice,Smith\n').status, 'UNSUPPORTED_DATASET');
+  assert.equal(validate(header + '"unclosed').status, 'INVALID_FORMAT');
+  assert.equal(validate('date,store_id,product_id,quantity\n2026-01-01,S,P,2\n').status, 'MISSING_REQUIRED_FIELDS');
+  const aliases = 'sale_date,store_code,sku,qty,unit,extra\n2026-01-01,S,P,2,PCS,ignored\n';
+  const checked = validate(aliases); assert.equal(checked.status, 'NEEDS_MAPPING');
+  assert.deepEqual(checked.ignoredColumns, ['extra']);
+  assert.equal(validate(aliases, 'SALES', checked.mapping).status, 'VALID');
+  assert.equal(validate(header + '2026-01-01,S,P,2,PCS\n2026-01-01,S,P,3,PCS\n').status, 'DUPLICATE_DATA');
+  assert.equal(validate(header + '2026-02-30,S,P,2,PCS\n').status, 'INVALID_FORMAT');
+  assert.equal(validate(header + '2026-01-01,S,P,-2,PCS\n').status, 'INVALID_FORMAT');
+  assert.equal(validate(header + '2026-01-01,S,P,1.00001,PCS\n').status, 'INVALID_FORMAT');
+  assert.equal(validate(header + '2026-01-01,S,P,,PCS\n').status, 'MISSING_REQUIRED_FIELDS');
+  const attack = validate(header + '2026-01-01,S,=cmd,2,PCS\n');
+  assert.equal(attack.status, 'INVALID_FORMAT'); assert.equal(attack.issues[0].row, 2); assert.ok(attack.issues[0].fix);
+  assert.equal(validateCsv('data.csv', Buffer.from([0xff,0xfe,0,10])).status, 'INVALID_FORMAT');
+  assert.equal(validate(header + '2026-01-01,S,P,0,PCS\n', undefined, undefined, 'data.exe').status, 'INVALID_FORMAT');
+});
+test('AI CSV keeps explicit zeros, transaction lines and unit identity; never maps normalized sale_amount to quantity', () => {
+  const zero = validate(header + '2026-01-01,S,P,0,KG\n'); assert.equal(zero.status, 'VALID'); assert.equal(zero.rows[0].values.quantity, '0');
+  assert.equal(validate('date,store_id,product_id,sale_amount,unit_code\n2026-01-01,S,P,2,PCS\n').status, 'MISSING_REQUIRED_FIELDS');
+  assert.equal(validate(header.trim() + ',transaction_id,line_id\n2026-01-01,S,P,2,PCS,T,1\n2026-01-01,S,P,3,PCS,T,2\n').status, 'VALID');
+  const stock = validate('date,store_id,product_id,quantity,unit_code,lot_number\n2026-01-01,S,P,3,PCS,L\n');
+  assert.equal(stock.kind, 'INVENTORY'); assert.equal(stock.status, 'VALID');
+  assert.equal(validate('product_id,name,unit_code\nP,Product,PCS\n').kind, 'PRODUCTS');
+});

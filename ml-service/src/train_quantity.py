@@ -79,23 +79,31 @@ def selection_score(results: dict) -> float:
     return float(np.mean(values)) if values else float("inf")
 
 
-def fit(features: pd.DataFrame, end: pd.Timestamp):
+def fit(features: pd.DataFrame, end: pd.Timestamp, parameters=None):
     rows = features.loc[(features.dt <= end) & features.training_eligible]
     if len(rows) < 30:
         raise ValueError("Insufficient eligible training targets")
-    model = LGBMRegressor(**PARAMETERS)
+    model = LGBMRegressor(**(parameters or PARAMETERS))
     model.fit(rows[MODEL_FEATURES], rows.sale_amount)
     return model, {"rows": len(rows), "first_target": rows.dt.min().date().isoformat(), "last_target": rows.dt.max().date().isoformat()}
 
 
 def run(snapshot: Path, version: str, source_kind: str = "EXTERNAL", evaluation_days: int = 124,
-        allow_synthetic: bool = False, activate_model: bool = False, model_root: Path = ROOT / "models"):
+        allow_synthetic: bool = False, activate_model: bool = False, model_root: Path = ROOT / "models",
+        parameters=None, algorithms=None, progress=None, strict_series: bool = False):
+    parameters = {**PARAMETERS, **(parameters or {})}
+    algorithms = tuple(algorithms or ALGORITHMS)
+    if not algorithms or any(name not in ALGORITHMS for name in algorithms):
+        raise ValueError("Unsupported algorithm")
+    notify = progress or (lambda stage, detail: None)
+    notify("DATA_COLLECTION", {"status": "RUNNING"})
     if not 30 <= evaluation_days <= MAX_HORIZON:
         raise ValueError("evaluation-days must be 30..124")
     destination = version_path(version, model_root)
     if destination.exists():
         raise ValueError("Model version already exists; choose a new immutable version")
     data = load_snapshot(snapshot, allow_synthetic)
+    notify("EDA", {"status": "RUNNING", "rows": len(data)})
     contains_synthetic = bool(data.source.str.upper().str.contains("SYNTHETIC|DEMO", regex=True).any())
     if source_kind == "STORE_HISTORY" and not data.source.eq("STORE_HISTORY").all():
         raise ValueError("STORE_HISTORY provenance requires exclusively STORE_HISTORY snapshot rows")
@@ -114,40 +122,64 @@ def run(snapshot: Path, version: str, source_kind: str = "EXTERNAL", evaluation_
             skipped.append({"store_id": pair[0], "product_id": pair[1], "reason": "insufficient continuous holdout/history or training coverage"})
     if not kept:
         raise ValueError("No series has 60 training days plus two complete evaluation windows; use a longer snapshot or shorter --evaluation-days")
+    if strict_series and skipped:
+        raise ValueError(f"{len(skipped)} series lack continuous training/holdout coverage. Select or correct the dataset; no series was silently removed.")
     data = pd.concat(kept, ignore_index=True)
     features = build_features(data)
+    notify("FEATURES", {"features": MODEL_FEATURES, "eligible_rows": int(features.training_eligible.sum())})
     horizons = sorted(set([value for value in [7, 30, 31, 90, 124] if value <= evaluation_days] + [evaluation_days]))
     protocol = {"selection": "mean across horizons/units of 0.5 daily WAPE + 0.5 period WAPE; tie favors simpler baseline",
                 "horizons": horizons, "validation_origin": validation_origin.date().isoformat(),
                 "test_origin": test_origin.date().isoformat(), "test_end": end.date().isoformat(),
-                "parameters": PARAMETERS, "snapshot_sha256": sha256(snapshot),
+                "split_rows": {"train": int(data.dt.le(validation_origin).sum()),
+                               "validation": int((data.dt.gt(validation_origin) & data.dt.le(test_origin)).sum()),
+                               "test": int(data.dt.gt(test_origin).sum())},
+                "parameters": parameters, "algorithms": list(algorithms), "snapshot_sha256": sha256(snapshot),
                 "source_kind": source_kind, "contains_synthetic": contains_synthetic,
                 "created_at": datetime.now(timezone.utc).isoformat()}
     # Persist precommitted protocol before fitting or inspecting held-out performance.
     destination.mkdir(parents=True)
     (destination / "protocol.json").write_text(json.dumps(protocol, indent=2) + "\n", encoding="utf-8", newline="\n")
-    regressor, initial_fit = fit(features, validation_origin)
+    notify("SPLITTING", {"validation_origin": str(validation_origin.date()), "test_origin": str(test_origin.date()), "test_end": str(end.date())})
+    notify("TRAINING", {"algorithm": "LightGBM" if "LightGBM" in algorithms else "Statistical baselines"})
+    regressor, initial_fit = fit(features, validation_origin, parameters) if "LightGBM" in algorithms else (None, {"rows": int(features.training_eligible.sum())})
     validation = {}
-    for name in ALGORITHMS:
+    for name in algorithms:
         candidate = QuantityModel(name, version, regressor if name == "LightGBM" else None)
         predicted, _ = candidate.predict(data.loc[data.dt <= validation_origin], str(validation_origin.date()), evaluation_days)
         validation[name] = {str(horizon): score(predicted, data, horizon, validation_origin) for horizon in horizons}
-    selected = min(ALGORITHMS, key=lambda name: (selection_score(validation[name]), ALGORITHMS.index(name)))
+    selected = min(algorithms, key=lambda name: (selection_score(validation[name]), ALGORITHMS.index(name)))
     if not np.isfinite(selection_score(validation[selected])):
         raise ValueError("All-zero evaluation targets cannot establish an activation score")
-    selection = {"algorithm": selected, "scores": {name: selection_score(validation[name]) for name in ALGORITHMS},
+    selection = {"algorithm": selected, "scores": {name: selection_score(validation[name]) for name in algorithms},
                  "selected_before_test": True, "selected_at": datetime.now(timezone.utc).isoformat()}
     (destination / "selection.json").write_text(json.dumps(selection, indent=2) + "\n", encoding="utf-8", newline="\n")
-    refitted, refit_info = fit(features, test_origin)
+    notify("EVALUATION", {"selected_on_validation": selected, "scores": selection["scores"]})
+    refitted, refit_info = fit(features, test_origin, parameters) if "LightGBM" in algorithms else (None, None)
     candidate_directory = destination / "candidates"
     candidate_directory.mkdir()
     candidate_path = candidate_directory / "lightgbm.joblib"
-    joblib.dump(QuantityModel("LightGBM", version + "-candidate", refitted), candidate_path, compress=3)
+    if refitted is not None:
+        joblib.dump(QuantityModel("LightGBM", version + "-candidate", refitted), candidate_path, compress=3)
     test, selected_model = {}, None
-    for name in ALGORITHMS:
+    diagnostics = {}
+    for name in algorithms:
         candidate = QuantityModel(name, version, refitted if name == "LightGBM" else None)
         predicted, _ = candidate.predict(data.loc[data.dt <= test_origin], str(test_origin.date()), evaluation_days)
         test[name] = {str(horizon): score(predicted, data, horizon, test_origin) for horizon in horizons}
+        if progress is not None:
+            joined = predicted.merge(data[KEY + ["sale_amount", "unit_code"]], on=KEY, validate="one_to_one")
+            examples = joined.iloc[:min(3000, len(joined))]
+            diagnostics[name] = {"samples": [{"store_id": row.store_id, "product_id": row.product_id,
+                "date": row.dt.strftime("%Y-%m-%d"), "actual": float(row.sale_amount), "predicted": float(row.prediction),
+                "unit": row.unit_code} for row in examples.itertuples()], "sample_limit": 3000,
+                "by_unit_error": {str(unit): {"quantiles": np.quantile(group.prediction - group.sale_amount, [0, .25, .5, .75, 1]).tolist(),
+                    "distribution": {"counts": np.histogram(group.prediction - group.sale_amount, bins=12)[0].tolist(),
+                                     "edges": np.histogram(group.prediction - group.sale_amount, bins=12)[1].tolist()}}
+                                  for unit, group in joined.groupby("unit_code")},
+                "by_series": [{"store": str(store), "product": str(product), "unit": str(group.unit_code.iloc[0]),
+                               **metric(group.sale_amount, group.prediction)}
+                              for (store, product), group in joined.groupby(KEY[:2])]}
         if name == selected:
             selected_model = candidate
     artifact = destination / "model.joblib"
@@ -179,7 +211,7 @@ def run(snapshot: Path, version: str, source_kind: str = "EXTERNAL", evaluation_
                 "unit_validation_note": "Only the listed source units were evaluated; numerical support for a store base unit does not establish transfer accuracy.",
                 "selection_reason": f"{selected} had the lowest predeclared validation score; the independent test did not choose the model.",
                 "trained_candidate": {"algorithm": "LightGBM", "file": "candidates/lightgbm.joblib", "sha256": sha256(candidate_path),
-                                      "fit": refit_info, "parameters": PARAMETERS},
+                                      "fit": refit_info, "parameters": parameters} if refitted is not None else None,
                 "training": {"initial": initial_fit, "deployed_fit": refit_info if selected == "LightGBM" else None,
                              "snapshot_sha256": protocol["snapshot_sha256"], "source_kind": source_kind,
                              "rows": len(data), "pairs": len(kept), "units": sorted(data.unit_code.unique().tolist()),
@@ -193,10 +225,14 @@ def run(snapshot: Path, version: str, source_kind: str = "EXTERNAL", evaluation_
     report = {"protocol": protocol, "selection": selection, "validation": validation, "test": test,
               "skipped": skipped, "provenance": provenance, "artifact": metadata["artifact"],
               "trained_candidate": metadata["trained_candidate"]}
+    if progress is not None:
+        report["diagnostics"] = diagnostics
+        report["feature_importance"] = dict(zip(MODEL_FEATURES, map(int, refitted.feature_importances_))) if refitted is not None else None
     for name, value in [("metadata.json", metadata), ("evaluation.json", report)]:
         (destination / name).write_text(json.dumps(value, indent=2, allow_nan=False) + "\n", encoding="utf-8", newline="\n")
     if activate_model:
         activate(version, model_root)
+    notify("COMPLETED", {"model_version": version, "algorithm": selected})
     print(json.dumps({"model_version": version, "algorithm": selected, "scores": selection["scores"],
                       "pairs": len(kept), "horizons": horizons, "activated": activate_model}, indent=2))
     return metadata

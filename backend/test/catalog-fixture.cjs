@@ -18,6 +18,14 @@ async function catalogFixture(t) {
   const ids = { user: [], location: [], category: [], unit: [], product: [], storeProduct: [], inventoryLot: [], purchaseOrder: [], purchaseOrderItem: [], sale: [], saleItem: [], expense: [], importJob: [], forecastRun: [] };
   t.after(async () => {
     try {
+      // Remove only AI Center metadata owned by this test fixture.
+      await prisma.aiChatMessage.deleteMany({ where: { session: { ownerId: { in: ids.user } } } });
+      await prisma.aiChatSession.deleteMany({ where: { ownerId: { in: ids.user } } });
+      await prisma.aiAuditEvent.deleteMany({ where: { actorId: { in: ids.user } } });
+      await prisma.aiDeployment.deleteMany({ where: { actorId: { in: ids.user } } });
+      await prisma.aiTrainingJob.deleteMany({ where: { ownerId: { in: ids.user } } });
+      await prisma.aiDatasetFile.deleteMany({ where: { dataset: { ownerId: { in: ids.user } } } });
+      await prisma.aiDataset.deleteMany({ where: { ownerId: { in: ids.user } } });
       const runs = await prisma.forecastRun.findMany({ where: { requestedBy: { in: ids.user } }, select: { id: true } });
       const ownedRecommendations = await prisma.replenishmentRecommendation.findMany({ where: { OR: [{ locationId: { in: ids.location } }, { forecast: { forecastRunId: { in: runs.map(r => r.id) } } }] }, select: { id: true } });
       const ownedPurchases = await prisma.purchaseOrder.findMany({ where: { replenishmentRecommendationId: { in: ownedRecommendations.map(r => r.id) } }, select: { id: true } });

@@ -7,5 +7,5 @@ import { PredictionClient } from './prediction-client';
 import { AlertsModule } from '../alerts/alerts.module';
 import { ForecastDataController } from './forecast-data.controller';
 import { ForecastDataService } from './forecast-data.service';
-@Module({ imports: [DatabaseModule, AlertsModule], controllers: [ForecastsController, ForecastDataController], providers: [ForecastsService, ForecastHistory, PredictionClient, ForecastDataService] })
+@Module({ imports: [DatabaseModule, AlertsModule], controllers: [ForecastsController, ForecastDataController], providers: [ForecastsService, ForecastHistory, PredictionClient, ForecastDataService], exports: [ForecastHistory] })
 export class ForecastsModule {}

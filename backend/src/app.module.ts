@@ -18,6 +18,7 @@ import { ReportsModule } from './reports/reports.module';
 import { ForecastsModule } from './forecasts/forecasts.module';
 import { ReplenishmentModule } from './replenishment/replenishment.module';
 import { AlertsModule } from './alerts/alerts.module';
+import { AiCenterModule } from './ai-center/ai-center.module';
 
 @Module({
   imports: [
@@ -43,6 +44,7 @@ import { AlertsModule } from './alerts/alerts.module';
     ForecastsModule,
     ReplenishmentModule,
     AlertsModule,
+    AiCenterModule,
   ],
 })
 export class AppModule {}

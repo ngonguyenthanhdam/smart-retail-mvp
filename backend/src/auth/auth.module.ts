@@ -24,6 +24,6 @@ import { ResetMailer } from './reset-mailer.service';
     { provide: APP_GUARD, useExisting: AuthGuard },
     { provide: APP_GUARD, useExisting: RolesGuard },
   ],
-  exports: [AuthGuard, RolesGuard],
+  exports: [AuthGuard, RolesGuard, AuthService],
 })
 export class AuthModule {}

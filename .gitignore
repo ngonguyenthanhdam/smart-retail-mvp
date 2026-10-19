@@ -43,6 +43,7 @@ ml-service/models/*
 !ml-service/models/operational/**/
 !ml-service/models/operational/**/*.json
 !ml-service/models/operational/**/*.joblib
+ml-service/models/operational/ai-*/
 training-runs/
 
 # Local output

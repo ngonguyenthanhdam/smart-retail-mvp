@@ -139,6 +139,8 @@ model Location {
   demandForecasts DemandForecast[]
   recommendations ReplenishmentRecommendation[]
   inventoryAlerts InventoryAlert[]
+  aiDatasets AiDataset[]
+  aiChats AiChatSession[]
   @@map("locations")
 }
 
@@ -164,9 +166,126 @@ model User {
   importJobs ImportJob[]
   forecastRuns ForecastRun[]
   decisions ReplenishmentRecommendation[]
+  aiDatasets AiDataset[]
+  aiTrainingJobs AiTrainingJob[]
+  aiDeployments AiDeployment[]
+  aiChatSessions AiChatSession[]
+  aiAuditEvents AiAuditEvent[]
 
   @@index([locationId])
   @@map("users")
+}
+
+model AiDataset {
+  id String @id @default(uuid()) @db.Uuid
+  ownerId String @map("owner_id") @db.Uuid
+  locationId String? @map("location_id") @db.Uuid
+  name String @db.VarChar(150)
+  sourceKind String @map("source_kind") @db.VarChar(30)
+  external Boolean @default(false)
+  synthetic Boolean @default(false)
+  status String @default("STAGING") @db.VarChar(30)
+  revision Int @default(1)
+  summary Json?
+  snapshotHash String? @map("snapshot_hash") @db.Char(64)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  expiresAt DateTime @map("expires_at") @db.Timestamptz(6)
+  publishedAt DateTime? @map("published_at") @db.Timestamptz(6)
+  owner User @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+  location Location? @relation(fields: [locationId], references: [id], onDelete: Restrict)
+  files AiDatasetFile[]
+  jobs AiTrainingJob[]
+  @@index([ownerId, createdAt])
+  @@index([status, expiresAt])
+  @@map("ai_datasets")
+}
+
+model AiDatasetFile {
+  id String @id @default(uuid()) @db.Uuid
+  datasetId String @map("dataset_id") @db.Uuid
+  name String @db.VarChar(255)
+  sha256 String @db.Char(64)
+  bytes Int
+  rows Int @default(0)
+  kind String? @db.VarChar(30)
+  status String @db.VarChar(40)
+  mapping Json?
+  profile Json?
+  issues Json?
+  removed Boolean @default(false)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  dataset AiDataset @relation(fields: [datasetId], references: [id], onDelete: Restrict)
+  @@index([datasetId])
+  @@map("ai_dataset_files")
+}
+
+model AiTrainingJob {
+  id String @id @default(uuid()) @db.Uuid
+  datasetId String @map("dataset_id") @db.Uuid
+  ownerId String @map("owner_id") @db.Uuid
+  modelVersion String @unique @map("model_version") @db.VarChar(100)
+  status String @db.VarChar(30)
+  config Json
+  result Json?
+  error String? @db.VarChar(1000)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  completedAt DateTime? @map("completed_at") @db.Timestamptz(6)
+  dataset AiDataset @relation(fields: [datasetId], references: [id], onDelete: Restrict)
+  owner User @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+  @@index([ownerId, createdAt])
+  @@map("ai_training_jobs")
+}
+
+model AiDeployment {
+  id String @id @default(uuid()) @db.Uuid
+  actorId String @map("actor_id") @db.Uuid
+  previousVersion String @map("previous_version") @db.VarChar(100)
+  modelVersion String @map("model_version") @db.VarChar(100)
+  status String @db.VarChar(30)
+  reason String @db.VarChar(500)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  actor User @relation(fields: [actorId], references: [id], onDelete: Restrict)
+  @@index([createdAt])
+  @@map("ai_deployments")
+}
+
+model AiChatSession {
+  id String @id @default(uuid()) @db.Uuid
+  ownerId String @map("owner_id") @db.Uuid
+  locationId String? @map("location_id") @db.Uuid
+  title String @db.VarChar(150)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  owner User @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+  location Location? @relation(fields: [locationId], references: [id], onDelete: Restrict)
+  messages AiChatMessage[]
+  @@index([ownerId, updatedAt])
+  @@map("ai_chat_sessions")
+}
+
+model AiChatMessage {
+  id String @id @default(uuid()) @db.Uuid
+  sessionId String @map("session_id") @db.Uuid
+  role String @db.VarChar(20)
+  content String @db.Text
+  sources Json?
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  session AiChatSession @relation(fields: [sessionId], references: [id], onDelete: Restrict)
+  @@index([sessionId, createdAt])
+  @@map("ai_chat_messages")
+}
+
+model AiAuditEvent {
+  id String @id @default(uuid()) @db.Uuid
+  actorId String @map("actor_id") @db.Uuid
+  action String @db.VarChar(60)
+  recordId String @map("record_id") @db.VarChar(100)
+  detail Json
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  actor User @relation(fields: [actorId], references: [id], onDelete: Restrict)
+  @@index([actorId, createdAt])
+  @@map("ai_audit_events")
 }
 
 model PurchaseOrder {
