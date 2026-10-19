@@ -8,7 +8,7 @@ import { findSection, navigation } from "@/lib/navigation";
 type PageProps = { params: Promise<{ section: string }> };
 
 export function generateStaticParams() {
-  return navigation.filter(({ id }) => !["stores", "users", "products", "inventory", "purchases", "sales", "expenses", "imports", "dashboard", "forecasts", "replenishment", "alerts"].includes(id)).map(({ id }) => ({ section: id }));
+  return navigation.filter(({ id }) => !["stores", "users", "products", "inventory", "purchases", "sales", "expenses", "imports", "dashboard", "forecasts", "replenishment", "alerts", "ai-center"].includes(id)).map(({ id }) => ({ section: id }));
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {

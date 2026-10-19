@@ -13,7 +13,7 @@ Next.js frontend → NestJS backend → PostgreSQL
                          └───────→ FastAPI service
 ```
 
-The backend is a modular monolith responsible for business rules and database access. The separate Python service serves experimental demand predictions from a model trained offline.
+The backend is a modular monolith responsible for business rules and database access. The separate Python service serves experimental quantity forecasts. AI Center starts a bounded Python training process on explicit request and queries local Ollama through authorized, read-only business tools.
 
 | Component | Stack |
 | --- | --- |
@@ -31,6 +31,8 @@ backend/            Business modules, authorization, migrations and database acc
 ml-service/         Offline demand experiments and model service
 .env.example        Backend environment template
 Setup-SmartRetail.bat First-time Windows installation (double-click once)
+Setup-AI.bat         Optional one-time Ollama + Qwen3 4B installation
+setup-ai.ps1         Verified local model setup; does not change retail data
 setup.ps1           Download tools, install dependencies and initialize local configuration
 scripts/            Windows setup/runtime helpers and pinned download manifest
 Start-SmartRetail.bat Windows development launcher (double-click)
@@ -121,7 +123,7 @@ npm run prisma:seed
 npm run dev
 ```
 
-The fourteen migrations create 19 business tables: `roles`, `locations`, `users`, `categories`, `units`, `products`, `store_products`, `inventory_lots`, `purchase_orders`, `purchase_order_items`, `sales`, `sale_items`, `expenses`, `import_jobs`, `forecast_runs`, `demand_forecasts`, `replenishment_recommendations`, `sales_history_coverage`, and `inventory_alerts`, plus the `v_inventory_balance` and `v_sales_daily_facts` views and Prisma's migration history. The authentication seed creates the three roles and one ADMIN with a bcrypt password hash. Running it again preserves the existing administrator and password; changing the bootstrap identity does not create another administrator. It does not create stores or staff accounts. Application and seed connections use UTC; screens and business-date filters use Vietnam time.
+The fifteen migrations create 19 business tables: `roles`, `locations`, `users`, `categories`, `units`, `products`, `store_products`, `inventory_lots`, `purchase_orders`, `purchase_order_items`, `sales`, `sale_items`, `expenses`, `import_jobs`, `forecast_runs`, `demand_forecasts`, `replenishment_recommendations`, `sales_history_coverage`, and `inventory_alerts`, plus the `v_inventory_balance` and `v_sales_daily_facts` views and Prisma's migration history. AI Center adds seven separate metadata tables: `ai_datasets`, `ai_dataset_files`, `ai_training_jobs`, `ai_deployments`, `ai_chat_sessions`, `ai_chat_messages`, and `ai_audit_events`. The authentication seed creates the three roles and one ADMIN with a bcrypt password hash. Running it again preserves the existing administrator and password; changing the bootstrap identity does not create another administrator. It does not create stores or staff accounts. Application and seed connections use UTC; screens and business-date filters use Vietnam time.
 
 ### Products and inventory demo
 
@@ -214,7 +216,7 @@ Revenue sums completed invoice totals after discount and excludes VOIDED sales. 
 
 Daily revenue includes dates without sales as zero. Top products rank by quantity sold. ADMIN's comparison always shows all stores for the selected dates, with revenue, quantity and gross profit; company-wide expenses are not allocated to stores. Inventory cards show current physical quantity/value, active products, low-stock store/product pairs, expired lots and lots expiring today through the next seven days. These current values do not follow the historical date filter, and physical stock includes expired lots. Depleted lots do not count as expiry warnings.
 
-Reporting reads operational PostgreSQL data. The daily facts view allocates invoice discount cents proportionally across lines so allocations sum exactly to the invoice discount; stored item discounts remain zero. No predictions, scheduled imports, external training-dataset ingestion or reporting exports are included.
+Reporting reads operational PostgreSQL data. The daily facts view allocates invoice discount cents proportionally across lines so allocations sum exactly to the invoice discount; stored item discounts remain zero. Training datasets are managed separately in AI Center; they do not appear in operational reports. Reporting does not schedule imports or run forecasts.
 
 ### Authentication and authorization
 
@@ -441,6 +443,8 @@ Tests require a separate database whose name ends in `_test`. They exercise the 
 
 For the complete Python suite, install `requirements-training.txt` (including inference and preparation dependencies), then run `.venv`'s Python with `-m unittest discover -s tests -v` from `ml-service/`. Prediction tests start a temporary loopback Uvicorn server with the retained artifact; no extra HTTP testing library is required. The full demo backtest and browser checks additionally exercise the actual NestJS → FastAPI → PostgreSQL flow.
 
+AI Center API tests are included in `npm test`. They run real Python training and test activation/rollback against a copied model directory, preserving the application's ACTIVE pointer. For its real-browser check on Windows, first build the frontend, start PostgreSQL and run `Setup-AI.bat`. With ports 3000/3001/9234 free and Chrome at its standard installation path, run `node test/ai-browser.cjs` from `backend/`. This uses `TEST_DATABASE_URL`, temporary accounts and synthetic facts; checks real Qwen tool calling, multi-file import, training, toggle independence, desktop/mobile and role restrictions; and removes its own database fixtures afterward. Browser screenshots/results are written to ignored `.test-artifacts/`. Run it separately from other backend tests.
+
 ## Daily operation
 
 After the one-time Windows setup, **double-click `Start-SmartRetail.bat` in the project root**. No administrator terminal or manual execution-policy setup is required. The launcher uses its own directory and project-local Node/npm, so you can open it from Explorer or another working directory without changing PATH.
@@ -478,6 +482,55 @@ The commands above use the local `NODE_ENV=development` backend configuration ev
 Check backend `/health`, the login page and the local inbox before presenting. FastAPI `/health` reports process health only; a completed Forecast run confirms that the artifact loaded and prediction works. Keep `ml-service/models/demand_model.joblib` and `model_metadata.json` together. FreshRetailNet downloads and training dependencies are not needed for inference or the synthetic demo.
 
 Stop the frontend, backend, FastAPI and inbox with `Ctrl+C` in their terminals, then stop PostgreSQL with its service control or `pg_ctl -m fast stop`. Do not close the computer while a receipt, sale, import or forecast request is still pending. After an interrupted request, inspect the saved document/run/history before retrying. Restarting the backend marks interrupted forecast runs FAILED; restarting also expires in-memory import previews.
+
+## AI Center: dữ liệu, training và trợ lý kinh doanh
+
+Mở [AI Center](http://localhost:3000/ai-center) bằng tài khoản **ADMIN** hoặc **STORE_MANAGER**. STAFF không có quyền truy cập cả trang và API. Trang gồm dữ liệu, quy trình huấn luyện và chatbot. Công tắc **Hiển thị quy trình huấn luyện** chỉ ẩn/hiện khung training, nhớ lựa chọn theo tài khoản trên trình duyệt; không dừng job, đổi model hay xóa hội thoại.
+
+**Cập nhật một bản đã cài:** sao lưu database, dừng các cửa sổ dịch vụ rồi chạy lại `Setup-SmartRetail.bat` để áp dụng migration bổ sung và build. Setup giữ tài khoản và dữ liệu hiện có. Không reset hoặc reseed database để nâng cấp. Nếu cài thủ công, chạy `npm ci`, `npm run prisma:migrate`, `npm run build` trong backend và `npm ci`, `npm run build` trong frontend; giữ môi trường Python theo các requirements của dự án.
+
+**Chuẩn bị dữ liệu**
+
+1. Đặt tên dataset, chọn CSV hoặc snapshot database. ADMIN có thể chọn dữ liệu ngoài hệ thống; mã cửa hàng/sản phẩm ngoài chỉ tồn tại trong dataset. STORE_MANAGER chỉ xử lý dữ liệu cửa hàng được giao.
+2. Chọn nhiều CSV: tối đa **20 file, 10 MiB/file, 100 MiB và 400.000 dòng/batch**. CSV dùng UTF-8, dấu phẩy và ngày `YYYY-MM-DD`. Các nút tải mẫu trên trang tạo file ví dụ có nhãn `SYNTHETIC`; thay dữ liệu nguồn trước khi sử dụng thực tế.
+3. Xem loại file, cột, dòng, nguyên nhân và cách sửa. Tên cột khác có mapping gợi ý, cần xác nhận các cột được dùng/bỏ qua. Thay thế hoặc loại bỏ riêng file lỗi; các file hợp lệ vẫn ở staging.
+4. Bấm **Kiểm tra toàn bộ batch**. Xử lý trùng khóa, sai đơn vị, sai phạm vi và tham chiếu catalog. Chọn xác nhận rồi **Công bố dataset**. Sau công bố, snapshot là bất biến; tạo dataset mới cho lần sửa sau.
+
+| Nhóm | Cột bắt buộc | Cột tùy chọn |
+| --- | --- | --- |
+| Sales History | `date,store_id,product_id,quantity,unit_code` | `transaction_id,line_id,source` |
+| Product Catalog | `product_id,name,unit_code` | `store_id,source` |
+| Opening Inventory | `date,store_id,product_id,quantity,unit_code` | `lot_number,source` |
+
+`quantity` là **số lượng theo đơn vị cơ sở**, tối đa bốn số thập phân. Lịch sử bán có thể là tổng theo ngày hoặc dòng giao dịch có `transaction_id`; `line_id` phân biệt các dòng cùng sản phẩm trong một giao dịch. Các dòng giao dịch được tổng hợp theo ngày với kết quả và số dòng được công bố trong phần kiểm tra. Không trộn tổng ngày với giao dịch cho cùng khóa. Tồn đầu kỳ nên có `lot_number` hoặc ánh xạ rõ nhóm INVENTORY khi cấu trúc cột giống sales; không dùng lượng tồn làm lượng bán. Catalog và tồn đầu kỳ dùng đối chiếu, không thay thế Sales History.
+
+Trạng thái file: `INVALID_FORMAT`, `MISSING_REQUIRED_FIELDS`, `NEEDS_MAPPING`, `UNSUPPORTED_DATASET`, `DUPLICATE_DATA`, `ACCESS_DENIED`, hoặc `VALID`. Không tự bỏ dòng lỗi, sửa đơn vị, khử trùng hay điền ngày thiếu. Ngày bán bằng 0 phải được khai báo rõ; snapshot database chỉ suy ra số 0 trong phạm vi lịch sử đã xác nhận đầy đủ. Dữ liệu mô phỏng phải được đánh dấu; nguồn demo đã biết trong database cũng tự được nhận diện và chặn kích hoạt model.
+
+Staging hết hạn sau **7 ngày**, dọn khi khởi động, mỗi giờ và khi mở/tạo dataset. Metadata và audit được giữ; raw CSV và snapshot công bố nằm trong `.local/ai-center/`, không phục vụ trực tiếp qua web. Mỗi tài khoản tối đa 10 staging và 500 MiB file nguồn đang lưu. Bộ M5/FreshRetailNet nguyên bản lớn tiếp tục xử lý bằng script offline; upload snapshot số lượng đã chuẩn bị đúng định dạng. Không chuyển `sale_amount` chuẩn hóa của FreshRetailNet thành CAN/KG/PCS.
+
+**Huấn luyện và phiên bản model**
+
+- Chọn dataset đã công bố. Hai baseline **SeasonalNaive** và **RollingMean28** luôn chạy; **LightGBM** có thể chọn thêm với số cây, learning rate và số lá trong giới hạn. Job bất đồng bộ chạy một lần/installation, tối đa một giờ, hai luồng tính toán; không cần queue service. Backend dừng thì job bị đánh dấu gián đoạn khi mở lại, không tự chạy tiếp.
+- Chia train/validation/test theo thời gian, mọi chuỗi phải có dữ liệu liên tục. Chọn 30 ngày mỗi cửa sổ cần tối thiểu **120 ngày** và chỉ phục vụ phân tích. Điều kiện kích hoạt hiện tại cần hai cửa sổ **124 ngày** độc lập, tối thiểu **308 ngày** mỗi chuỗi và không có dữ liệu synthetic. Không dùng test để chọn thuật toán.
+- Kết quả gồm EDA, ngày bán bằng 0, outlier IQR được giữ nguyên, lag/rolling/calendar features, số dòng từng tập, metric từng đơn vị, actual/predicted, phân bố sai số và feature importance khi có LightGBM. WAPE/Bias là không xác định nếu tổng thực tế bằng 0. Dataset toàn số 0 không đủ bằng chứng chọn model.
+- Model mới là `CANDIDATE`, không tự thay `m5-quantity-v2`. Chỉ ADMIN được xác nhận **Kích hoạt** hoặc rollback về phiên bản đã được đánh giá; lịch sử ghi phiên bản cũ/mới, người thực hiện và lý do. Phiên bản từng triển khai được hiển thị `ARCHIVED` khi không còn ACTIVE. Dự báo đã lưu giữ nguyên model gốc.
+- Tối đa 100 lần training/tài khoản. Giữ metadata và artifact bất biến để truy vết; khi cần giải phóng dung lượng, quản trị viên phải sao lưu và xác định phiên bản không còn được sử dụng. Không xóa thư mục model ACTIVE.
+
+**Thử training ngay bằng CSV mẫu:** đăng nhập ADMIN, tải ba mẫu trên trang (mẫu Sales có 140 ngày được tạo cố định, bao gồm ngày bằng 0). Tạo dataset CSV, chọn “Dữ liệu ngoài hệ thống” và “Dữ liệu demo / mô phỏng”, upload cả ba file, kiểm tra và công bố. Chọn đánh giá 30 ngày rồi xác nhận bắt đầu. Kết quả chỉ kiểm tra pipeline; model demo không được kích hoạt. STORE_MANAGER cần thay mã bằng cửa hàng/sản phẩm được giao và đúng đơn vị cơ sở.
+
+**Cài và sử dụng chatbot**
+
+Trên Windows 10 **22H2** / Windows 11 64-bit, sau bộ cài chính, chạy **`Setup-AI.bat` một lần**. Bộ cài tải Ollama 0.40.6 chính thức đã khóa SHA-256 và `qwen3:4b-instruct-2507-q4_K_M`; cần khoảng 10 GB dung lượng trống lúc cài, Internet để tải lần đầu và nên dùng máy 16 GB RAM. Thời gian trả lời phụ thuộc CPU/GPU. Không yêu cầu cloud API key. Các lần sau launcher chính mở Ollama đã cài; nếu Ollama thiếu hoặc lỗi, nghiệp vụ và training vẫn hoạt động.
+
+Ollama mặc định ở `http://127.0.0.1:11434`. Binaries tại `.local/ollama/`, model tại `.local/ollama-models/`, log tại `.local/ollama-logs/`. Nếu máy đã chạy Ollama, setup dùng dịch vụ đó và kho model của nó. Cấu hình backend qua `OLLAMA_BASE_URL` (chỉ địa chỉ loopback) và `OLLAMA_MODEL` (model cục bộ hỗ trợ tool calling). Model thay thế phải được tải trước; mặc định [Qwen3 4B Instruct 2507 Q4_K_M](https://ollama.com/library/qwen3:4b-instruct-2507-q4_K_M), dùng ngữ cảnh 4.096 token. Khóa rõ biến thể Instruct để tránh nhãn 4B chung chuyển sang biến thể suy luận dài. Kiểm tra bằng `powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\setup-ai.ps1 -CheckOnly`. Trên hệ điều hành khác có thể cài [Ollama](https://docs.ollama.com/windows) phù hợp, chạy `ollama serve` và `ollama pull qwen3:4b-instruct-2507-q4_K_M` thủ công.
+
+Chọn phạm vi rồi bắt đầu hội thoại: doanh thu theo ngày, sản phẩm bán chạy, so sánh doanh thu, chi phí, cảnh báo tồn kho, đề xuất nhập, dự báo đã lưu 7/30 ngày và model hiện hành. Hội thoại chỉ thuộc tài khoản tạo ra; tạo hội thoại mới khi muốn đổi cửa hàng. Enter gửi, Shift+Enter xuống dòng. Bảng nguồn kèm phạm vi, ngày, đơn vị và thời điểm truy vấn là cơ sở đối chiếu. Cảnh báo/đề xuất/dự báo là snapshot đã lưu, không được tự tính lại trong chat. Nếu chưa có dự báo đủ ngày, mở trang Dự báo bán hàng để tạo riêng.
+
+Backend cho phép tối đa sáu lời gọi công cụ đọc, kiểm tra lại quyền hiện tại, không cung cấp SQL hoặc công cụ ghi dữ liệu cho LLM. Nội dung HTML không được thực thi. Tin nhắn tối đa 2.000 ký tự; 100 tin nhắn/hội thoại, 100 hội thoại/tài khoản, tối đa hai lượt trả lời đồng thời toàn hệ thống. Các request thay đổi AI Center bị giới hạn 30/phút/tài khoản. Phản hồi không có nguồn hoặc chứa số không khớp nguồn dùng thông báo đối chiếu thay vì khẳng định số liệu. Kiểm tra nguồn trước khi quyết định; LLM vẫn có thể giải thích sai ngữ cảnh.
+
+**Giới hạn bằng chứng:** kết quả FreshRetailNet giữ nguyên **WAPE 34.17%, MAE 0.407719, RMSE 0.690328** trên thang `sale_amount` chuẩn hóa. Synthetic/demo backtest — not evidence of real-world forecasting accuracy. Dữ liệu ngoài hệ thống có đơn vị phù hợp cũng chưa chứng minh độ chính xác tại cửa hàng RetailSense.
+
+**Sao lưu bổ sung:** cùng bản dump PostgreSQL, lưu `.local/ai-center/`, `ml-service/models/active-model.json` và các phiên bản tương ứng trong `ml-service/models/operational/`. Dừng training/deployment khi sao lưu để có bộ nhất quán. Không commit file upload, nội dung chat, binary ứng viên hoặc model Ollama lên Git. Không tự xóa metadata database để xử lý lỗi file; khôi phục snapshot/artifact khớp checksum từ backup.
 
 ## Demonstration walkthrough
 

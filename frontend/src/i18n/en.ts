@@ -207,6 +207,7 @@ export const en = {
     deactivateDescription: (name: string) => `Deactivate ${name}? This account will no longer be able to sign in or access the application.`,
   },
   sections: {
+    'ai-center': { label: 'AI Center', description: 'Data, model training and business assistant.', emptyTitle: 'AI Center', emptyDescription: 'Prepare data and explore your business.', planned: [] },
     users: {
       label: "Users", description: "Manage accounts and store access.",
       emptyTitle: "User accounts", emptyDescription: "Manage account access and assignments.", planned: [],

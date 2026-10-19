@@ -156,6 +156,8 @@ try {
         exit 0
     }
     Start-ProjectPostgres
+    . (Join-Path $ProjectRoot 'scripts/ollama-runtime.ps1')
+    try { Start-ProjectOllama $ProjectRoot | Out-Null } catch { Write-Host "[OPTIONAL] AI chat: $($_.Exception.Message)" }
     foreach ($entry in $Services) { Start-ServiceConsole $entry }
 
     Write-Host '[WAIT] Checking service health for up to about 120 seconds...'

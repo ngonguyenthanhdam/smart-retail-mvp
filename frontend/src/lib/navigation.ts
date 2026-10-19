@@ -1,5 +1,6 @@
 import {
   BarChart3,
+  BrainCircuit,
   Bell,
   Boxes,
   CircleDollarSign,
@@ -26,6 +27,7 @@ export const navigation = [
   { id: "expenses", group: "operations", icon: CircleDollarSign },
   { id: "imports", group: "operations", icon: Upload },
   { id: "forecasts", group: "planning", icon: BarChart3 },
+  { id: "ai-center", group: "planning", icon: BrainCircuit },
   { id: "replenishment", group: "planning", icon: RefreshCw },
   { id: "alerts", group: "planning", icon: Bell },
 ] as const;
