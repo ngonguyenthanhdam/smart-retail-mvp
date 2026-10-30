@@ -226,7 +226,11 @@ export class DatasetsService implements OnModuleInit, OnModuleDestroy {
       const bad = (code: string, column: string, reason: string, fix: string) => issue(code, row.file, row.row, column, reason, fix);
       if (!dataset.external) {
         const location = v.store_id ? locationMap.get(v.store_id) : null, product = productMap.get(v.product_id!);
-        if (v.store_id && !location) { bad('ACCESS_DENIED', 'store_id', 'Mã cửa hàng không thuộc phạm vi được phép.', 'Chọn dữ liệu của cửa hàng được giao hoặc nhờ ADMIN kiểm tra.'); continue; }
+        if (v.store_id && !location) {
+          bad(user.role === 'ADMIN' ? 'MISSING_REQUIRED_FIELDS' : 'ACCESS_DENIED', 'store_id',
+            user.role === 'ADMIN' ? 'Mã cửa hàng chưa có trong danh mục nội bộ.' : 'Mã cửa hàng không thuộc phạm vi được phép.',
+            user.role === 'ADMIN' ? 'Nếu là CSV mẫu/nguồn ngoài, đổi sang dữ liệu ngoài hệ thống và kiểm tra lại; nếu là dữ liệu nội bộ, sửa mã cho khớp danh mục.' : 'Chọn dữ liệu của cửa hàng được giao hoặc nhờ ADMIN kiểm tra.'); continue;
+        }
         if (!product || product.baseUnit?.code !== v.unit_code) { bad('MISSING_REQUIRED_FIELDS', 'product_id', 'Sản phẩm hoặc đơn vị cơ sở không khớp cấu hình được phép.', 'Dùng mã/UUID sản phẩm và đúng đơn vị cơ sở.'); continue; }
         if (location) v.store_id = location.id; v.product_id = product.id;
         synthetic ||= product.externalSource === DEMO_SOURCE || location?.externalSource === DEMO_SOURCE;
@@ -277,6 +281,26 @@ export class DatasetsService implements OnModuleInit, OnModuleDestroy {
       const dataset = await this.get(id, user, true); const { summary } = await this.build(dataset, user);
       if (!(await this.db.aiDataset.updateMany({ where: { id, revision: dataset.revision, status: 'STAGING' }, data: { summary: jsonValue(summary) } })).count) aiError('CONFLICT', 'Batch đã thay đổi. Kiểm tra lại.', 409);
       await audit(this.db, user.id, 'DATASET_VALIDATED', id, { revision: dataset.revision, valid: summary.valid, issueCount: summary.issueCount, fingerprint: summary.fingerprint });
+      return this.detail(id, user);
+    });
+  }
+  async useExternalSource(id: string, input: unknown, user: AuthenticatedUser) {
+    if (user.role !== 'ADMIN') aiError('ACCESS_DENIED', 'Chỉ ADMIN được dùng mã CSV ngoài hệ thống.', 403);
+    return this.exclusive(uuidValue(id), async () => {
+      const dataset = await this.get(id, user, true), body = bodyObject(input, ['revision', 'confirmed']);
+      if (body.confirmed !== true || body.revision !== dataset.revision) aiError('CONFLICT', 'Xem lại dataset và xác nhận đổi nguồn dữ liệu.', 409);
+      if (dataset.sourceKind !== 'CSV' || dataset.external) aiError('CONFLICT', 'Chỉ đổi nguồn cho CSV nội bộ đang chuẩn bị.', 409);
+      const { summary } = await this.build({ ...dataset, external: true, locationId: null }, user);
+      await this.db.$transaction(async tx => {
+        const actor = await writeActor(tx, user);
+        if (actor.role !== 'ADMIN') aiError('ACCESS_DENIED', 'Chỉ ADMIN được đổi sang dữ liệu ngoài hệ thống.', 403);
+        const changed = await tx.aiDataset.updateMany({ where: { id, revision: dataset.revision, status: 'STAGING', external: false, expiresAt: { gt: new Date() } },
+          data: { external: true, locationId: null, synthetic: summary.synthetic, revision: { increment: 1 }, summary: jsonValue(summary) } });
+        if (!changed.count) aiError('CONFLICT', 'Dataset đã thay đổi. Tải lại trước khi đổi nguồn.', 409);
+        await audit(tx, user.id, 'DATASET_SOURCE_CHANGED', id, { from: { external: false, locationId: dataset.locationId, synthetic: dataset.synthetic },
+          to: { external: true, locationId: null, synthetic: summary.synthetic }, previousRevision: dataset.revision, revision: dataset.revision + 1,
+          valid: summary.valid, issueCount: summary.issueCount, fingerprint: summary.fingerprint, rawFilesPreserved: true });
+      }, { isolationLevel: 'Serializable' });
       return this.detail(id, user);
     });
   }

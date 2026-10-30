@@ -399,6 +399,7 @@ model ImportJob {
   createdBy String? @map("created_by") @db.Uuid
   createdAt DateTime @map("created_at") @db.Timestamptz(6)
   completedAt DateTime? @map("completed_at") @db.Timestamptz(6)
+  dismissedAt DateTime? @map("dismissed_at") @db.Timestamptz(6)
   creator User? @relation(fields: [createdBy], references: [id], onDelete: Restrict)
   sales Sale[]
   purchaseOrders PurchaseOrder[]

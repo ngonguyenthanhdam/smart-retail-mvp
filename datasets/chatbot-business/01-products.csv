@@ -1,0 +1,13 @@
+﻿sku,barcode,name,category_code,base_unit_code,purchase_unit_code,purchase_to_base_ratio,default_cost,track_expiry,shelf_life_days,is_active
+SYN_P01,,Mô phỏng - Nước cam lon,SYN_DEMO,CAN,CAN,1,11000.00,false,,true
+SYN_P02,,Mô phỏng - Trà đào lon,SYN_DEMO,CAN,CAN,1,9000.00,false,,true
+SYN_P03,,Mô phỏng - Nước dừa lon,SYN_DEMO,CAN,CAN,1,14000.00,false,,true
+SYN_P04,,Mô phỏng - Cà phê lon,SYN_DEMO,CAN,CAN,1,16000.00,false,,true
+SYN_P05,,Mô phỏng - Gạo thơm,SYN_DEMO,KG,KG,1,20000.00,false,,true
+SYN_P06,,Mô phỏng - Táo đỏ,SYN_DEMO,KG,KG,1,42000.00,false,,true
+SYN_P07,,Mô phỏng - Cà rốt,SYN_DEMO,KG,KG,1,13000.00,false,,true
+SYN_P08,,Mô phỏng - Khoai tây,SYN_DEMO,KG,KG,1,19000.00,false,,true
+SYN_P09,,Mô phỏng - Bánh quy gói,SYN_DEMO,PCS,PCS,1,16000.00,false,,true
+SYN_P10,,Mô phỏng - Mì gói,SYN_DEMO,PCS,PCS,1,5000.00,false,,true
+SYN_P11,,Mô phỏng - Khăn giấy gói,SYN_DEMO,PCS,PCS,1,7500.00,false,,true
+SYN_P12,,Mô phỏng - Nước rửa chén chai,SYN_DEMO,PCS,PCS,1,23000.00,false,,true

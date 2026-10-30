@@ -1,0 +1,7 @@
+﻿expense_type,amount,expense_date,location_code,description
+RENT,150000.00,2026-10-05,SYN_STORE_01,SYNTHETIC - Chi phí thuê mặt bằng phân bổ cho kỳ demo
+MARKETING,50000.00,2026-10-12,SYN_STORE_01,SYNTHETIC - Chi phí quảng cáo mô phỏng
+RENT,300000.00,2026-10-05,SYN_STORE_02,SYNTHETIC - Chi phí thuê mặt bằng phân bổ cho kỳ demo
+MARKETING,100000.00,2026-10-12,SYN_STORE_02,SYNTHETIC - Chi phí quảng cáo mô phỏng
+RENT,450000.00,2026-10-05,SYN_STORE_03,SYNTHETIC - Chi phí thuê mặt bằng phân bổ cho kỳ demo
+MARKETING,150000.00,2026-10-12,SYN_STORE_03,SYNTHETIC - Chi phí quảng cáo mô phỏng

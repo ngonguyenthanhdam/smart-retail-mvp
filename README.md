@@ -123,7 +123,7 @@ npm run prisma:seed
 npm run dev
 ```
 
-The fifteen migrations create 19 business tables: `roles`, `locations`, `users`, `categories`, `units`, `products`, `store_products`, `inventory_lots`, `purchase_orders`, `purchase_order_items`, `sales`, `sale_items`, `expenses`, `import_jobs`, `forecast_runs`, `demand_forecasts`, `replenishment_recommendations`, `sales_history_coverage`, and `inventory_alerts`, plus the `v_inventory_balance` and `v_sales_daily_facts` views and Prisma's migration history. AI Center adds seven separate metadata tables: `ai_datasets`, `ai_dataset_files`, `ai_training_jobs`, `ai_deployments`, `ai_chat_sessions`, `ai_chat_messages`, and `ai_audit_events`. The authentication seed creates the three roles and one ADMIN with a bcrypt password hash. Running it again preserves the existing administrator and password; changing the bootstrap identity does not create another administrator. It does not create stores or staff accounts. Application and seed connections use UTC; screens and business-date filters use Vietnam time.
+The sixteen migrations maintain 19 business tables: `roles`, `locations`, `users`, `categories`, `units`, `products`, `store_products`, `inventory_lots`, `purchase_orders`, `purchase_order_items`, `sales`, `sale_items`, `expenses`, `import_jobs`, `forecast_runs`, `demand_forecasts`, `replenishment_recommendations`, `sales_history_coverage`, and `inventory_alerts`, plus the `v_inventory_balance` and `v_sales_daily_facts` views and Prisma's migration history. AI Center adds seven separate metadata tables: `ai_datasets`, `ai_dataset_files`, `ai_training_jobs`, `ai_deployments`, `ai_chat_sessions`, `ai_chat_messages`, and `ai_audit_events`. The authentication seed creates the three roles and one ADMIN with a bcrypt password hash. Running it again preserves the existing administrator and password; changing the bootstrap identity does not create another administrator. It does not create stores or staff accounts. Application and seed connections use UTC; screens and business-date filters use Vietnam time.
 
 ### Products and inventory demo
 
@@ -181,7 +181,7 @@ The frontend defaults to `http://localhost:3001`. For another address, copy `fro
 
 ### Import existing data
 
-Only ADMIN can use **Import Data**. Create the referenced stores, categories and units first. Choose an import type, download its CSV header template, fill it with business codes, and upload CSV or XLSX. Review recognized columns, row counts, sample data and errors before selecting **Confirm valid import**. Closing the review leaves it pending; **Cancel import** ends it without business writes. History retains the importer, filename, type, status, row counts and errors.
+Only ADMIN can use **Import Data**. Create the referenced stores, categories and units first. Choose up to 20 CSV/XLSX files; the default AUTO mode detects each file's type from supported headers. Each file has an independent preview and result. Review recognized columns, row counts, sample data and errors before selecting **Confirm valid import** for that file. Import products before sales or opening inventory; opening a pending result rechecks its references, and **Recheck** updates validation without reuploading. Closing the review leaves it pending; **Cancel import** ends it without business writes. **Remove from list** hides only cancelled/failed imports with no committed rows; metadata is retained for review. Completed and partial imports cannot be hidden by this action.
 
 Files are limited to 2 MB and 1,000 data rows, with at most 100 lines per sales/purchase document. CSV must be UTF-8 with comma separators; XLSX must contain one worksheet and literal cells, without formulas or rich-text cells. Use text cells for identifiers with leading zeros. Dates use `YYYY-MM-DD`; transaction timestamps can also use ISO format with an explicit timezone. An Excel date cell is interpreted as a calendar date. Quantities allow four decimal places and money two. Use `true`/`false` for booleans.
 
@@ -193,7 +193,7 @@ Files are limited to 2 MB and 1,000 data rows, with at most 100 lines per sales/
 | Historical purchases | `purchase_reference`, `location_code`, `ordered_at`, `status`, `product_sku`, `purchase_quantity`, `unit_cost` | Only RECEIVED/CANCELLED. RECEIVED also requires source `base_quantity` and `received_at`. Cost is per purchase unit. CANCELLED may omit base quantity, using current conversion for the cancelled line only. Optional lot and expiry fields follow the template. |
 | Expenses | `expense_type`, `amount`, `expense_date` | The seven existing expense types only. Optional `location_code` is blank for company-wide expenses; optional `description`. |
 
-One invalid sales/purchase line rejects its entire document; other valid documents in that file can still import. Repeated document headers must agree, and references must not already exist. Other import types validate each row. A critical failure rolls back all business writes from that confirmation. Underlying data is checked again before confirmation; if it changed, upload again for a new preview.
+One invalid sales/purchase line rejects its entire document; other valid documents in that file can still import. Repeated document headers must agree, and references must not already exist. Other import types validate each row. A critical failure rolls back all business writes from that confirmation. Underlying data is checked again before confirmation; if it changed, recheck and review the new preview. Expired previews or previews lost after a backend restart require reuploading the file.
 
 Historical sales and purchases never change current inventory. They link to their import job and show **Historical import** in transaction details. Imported purchases cannot be edited, cancelled or received through the live workflow. Load opening stock separately; existing stock is never merged or overwritten. Opening/history expiry dates can be in the past but cannot precede receipt. Historical records can reference existing inactive products/locations; opening stock requires active stores/products. Product import does not configure store selling prices: use **Products → Store settings** before live sales.
 
@@ -202,11 +202,13 @@ Exact file bytes are hashed with SHA-256 for each import type. COMPLETED/PARTIAL
 | Endpoint | Behavior |
 | --- | --- |
 | `GET /imports/templates` | Column definitions, required fields and instructions |
-| `POST /imports/preview` | Multipart `file` and `importType`: PRODUCT, SALE, INVENTORY, PURCHASE or EXPENSE |
+| `POST /imports/preview` | Multipart `file` and `importType`: AUTO, PRODUCT, SALE, INVENTORY, PURCHASE or EXPENSE; the UI sends selected files separately |
 | `GET /imports` | Paginated history; optional `importType` |
 | `GET /imports/:id` | Results/errors and an available pending preview |
 | `POST /imports/:id/confirm` | `{ "previewToken": "..." }` from the reviewed preview; atomically imports its valid data |
 | `POST /imports/:id/cancel` | Empty JSON object; cancels a pending import |
+| `POST /imports/:id/revalidate` | Recheck a stored pending preview against current reference data; returns a new confirmation token |
+| `DELETE /imports/:id` | ADMIN: hide a cancelled/failed import with no committed rows; retain metadata |
 
 ### Business dashboard
 
@@ -443,7 +445,7 @@ Tests require a separate database whose name ends in `_test`. They exercise the 
 
 For the complete Python suite, install `requirements-training.txt` (including inference and preparation dependencies), then run `.venv`'s Python with `-m unittest discover -s tests -v` from `ml-service/`. Prediction tests start a temporary loopback Uvicorn server with the retained artifact; no extra HTTP testing library is required. The full demo backtest and browser checks additionally exercise the actual NestJS → FastAPI → PostgreSQL flow.
 
-AI Center API tests are included in `npm test`. They run real Python training and test activation/rollback against a copied model directory, preserving the application's ACTIVE pointer. For its real-browser check on Windows, first build the frontend, start PostgreSQL and run `Setup-AI.bat`. With ports 3000/3001/9234 free and Chrome at its standard installation path, run `node test/ai-browser.cjs` from `backend/`. This uses `TEST_DATABASE_URL`, temporary accounts and synthetic facts; checks real Qwen tool calling, multi-file import, training, toggle independence, desktop/mobile and role restrictions; and removes its own database fixtures afterward. Browser screenshots/results are written to ignored `.test-artifacts/`. Run it separately from other backend tests.
+Run `node test/ai-redesign-browser.cjs` from backend for the unified workspace acceptance checks at 1440/1280/390px, real CSV upload/replacement, training, scoped Ollama chat, history and presentation-only toggle. Run suites sequentially against the test database. Run `node test/center-imports-browser.cjs` from backend to verify both import pages using the exact seven CSV files in `datasets/`, real training and real Ollama chat. API calls are redirected to an isolated test fixture; application business data is preserved. Use `--layout-only` for the bounded import-error dialog check, or `--source-only` to reproduce/correct an internal-source sample dataset without reupload. AI Center API tests are included in `npm test`. They run real Python training and test activation/rollback against a copied model directory, preserving the application's ACTIVE pointer. For its real-browser check on Windows, first build the frontend, start PostgreSQL and run `Setup-AI.bat`. With ports 3000/3001/9234 free and Chrome at its standard installation path, run `node test/ai-browser.cjs` from `backend/`. This uses `TEST_DATABASE_URL`, temporary accounts and synthetic facts; checks real Qwen tool calling, multi-file import, training, toggle independence, desktop/mobile and role restrictions; and removes its own database fixtures afterward. Browser screenshots/results are written to ignored `.test-artifacts/`. Run it separately from other backend tests.
 
 ## Daily operation
 
@@ -485,16 +487,20 @@ Stop the frontend, backend, FastAPI and inbox with `Ctrl+C` in their terminals, 
 
 ## AI Center: dữ liệu, training và trợ lý kinh doanh
 
-Mở [AI Center](http://localhost:3000/ai-center) bằng tài khoản **ADMIN** hoặc **STORE_MANAGER**. STAFF không có quyền truy cập cả trang và API. Trang gồm dữ liệu, quy trình huấn luyện và chatbot. Công tắc **Hiển thị quy trình huấn luyện** chỉ ẩn/hiện khung training, nhớ lựa chọn theo tài khoản trên trình duyệt; không dừng job, đổi model hay xóa hội thoại.
+Mở [AI Center](http://localhost:3000/ai-center) bằng tài khoản **ADMIN** hoặc **STORE_MANAGER**. STAFF không có quyền truy cập cả trang và API. Trang hiển thị khu nhập dữ liệu gọn và trợ lý kinh doanh cùng lúc. Quy trình huấn luyện mặc định thu gọn cho trình duyệt chưa có lựa chọn; các liên kết đầu trang đưa đến từng khu vực. Công tắc **Hiển thị quy trình huấn luyện** chỉ ẩn/hiện khung training, nhớ lựa chọn theo tài khoản trên trình duyệt; không dừng job, đổi model hay xóa hội thoại.
 
 **Cập nhật một bản đã cài:** sao lưu database, dừng các cửa sổ dịch vụ rồi chạy lại `Setup-SmartRetail.bat` để áp dụng migration bổ sung và build. Setup giữ tài khoản và dữ liệu hiện có. Không reset hoặc reseed database để nâng cấp. Nếu cài thủ công, chạy `npm ci`, `npm run prisma:migrate`, `npm run build` trong backend và `npm ci`, `npm run build` trong frontend; giữ môi trường Python theo các requirements của dự án.
 
 **Chuẩn bị dữ liệu**
 
-1. Đặt tên dataset, chọn CSV hoặc snapshot database. ADMIN có thể chọn dữ liệu ngoài hệ thống; mã cửa hàng/sản phẩm ngoài chỉ tồn tại trong dataset. STORE_MANAGER chỉ xử lý dữ liệu cửa hàng được giao.
+Bộ CSV mô phỏng có sẵn trong [`datasets/`](datasets/README.md): ba file để thử import nhiều file/training trong AI Center và bốn file nghiệp vụ tùy chọn để thử chatbot. Hướng dẫn kèm thứ tự import, cấu hình cửa hàng và số liệu đối chiếu; upload dataset vào AI Center không tự đưa dữ liệu vào chatbot.
+
+Khi tạo dataset CSV bằng ADMIN, chọn rõ **Dữ liệu ngoài hệ thống / CSV mẫu** hoặc **Dữ liệu trong hệ thống**. Với bộ mẫu SYN_*, dùng lựa chọn ngoài hệ thống. Nếu đã chọn nhầm nội bộ, trang sẽ giải thích lỗi mã không khớp và có nút **Chuyển sang dữ liệu ngoài hệ thống và kiểm tra lại**: giữ nguyên file, ghi nhật ký, giữ nhãn mô phỏng và kiểm tra lại toàn bộ. Chỉ ADMIN được đổi nguồn cho dataset CSV còn staging; dataset đã công bố không đổi được. Thao tác không công bố, không huấn luyện và không ghi dữ liệu nghiệp vụ.
+
+1. Bấm **Nhập CSV** (hoặc **Dataset mới**), đặt tên dataset, chọn CSV hoặc snapshot database. ADMIN có thể chọn dữ liệu ngoài hệ thống; mã cửa hàng/sản phẩm ngoài chỉ tồn tại trong dataset. STORE_MANAGER chỉ xử lý dữ liệu cửa hàng được giao.
 2. Chọn nhiều CSV: tối đa **20 file, 10 MiB/file, 100 MiB và 400.000 dòng/batch**. CSV dùng UTF-8, dấu phẩy và ngày `YYYY-MM-DD`. Các nút tải mẫu trên trang tạo file ví dụ có nhãn `SYNTHETIC`; thay dữ liệu nguồn trước khi sử dụng thực tế.
 3. Xem loại file, cột, dòng, nguyên nhân và cách sửa. Tên cột khác có mapping gợi ý, cần xác nhận các cột được dùng/bỏ qua. Thay thế hoặc loại bỏ riêng file lỗi; các file hợp lệ vẫn ở staging.
-4. Bấm **Kiểm tra toàn bộ batch**. Xử lý trùng khóa, sai đơn vị, sai phạm vi và tham chiếu catalog. Chọn xác nhận rồi **Công bố dataset**. Sau công bố, snapshot là bất biến; tạo dataset mới cho lần sửa sau.
+4. Sau upload, trang báo **Đã tải lên … file** và tự kiểm tra toàn bộ batch. Xem tóm tắt, mở chi tiết khi cần; xử lý lỗi rồi bấm **Kiểm tra toàn bộ batch** để kiểm tra lại. Bấm **Xác nhận sử dụng dữ liệu** để chốt snapshot và mở khu vực huấn luyện. Nút chỉ mở khi dữ liệu hợp lệ; không tự chạy training hoặc đổi model. Snapshot đã chốt là bất biến; tạo dataset mới cho lần sửa sau.
 
 | Nhóm | Cột bắt buộc | Cột tùy chọn |
 | --- | --- | --- |
@@ -510,15 +516,25 @@ Staging hết hạn sau **7 ngày**, dọn khi khởi động, mỗi giờ và k
 
 **Huấn luyện và phiên bản model**
 
+Bật **Hiển thị quy trình huấn luyện** để xem thanh bảy bước và các lần chạy. Thanh bước dựa trên sự kiện thực tế; hoàn tất huấn luyện không đồng nghĩa model đã triển khai. Tắt công tắc vẫn giữ nguyên nội dung đang soạn, tác vụ đang chạy và chatbot. Nút **Bắt đầu huấn luyện** nằm ngay dưới cấu hình; tham số số cây, tốc độ học và số lá được giải thích trong **Tùy chọn nâng cao**. Không cần tích ô xác nhận lặp lại. Kích hoạt model vẫn có hộp xác nhận ghi rõ phiên bản và ảnh hưởng trước khi thay đổi model vận hành.
+
 - Chọn dataset đã công bố. Hai baseline **SeasonalNaive** và **RollingMean28** luôn chạy; **LightGBM** có thể chọn thêm với số cây, learning rate và số lá trong giới hạn. Job bất đồng bộ chạy một lần/installation, tối đa một giờ, hai luồng tính toán; không cần queue service. Backend dừng thì job bị đánh dấu gián đoạn khi mở lại, không tự chạy tiếp.
 - Chia train/validation/test theo thời gian, mọi chuỗi phải có dữ liệu liên tục. Chọn 30 ngày mỗi cửa sổ cần tối thiểu **120 ngày** và chỉ phục vụ phân tích. Điều kiện kích hoạt hiện tại cần hai cửa sổ **124 ngày** độc lập, tối thiểu **308 ngày** mỗi chuỗi và không có dữ liệu synthetic. Không dùng test để chọn thuật toán.
 - Kết quả gồm EDA, ngày bán bằng 0, outlier IQR được giữ nguyên, lag/rolling/calendar features, số dòng từng tập, metric từng đơn vị, actual/predicted, phân bố sai số và feature importance khi có LightGBM. WAPE/Bias là không xác định nếu tổng thực tế bằng 0. Dataset toàn số 0 không đủ bằng chứng chọn model.
 - Model mới là `CANDIDATE`, không tự thay `m5-quantity-v2`. Chỉ ADMIN được xác nhận **Kích hoạt** hoặc rollback về phiên bản đã được đánh giá; lịch sử ghi phiên bản cũ/mới, người thực hiện và lý do. Phiên bản từng triển khai được hiển thị `ARCHIVED` khi không còn ACTIVE. Dự báo đã lưu giữ nguyên model gốc.
 - Tối đa 100 lần training/tài khoản. Giữ metadata và artifact bất biến để truy vết; khi cần giải phóng dung lượng, quản trị viên phải sao lưu và xác định phiên bản không còn được sử dụng. Không xóa thư mục model ACTIVE.
 
-**Thử training ngay bằng CSV mẫu:** đăng nhập ADMIN, tải ba mẫu trên trang (mẫu Sales có 140 ngày được tạo cố định, bao gồm ngày bằng 0). Tạo dataset CSV, chọn “Dữ liệu ngoài hệ thống” và “Dữ liệu demo / mô phỏng”, upload cả ba file, kiểm tra và công bố. Chọn đánh giá 30 ngày rồi xác nhận bắt đầu. Kết quả chỉ kiểm tra pipeline; model demo không được kích hoạt. STORE_MANAGER cần thay mã bằng cửa hàng/sản phẩm được giao và đúng đơn vị cơ sở.
+**Thử training ngay bằng CSV mẫu:** đăng nhập ADMIN, tải ba mẫu trên trang (mẫu Sales có 140 ngày được tạo cố định, bao gồm ngày bằng 0). Tạo dataset CSV, chọn “Dữ liệu ngoài hệ thống” và “Dữ liệu demo / mô phỏng”, upload cả ba file, xem thông báo kiểm tra rồi bấm Xác nhận sử dụng dữ liệu. Trang chuyển sang Huấn luyện & kết quả; giữ chế độ 30 ngày rồi bấm Bắt đầu huấn luyện. Kết quả chỉ kiểm tra pipeline; model demo không được kích hoạt. STORE_MANAGER cần thay mã bằng cửa hàng/sản phẩm được giao và đúng đơn vị cơ sở.
+
+Kết quả tổng quan gồm WAPE/MAE/RMSE, biểu đồ thực tế–dự báo và so sánh WAPE tăng dần (thấp hơn tốt hơn). Bộ lọc dùng chung cho đơn vị, cửa sổ test, model và chuỗi mẫu. KPI tính trên toàn bộ chuỗi của đơn vị; chuỗi đang chọn chỉ lọc biểu đồ điểm mẫu. Mở **Phân tích chuyên sâu** và chọn một biểu đồ: lịch bán hàng toàn dataset theo đơn vị, mật độ/phân phối sai số mẫu, tương quan hoặc mức thiếu đặc trưng trên tập train. Mỗi biểu đồ ghi rõ phạm vi áp dụng bộ lọc; có số liệu đối chiếu và tooltip. Đóng góp đặc trưng chỉ xuất hiện khi lần chạy thực sự có LightGBM. Giá trị lag/rolling thiếu ở đầu chuỗi là thiếu lịch sử, không được thay bằng 0. Tương quan hằng số hiển thị không xác định. Các lần chạy cũ chưa lưu diagnostics vẫn mở được; tạo lần huấn luyện mới nếu cần heatmap mới. Chưa có thuật toán phân cụm sản phẩm; histogram mật độ không phải kết quả phân cụm.
 
 **Cài và sử dụng chatbot**
+
+Gõ câu hỏi trong ô nhập ở cuối phần **Trợ lý kinh doanh**, nhấn Enter để gửi hoặc Shift+Enter để xuống dòng. Bốn câu gợi ý chỉ điền nội dung để chỉnh sửa. Menu **Công cụ** chứa câu hỏi gợi ý, lịch sử, nguồn dữ liệu và phạm vi cửa hàng cho ADMIN. Chọn phạm vi trước khi gửi tin đầu; hội thoại đã tạo giữ nguyên phạm vi. Nút lịch sử và hội thoại mới ở góc phần chat. Nguồn số liệu nằm dưới từng câu trả lời, mở khi cần; thiếu bản ghi được giải thích riêng với doanh thu bằng 0. Công tắc huấn luyện không làm mất bản nháp hoặc lịch sử chat.
+
+Trong **Trợ lý kinh doanh**, nhập câu hỏi tự do; các nút gợi ý chỉ điền nội dung để sửa trước khi gửi. Câu hỏi không liên quan hoặc không có nguồn được trả lời rõ là chưa biết/ngoài phạm vi, không tự suy đoán. Dataset huấn luyện không phải nguồn dữ liệu nghiệp vụ của chatbot. Thẻ nguồn luôn ghi phạm vi/khoảng ngày; bảng chi tiết được thu gọn. Không có hóa đơn/khoản chi trong kỳ được báo là **chưa có bản ghi**, kèm ngày gần nhất trong đúng phạm vi nếu có. Điều này khác với có giao dịch và tổng tiền bằng 0. Với bộ mẫu, hỏi ngày 05/10–18/10/2026; hỏi “hôm nay” sau khoảng đó có thể không có bản ghi.
+
+**Import nhiều file nghiệp vụ:** `/imports` nhận tối đa 20 file được chọn cùng lúc, mỗi file 2 MB/1.000 dòng, tự nhận diện loại từ các cột chuẩn. Từng file được kiểm tra và giữ kết quả riêng; mở **Xem kết quả / nhập** để xác nhận từng file. Nhập sản phẩm trước bán hàng/tồn kho; nếu thiếu danh mục, đơn vị hoặc cửa hàng, bổ sung theo đường dẫn ở thông báo rồi **Kiểm tra lại**. Nút nhập bị khóa có lý do hiển thị. Sau khi hủy hoặc thất bại mà chưa ghi dữ liệu, **Xóa khỏi danh sách** chỉ ẩn lần nhập, giữ metadata đối chiếu. Không xóa các lần nhập thành công hoặc nhập một phần. Bản xem trước vẫn có thời hạn 30 phút và cần upload lại nếu backend đã khởi động lại.
 
 Trên Windows 10 **22H2** / Windows 11 64-bit, sau bộ cài chính, chạy **`Setup-AI.bat` một lần**. Bộ cài tải Ollama 0.40.6 chính thức đã khóa SHA-256 và `qwen3:4b-instruct-2507-q4_K_M`; cần khoảng 10 GB dung lượng trống lúc cài, Internet để tải lần đầu và nên dùng máy 16 GB RAM. Thời gian trả lời phụ thuộc CPU/GPU. Không yêu cầu cloud API key. Các lần sau launcher chính mở Ollama đã cài; nếu Ollama thiếu hoặc lỗi, nghiệp vụ và training vẫn hoạt động.
 

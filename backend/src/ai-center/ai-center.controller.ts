@@ -30,6 +30,7 @@ export class AiCenterController {
   replace(@Param('id') id: string, @Param('fileId') fileId: string, @UploadedFiles() files: Express.Multer.File[], @CurrentUser() user: AuthenticatedUser) { return this.datasets.replaceFile(id, fileId, files, user); }
   @Delete('datasets/:id/files/:fileId') remove(@Param('id') id: string, @Param('fileId') fileId: string, @CurrentUser() user: AuthenticatedUser) { return this.datasets.removeFile(id, fileId, user); }
   @Post('datasets/:id/validate') validate(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser) { return this.datasets.validate(id, user); }
+  @Post('datasets/:id/external-source') externalSource(@Param('id') id: string, @Body() body: unknown, @CurrentUser() user: AuthenticatedUser) { return this.datasets.useExternalSource(id, body, user); }
   @Post('datasets/:id/publish') publish(@Param('id') id: string, @Body() body: unknown, @CurrentUser() user: AuthenticatedUser) { return this.datasets.publish(id, body, user); }
   @Delete('datasets/:id') discard(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser) { return this.datasets.discard(id, user); }
   @Get('training') jobs(@CurrentUser() user: AuthenticatedUser) { return this.training.list(user); }

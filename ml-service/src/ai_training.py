@@ -10,6 +10,7 @@ from datetime import datetime, timezone
 import numpy as np
 from .train_quantity import load_snapshot, run, PARAMETERS
 from .quantity_model import sha256, activate, ModelRegistry, version_path, load_version, ROOT
+from .ai_diagnostics import feature_diagnostics
 
 
 def save(path, value):
@@ -72,6 +73,8 @@ def execute(config_path: Path):
         metadata = run(snapshot, config['version'], config['source_kind'], config['evaluation_days'],
                        config['synthetic'], False, model_root, parameters, algorithms, progress, strict_series=True)
         report = json.loads((version_path(config['version'], model_root) / 'evaluation.json').read_text(encoding='utf-8'))
+        eda['feature_diagnostics'] = feature_diagnostics(data, report['protocol']['validation_origin'])
+        save(directory / 'eda.json', eda)
         save(directory / 'result.json', {'metadata': metadata, 'evaluation': report, 'eda': eda})
     except Exception as error:
         save(directory / 'error.json', {'message': str(error)[:1000]})

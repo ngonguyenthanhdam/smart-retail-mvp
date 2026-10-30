@@ -4,6 +4,17 @@ const { Workbook } = require('exceljs');
 const { zipSync } = require('fflate');
 const { readImportFile, MAX_BYTES } = require('../dist/src/imports/import-file.js');
 const header = ['expense_type', 'amount', 'expense_date', 'description'];
+
+test('Auto detection recognizes operational templates and directs AI datasets to AI Center', async () => {
+  const fs = require('node:fs/promises'), path = require('node:path');
+  for (const [name, type] of [['01-products.csv','PRODUCT'],['02-sales.csv','SALE'],['03-expenses.csv','EXPENSE'],['04-opening-inventory.csv','INVENTORY']]) {
+    const bytes = await fs.readFile(path.resolve(__dirname, '../../datasets/chatbot-business', name));
+    const parsed = await readImportFile(name, bytes);
+    assert.equal(parsed.importType, type); assert.ok(parsed.rows.length > 0);
+  }
+  await assert.rejects(readImportFile('a.csv', Buffer.from('date,store_id,product_id,quantity,unit_code\n2026-01-01,S,P,1,PCS')), /AI Center/);
+  await assert.rejects(readImportFile('a.csv', Buffer.from('title,author\nNovel,Writer')), /Không nhận diện/);
+});
 test('CSV preserves BOM, quoted commas/newlines and decimal strings', async () => {
   const source = await readImportFile('a.csv', Buffer.from('\ufeff' + header.join(',') + '\nOTHER,12.50,2026-09-01,"Office,\nsupplies"'), 'EXPENSE');
   assert.equal(source.rows[0].values.amount, '12.50'); assert.equal(source.rows[0].values.description, 'Office,\nsupplies');

@@ -8,7 +8,7 @@ export const MAX_ROWS = 1000;
 export const importTypes = ['PRODUCT', 'SALE', 'INVENTORY', 'PURCHASE', 'EXPENSE'] as const;
 export type ImportType = typeof importTypes[number];
 export type SourceRow = { row: number; values: Record<string, string>; error?: string };
-export type SourceFile = { columns: string[]; rows: SourceRow[] };
+export type SourceFile = { columns: string[]; rows: SourceRow[]; importType?: ImportType };
 export type RowError = { row: number; error: string };
 export const templates: Record<ImportType, { columns: string[]; required: string[]; instructions: string }> = {
   PRODUCT: { columns: ['sku','barcode','name','category_code','base_unit_code','purchase_unit_code','purchase_to_base_ratio','default_cost','track_expiry','shelf_life_days','is_active'],
@@ -23,7 +23,17 @@ export const templates: Record<ImportType, { columns: string[]; required: string
     instructions: 'Types: RENT, SALARY, ELECTRICITY, WATER, TRANSPORT, MARKETING, OTHER. Blank location_code means company-wide. Amount must be nonnegative. Date: YYYY-MM-DD.' },
 };
 
-export async function readImportFile(name: string, buffer: Buffer, type: ImportType): Promise<SourceFile> {
+export function detectImportType(columns: string[]): ImportType {
+  const matches = importTypes.filter(type => templates[type].required.every(c => columns.includes(c)) && columns.every(c => templates[type].columns.includes(c)));
+  if (matches.length !== 1) {
+    if (['date','store_id','product_id','unit_code'].filter(c => columns.includes(c)).length >= 3) {
+      throw new BadRequestException('Tệp này dùng định dạng dataset AI Center. Hãy upload tại AI Center; trang Nhập dữ liệu dùng mẫu nghiệp vụ trong datasets/chatbot-business.');
+    }
+    throw new BadRequestException('Không nhận diện được loại dữ liệu từ tiêu đề. Chọn loại dữ liệu và đối chiếu các cột với mẫu tương ứng.');
+  }
+  return matches[0]!;
+}
+export async function readImportFile(name: string, buffer: Buffer, type?: ImportType): Promise<SourceFile> {
   if (!buffer.length || buffer.length > MAX_BYTES) throw new BadRequestException('Choose a nonempty CSV/XLSX file no larger than 2 MB.');
   const records: { row: number; cells: string[]; error?: string }[] = [];
   try {
@@ -62,11 +72,12 @@ export async function readImportFile(name: string, buffer: Buffer, type: ImportT
   const header = records.shift();
   if (!header || header.error || !records.length || records.length > MAX_ROWS) throw new BadRequestException('Provide a header and between 1 and 1,000 data rows.');
   const columns = header.cells;
-  const definition = templates[type];
+  const resolvedType = type ?? detectImportType(columns);
+  const definition = templates[resolvedType];
   if (new Set(columns).size !== columns.length || columns.some((c) => !definition.columns.includes(c)) || definition.required.some((c) => !columns.includes(c))) {
     throw new BadRequestException('Headers must be unique supported column names and include every required column. Download the template.');
   }
-  return { columns, rows: records.map(({ row, cells, error }) => ({ row,
+  return { importType: resolvedType, columns, rows: records.map(({ row, cells, error }) => ({ row,
     values: Object.fromEntries(columns.map((column, i) => [column, cells[i] ?? ''])),
     ...(error || cells.length !== columns.length ? { error: error ?? 'Column count does not match the header.' } : {}),
   })) };

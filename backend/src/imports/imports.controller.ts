@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Header, Param, Post, Query, UploadedFile, UseInterceptors } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Header, Param, Post, Query, UploadedFile, UseInterceptors } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { CurrentUser, Roles } from '../auth/auth.decorators';
 import type { AuthenticatedUser } from '../auth/auth.types';
@@ -22,4 +22,8 @@ export class ImportsController {
   confirm(@Param('id') id: string, @Body() body: unknown, @CurrentUser() user: AuthenticatedUser) { return this.service.confirm(id, body, user); }
   @Post(':id/cancel') @Header('Cache-Control', 'no-store')
   cancel(@Param('id') id: string, @Body() body: unknown, @CurrentUser() user: AuthenticatedUser) { return this.service.cancel(id, body, user); }
+  @Post(':id/revalidate') @Header('Cache-Control', 'no-store')
+  revalidate(@Param('id') id: string, @Body() body: unknown, @CurrentUser() user: AuthenticatedUser) { return this.service.revalidate(id, body, user); }
+  @Delete(':id') @Header('Cache-Control', 'no-store')
+  dismiss(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser) { return this.service.dismiss(id, user); }
 }

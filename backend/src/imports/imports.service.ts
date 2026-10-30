@@ -20,7 +20,7 @@ export class ImportsService {
   definitions() { return { types: templates, maxBytes: 2 * 1024 * 1024, maxRows: 1000 }; }
   async list(input: unknown) {
     const { query, page, pageSize } = listQuery(input, ['importType']);
-    const where = query.importType ? { importType: choiceValue(query.importType, importTypes, 'Import type') } : {};
+    const where = { dismissedAt: null, ...(query.importType ? { importType: choiceValue(query.importType, importTypes, 'Import type') } : {}) };
     return this.prisma.$transaction(async (tx) => ({
       items: await tx.importJob.findMany({ where, select, orderBy: [{ createdAt: 'desc' }, { id: 'desc' }], skip: (page - 1) * pageSize, take: pageSize }),
       total: await tx.importJob.count({ where }), page, pageSize,
@@ -44,10 +44,11 @@ export class ImportsService {
   }
   async upload(input: unknown, file: Express.Multer.File | undefined, user: AuthenticatedUser) {
     const body = bodyObject(input, ['importType']);
-    const type = choiceValue(body.importType, importTypes, 'Import type') as ImportType;
+    const requestedType = choiceValue(body.importType, [...importTypes, 'AUTO'], 'Import type');
     if (!file) throw new BadRequestException('Choose a file.');
     const name = requiredText(file.originalname, 'Filename', 255);
-    const source = await readImportFile(name, file.buffer, type);
+    const source = await readImportFile(name, file.buffer, requestedType === 'AUTO' ? undefined : requestedType as ImportType);
+    const type = source.importType!;
     const fileHash = createHash('sha256').update(file.buffer).digest('hex');
     for (const [id, preview] of this.previews) if (preview.expiresAt <= Date.now()) this.previews.delete(id);
     if (this.previews.size >= 20) throw new BadRequestException('There are too many pending previews. Cancel a preview or wait for expiry.');
@@ -58,7 +59,7 @@ export class ImportsService {
         if (existing && !['PENDING','FAILED'].includes(existing.status)) throw new ConflictException('This file has already been imported or is being processed.');
         const plan = await this.planner.prepare(tx, type, source);
         const data = { fileName: name, status: 'PENDING', totalRows: source.rows.length, successRows: 0, failedRows: 0,
-          errorReport: plan.errors as Prisma.InputJsonValue, createdBy: user.id, createdAt: new Date(), completedAt: null };
+          errorReport: plan.errors as Prisma.InputJsonValue, createdBy: user.id, createdAt: new Date(), completedAt: null, dismissedAt: null };
         const job = existing ? await tx.importJob.update({ where: { id: existing.id }, data, select }) :
           await tx.importJob.create({ data: { ...data, importType: type, fileHash }, select });
         return { job, plan };
@@ -105,5 +106,28 @@ export class ImportsService {
       if (!result.count) throw new ConflictException('Only pending imports can be cancelled.');
     });
     this.previews.delete(id); return this.detail(id);
+  }
+  async revalidate(rawId: string, input: unknown, user: AuthenticatedUser) {
+    bodyObject(input ?? {}, []); const id = uuidValue(rawId), preview = this.previews.get(id);
+    if (!preview || preview.expiresAt <= Date.now()) throw new ConflictException('Preview expired or unavailable. Upload the file again.');
+    const plan = await this.prisma.$transaction(async tx => {
+      await this.requireAdmin(tx, user);
+      const plan = await this.planner.prepare(tx, preview.type, preview.source);
+      const changed = await tx.importJob.updateMany({ where: { id, status: 'PENDING', dismissedAt: null }, data: { errorReport: plan.errors as Prisma.InputJsonValue } });
+      if (!changed.count) throw new ConflictException('Import already completed or cancelled. Refresh history.');
+      return plan;
+    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, timeout: 30000 });
+    this.previews.set(id, { ...preview, plan, token: randomUUID(), expiresAt: Date.now() + 30 * 60 * 1000 });
+    return this.detail(id);
+  }
+  async dismiss(rawId: string, user: AuthenticatedUser) {
+    const id = uuidValue(rawId);
+    await this.prisma.$transaction(async tx => {
+      await this.requireAdmin(tx, user);
+      const changed = await tx.importJob.updateMany({ where: { id, status: 'FAILED', successRows: 0, sales: { none: {} }, purchaseOrders: { none: {} } }, data: { dismissedAt: new Date() } });
+      if (!changed.count) throw new ConflictException('Chỉ xóa khỏi danh sách lần nhập đã hủy hoặc thất bại, chưa ghi dữ liệu nghiệp vụ.');
+    });
+    this.previews.delete(id);
+    return { id, removed: true };
   }
 }

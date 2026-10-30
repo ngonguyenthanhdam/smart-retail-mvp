@@ -25,7 +25,8 @@ export const BUSINESS_TOOLS = [
   properties: name === 'getForecastResults' ? { days: { type: 'integer', enum: [7, 30] } } : ['getInventoryAlerts','getReplenishmentSuggestions','getModelStatus'].includes(name!) ? {} : dateProperties,
   required: name === 'getForecastResults' ? ['days'] : ['getInventoryAlerts','getReplenishmentSuggestions','getModelStatus'].includes(name!) ? [] : ['from', 'to'] } } }));
 export type BusinessSource = { tool: string; scope: string; from: string | null; to: string | null; asOf: string; kind: 'ACTUAL' | 'FORECAST' | 'MODEL';
-  label: string; rows: Record<string, string | number | null>[]; note?: string };
+  label: string; rows: Record<string, string | number | null>[]; note?: string;
+  availability?: { state: 'AVAILABLE' | 'NO_RECORDS'; records: number; firstDate: string | null; lastDate: string | null; message: string } };
 
 @Injectable()
 export class BusinessTools {
@@ -57,6 +58,23 @@ export class BusinessTools {
           'Từ ngày kỳ trước': previous.from, 'Đến ngày kỳ trước': previous.to }];
       }
       result.note = [result.note, 'Nguồn là bản ghi hiện có, có thể bao gồm dữ liệu import hoặc demo. Báo cáo này không chứng minh đây là giao dịch thực ngoài đời.'].filter(Boolean).join(' ');
+      const expense = name === 'getExpenseSummary';
+      const records = expense ? await this.db.expense.count({ where: { ...scopeQuery, expenseDate: { gte: new Date(report.from), lte: new Date(report.to) } } }) : report.metrics.invoices;
+      let firstDate: string | null = null, lastDate: string | null = null;
+      if (!records) {
+        if (expense) {
+          const range = await this.db.expense.aggregate({ where: scopeQuery, _min: { expenseDate: true }, _max: { expenseDate: true } });
+          firstDate = range._min.expenseDate?.toISOString().slice(0,10) ?? null;
+          lastDate = range._max.expenseDate?.toISOString().slice(0,10) ?? null;
+        } else {
+          const range = await this.db.sale.aggregate({ where: { ...scopeQuery, status: 'COMPLETED' }, _min: { soldAt: true }, _max: { soldAt: true } });
+          firstDate = range._min.soldAt ? businessDate(range._min.soldAt) : null;
+          lastDate = range._max.soldAt ? businessDate(range._max.soldAt) : null;
+        }
+      }
+      result.availability = { state: records ? 'AVAILABLE' : 'NO_RECORDS', records, firstDate, lastDate,
+        message: records ? `Có ${records} ${expense ? 'khoản chi' : 'hóa đơn'} trong khoảng ngày được hỏi.` :
+          `Không tìm thấy ${expense ? 'khoản chi' : 'hóa đơn hoàn tất'} từ ${report.from} đến ${report.to} trong phạm vi ${result.scope}. ${lastDate ? `Bản ghi gần nhất: ${lastDate}.` : 'Phạm vi này chưa có bản ghi nghiệp vụ tương ứng.'} Không đủ căn cứ kết luận số thực tế bằng 0. CSV ở Dữ liệu huấn luyện không ghi vào nguồn nghiệp vụ này.` };
       return result;
     }
     if (name === 'getInventoryAlerts') {

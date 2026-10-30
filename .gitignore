@@ -27,6 +27,14 @@ venv/
 **/data/raw/
 **/data/processed/
 *.csv
+# Small, synthetic examples shipped for the AI Center walkthrough
+!/datasets/ai-center/01-sales-history.csv
+!/datasets/ai-center/02-product-catalog.csv
+!/datasets/ai-center/03-opening-inventory.csv
+!/datasets/chatbot-business/01-products.csv
+!/datasets/chatbot-business/02-sales.csv
+!/datasets/chatbot-business/03-expenses.csv
+!/datasets/chatbot-business/04-opening-inventory.csv
 *.parquet
 *.pkl
 *.pickle
