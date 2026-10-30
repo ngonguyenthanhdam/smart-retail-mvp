@@ -8,6 +8,7 @@ import { useState, type ReactNode } from "react";
 import { vi } from "@/i18n/vi";
 import { canAccessSection, defaultRoute, findSection, navigation, navigationGroups } from "@/lib/navigation";
 import { useAuth } from "@/components/auth-provider";
+import dashboardStyles from "@/components/dashboard/dashboard.module.css";
 
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
@@ -38,7 +39,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="app-shell">
+    <div className={`app-shell${pathname === "/dashboard" ? ` ${dashboardStyles.shell}` : ""}`}>
       <a className="skip-link" href="#main-content">
         {vi.shell.skipToContent}
       </a>
