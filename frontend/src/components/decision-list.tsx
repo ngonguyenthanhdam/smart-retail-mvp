@@ -1,4 +1,5 @@
 "use client";
+import { FilterPanel } from './filter-panel';
 import { useEffect, useState, type ReactNode } from 'react';
 import { useAuth } from './auth-provider';
 import { catalogError } from './product-form';
@@ -39,13 +40,13 @@ export function DecisionList<T extends { id: string }>({ state, statuses, card, 
   const { query, data } = state; const pages = Math.max(1,Math.ceil((data?.total ?? 0)/(data?.pageSize ?? 20)));
   const [storeFilter,setStoreFilter] = useState(query.locationId);
   return <section className="decision-results">
-    <form className="admin-filters admin-card" onSubmit={e => { e.preventDefault(); const form = new FormData(e.currentTarget); state.setData(null); state.setError(''); state.setQuery({ locationId: String(form.get('locationId') ?? query.locationId), status: String(form.get('status')), search: String(form.get('search') ?? ''), alertType: String(form.get('alertType') ?? ''), page: 1 }); }}>
+    <FilterPanel><form className="admin-filters admin-card" onSubmit={e => { e.preventDefault(); const form = new FormData(e.currentTarget); state.setData(null); state.setError(''); state.setQuery({ locationId: String(form.get('locationId') ?? query.locationId), status: String(form.get('status')), search: String(form.get('search') ?? ''), alertType: String(form.get('alertType') ?? ''), page: 1 }); }}>
       <div className="form-field admin-search"><label htmlFor="decision-search">{p.search}</label><input id="decision-search" name="search" defaultValue={query.search} maxLength={150} /></div>
       {state.admin ? <div className="form-field"><label htmlFor="decision-store">{c.store}</label><select id="decision-store" name="locationId" value={storeFilter} onChange={e => setStoreFilter(e.target.value)}><option value="">{c.allStores}</option>{state.stores.map(s => <option key={s.id} value={s.id}>{s.code} · {s.name}</option>)}</select></div> : <p>{state.user?.location?.name}</p>}
       <div className="form-field"><label htmlFor="decision-status">{c.status}</label><select id="decision-status" name="status" defaultValue={query.status}><option value="all">{c.all}</option>{statuses.map(s => <option key={s} value={s}>{s === 'RESOLVED' ? p.resolved : c.statuses[s]}</option>)}</select></div>
       {alertFilters && <div className="form-field"><label htmlFor="decision-type">{p.type}</label><select id="decision-type" name="alertType" defaultValue={query.alertType}><option value="">{p.allTypes}</option>{Object.entries(c.types).map(([value,label]) => <option key={value} value={value}>{label}</option>)}</select></div>}
       <button className="secondary-button" disabled={busy}>{c.filter}</button>
-    </form>
+    </form></FilterPanel>
     {state.error && <p className="form-error decision-hint" role="alert">{state.error} <button className="text-button" disabled={busy} onClick={state.refresh}>{vi.admin.retry}</button></p>}
     {!data && !state.error && <p className="admin-loading" role="status">{c.loading}</p>}
     {data?.items.length === 0 && <p className="report-empty">{c.empty}</p>}

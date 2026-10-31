@@ -1,5 +1,5 @@
 /* AI Center styles are scoped to its workspace. */
-.ai-page { --ai-ink:#243d34; --ai-muted:#5f7068; --ai-border:#dfe7e1; --ai-soft:#f5f8f6; --ai-brand:#17604f; max-width:1400px; margin:0 auto; display:grid; gap:18px; min-width:0; color:var(--ai-ink); }
+.ai-page { --ai-ink:var(--ds-text); --ai-muted:var(--ds-muted); --ai-border:var(--ds-border); --ai-soft:#f6f8f9; --ai-brand:var(--ds-primary); max-width:1440px; margin:0 auto; display:grid; gap:20px; min-width:0; color:var(--ai-ink); }
 .ai-page [hidden] { display:none!important; }
 .ai-page>div[id] { min-width:0; scroll-margin-top:24px; }
 .ai-page :is(button,a,input,select,textarea,summary,[tabindex]):focus-visible { outline:2px solid #287e66; outline-offset:3px; }

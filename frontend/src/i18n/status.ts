@@ -1,0 +1,16 @@
+export const statusCopy = {
+  vi: {
+    positiveProfit: 'Lợi nhuận dương', negativeProfit: 'Lợi nhuận âm', zeroProfit: 'Lợi nhuận bằng 0',
+    stockHealthy: 'Trên ngưỡng tồn tối thiểu', stockLow: 'Chạm / dưới ngưỡng tối thiểu', stockEmpty: 'Hết hàng', stockNegative: 'Tồn kho âm', stockPhysical: 'Tồn thực tế',
+    stockLegend: 'Trạng thái số lượng dựa trên tồn thực tế và ngưỡng tối thiểu của từng cửa hàng.',
+    tableHint: 'Vuốt ngang hoặc dùng phím mũi tên để xem thêm cột.',
+    currentPage: 'Trên trang này', rows: 'mặt hàng', stockAttention: 'Thiếu / hết hàng', expiryAttention: 'Lô hết / sắp hết hạn',
+  },
+  en: {
+    positiveProfit: 'Positive profit', negativeProfit: 'Negative profit', zeroProfit: 'Zero profit',
+    stockHealthy: 'Above minimum stock', stockLow: 'At or below minimum stock', stockEmpty: 'Out of stock', stockNegative: 'Negative stock', stockPhysical: 'Physical stock',
+    stockLegend: 'Quantity status uses physical stock and each store’s configured minimum.',
+    tableHint: 'Scroll horizontally or use the arrow keys to see more columns.',
+    currentPage: 'On this page', rows: 'items', stockAttention: 'Low / out of stock', expiryAttention: 'Expired / expiring lots',
+  },
+} as const;

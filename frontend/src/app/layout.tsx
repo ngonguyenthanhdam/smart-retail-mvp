@@ -6,6 +6,7 @@ import { AuthProvider } from "@/components/auth-provider";
 import { vi } from "@/i18n/vi";
 
 import "./globals.css";
+import "./retail-system.css";
 
 export const metadata: Metadata = {
   title: { default: vi.brand, template: `%s | ${vi.brand}` },
@@ -15,7 +16,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang={vi.locale}>
-      <body>
+      <body className="retail-ui">
         <AuthProvider>
           <AuthBoundary>{children}</AuthBoundary>
         </AuthProvider>

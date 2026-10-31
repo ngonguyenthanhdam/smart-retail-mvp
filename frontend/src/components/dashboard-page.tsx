@@ -15,6 +15,9 @@ import { canAccessSection } from '@/lib/navigation';
 import { vi, reportCopy as c } from '@/i18n/vi';
 import { dashboardCopy } from '@/i18n/dashboard';
 import { formatMoney, formatQuantity } from '@/lib/format';
+import { profitTone } from '@/lib/presentation-status';
+import { statusCopy } from '@/i18n/status';
+import { StatusBadge, StatusValue } from './status-value';
 import styles from './dashboard/dashboard.module.css';
 
 const d = dashboardCopy.vi;
@@ -71,10 +74,10 @@ export function DashboardPage() {
   const pending = draft.from !== filters.from || draft.to !== filters.to || draft.locationId !== filters.locationId;
   const scope = admin ? stores.find(store => store.id === filters.locationId)?.name ?? c.allStores : user?.location?.name;
   const metrics = data ? [
-    { label: c.revenue, value: data.metrics.revenue, hint: c.revenueHint, icon: Banknote },
-    { label: c.grossProfit, value: data.metrics.grossProfit, hint: c.grossHint, icon: ChartNoAxesCombined },
-    { label: c.expenses, value: data.metrics.expenses, hint: c.expenseHint, icon: Wallet },
-    { label: c.operatingProfit, value: data.metrics.estimatedOperatingProfit, hint: c.operatingHint, icon: CircleDollarSign },
+    { label: c.revenue, value: data.metrics.revenue, hint: c.revenueHint, icon: Banknote, isProfit: false },
+    { label: c.grossProfit, value: data.metrics.grossProfit, hint: c.grossHint, icon: ChartNoAxesCombined, isProfit: true },
+    { label: c.expenses, value: data.metrics.expenses, hint: c.expenseHint, icon: Wallet, isProfit: false },
+    { label: c.operatingProfit, value: data.metrics.estimatedOperatingProfit, hint: c.operatingHint, icon: CircleDollarSign, isProfit: true },
   ] : [];
 
   return <div className={styles.page}>
@@ -116,9 +119,11 @@ export function DashboardPage() {
 
     {data && <>
       <div className={styles.kpis} data-dashboard-metrics aria-label={d.periodSummary}>
-        {metrics.map(({ label, value, hint, icon: Icon }, index) => <section key={label} className={`${styles.kpi} ${index === 0 ? styles.primaryKpi : ''}`}>
+        {metrics.map(({ label, value, hint, icon: Icon, isProfit }, index) => <section key={label} className={`${styles.kpi} ${index === 0 ? styles.primaryKpi : ''}`}>
           <div className={styles.kpiHeading}><h2>{label}</h2><span className={styles.kpiIcon}><Icon size={18} aria-hidden="true" /></span></div>
-          <p className={value.startsWith('-') ? styles.negative : undefined}>{formatMoney(value)}</p><span>{hint}</span>
+          <p className={isProfit ? styles[profitTone(value)] : undefined} data-status-tone={isProfit ? profitTone(value) : 'neutral'}>{formatMoney(value)}</p>
+          {isProfit && <StatusBadge tone={profitTone(value)}>{Number(value) < 0 ? statusCopy.vi.negativeProfit : Number(value) > 0 ? statusCopy.vi.positiveProfit : statusCopy.vi.zeroProfit}</StatusBadge>}
+          <span>{hint}</span>
         </section>)}
       </div>
 
@@ -165,7 +170,7 @@ export function DashboardPage() {
             <p className={styles.tableHint}>{d.tableHint}</p>
             <div className={styles.tableScroll} tabIndex={0} role="region" aria-label={c.stores}>
               <table className={`${styles.table} ${styles.storesTable}`}><thead><tr>{[vi.operations.location, c.revenue, c.quantity, c.grossProfit].map(label => <th key={label} scope="col">{label}</th>)}</tr></thead>
-                <tbody>{data.storeComparison.map(store => <tr key={store.id}><th scope="row">{store.name}<span>{store.code}</span></th><td>{formatMoney(store.revenue)}</td><td>{formatQuantity(store.quantity)}</td><td className={store.grossProfit.startsWith('-') ? styles.negative : undefined}>{formatMoney(store.grossProfit)}</td></tr>)}</tbody>
+                <tbody>{data.storeComparison.map(store => <tr key={store.id}><th scope="row">{store.name}<span>{store.code}</span></th><td>{formatMoney(store.revenue)}</td><td>{formatQuantity(store.quantity)}</td><td><StatusValue tone={profitTone(store.grossProfit)} label={Number(store.grossProfit) < 0 ? statusCopy.vi.negativeProfit : Number(store.grossProfit) > 0 ? statusCopy.vi.positiveProfit : statusCopy.vi.zeroProfit}>{formatMoney(store.grossProfit)}</StatusValue></td></tr>)}</tbody>
               </table>
             </div>
           </>}

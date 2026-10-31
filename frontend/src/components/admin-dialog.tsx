@@ -12,8 +12,12 @@ export function AdminDialog({ titleId, busy = false, onClose, children }: {
 
   useEffect(() => {
     const dialog = ref.current;
+    const opener = document.activeElement;
     dialog?.showModal();
-    return () => { dialog?.close(); };
+    return () => {
+      dialog?.close();
+      if (opener instanceof HTMLElement && opener.isConnected) opener.focus({ preventScroll: true });
+    };
   }, []);
 
   return (

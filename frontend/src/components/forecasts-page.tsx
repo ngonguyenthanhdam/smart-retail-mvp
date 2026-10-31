@@ -5,23 +5,18 @@ import Link from 'next/link';
 import { useAuth } from './auth-provider';
 import { catalogError } from './product-form';
 import { ProductImage } from './product-image';
+import { DemandChart } from './demand-chart';
 import { ForecastDataPanel } from './forecast-data-panel';
 import { apiRequest } from '@/lib/api';
 import { allOptions } from '@/lib/catalog';
 import type { Location } from '@/lib/locations';
 import type { ForecastDetail, ForecastRun, ForecastReadiness } from '@/lib/forecasts';
-import { formatMoney, formatMonth, formatQuantity, formatTimestamp, unitLabel, formatEstimate, formatEstimatedMoney, periodDays } from '@/lib/format';
+import { formatMoney, formatMonth, formatTimestamp, unitLabel, formatEstimate, formatEstimatedMoney, periodDays } from '@/lib/format';
 import { planningCopy as pcopy } from '@/i18n/planning';
 import { forecastCopy as c } from '@/i18n/vi';
 
 const errorText = (code: string) => c.errors[code as keyof typeof c.errors] ?? c.errors.PREDICTION_FAILED;
 const algorithmLabel = (algorithm?: string) => algorithm === 'RollingMean28' ? 'Trung bình 28 ngày' : algorithm === 'SeasonalNaive' ? 'Theo chu kỳ tuần' : algorithm === 'LightGBM' ? 'LightGBM' : 'Chưa xác định';
-function DemandChart({ series, name }: { series: NonNullable<ForecastDetail['dailySeries']>[number]; name: string }) {
-  const historical = series.history ?? []; const all = [...historical, ...series.daily];
-  const max = Math.max(1, ...all.map(p => p.quantity)); const x = (index: number) => 45 + index * 665 / Math.max(1, all.length - 1); const y = (value: number) => 190 - value * 155 / max;
-  const path = (rows: typeof all, offset = 0) => rows.map((p, i) => `${x(i + offset)},${y(p.quantity)}`).join(' ');
-  return <div className="demand-chart"><div className="chart-legend"><span><i /> Đã bán</span><span><i /> Dự kiến</span><small>{name} · theo ngày</small></div><svg viewBox="0 0 740 225" role="img" aria-label={`Lịch sử và lượng bán dự kiến mỗi ngày của ${name}`}><title>Lượng bán của {name}</title>{[0, .5, 1].map(r => <g key={r}><line x1="45" x2="710" y1={y(max * r)} y2={y(max * r)} stroke="#e4e9e3" /><text x="36" y={y(max * r) + 4} textAnchor="end" fontSize="11" fill="#78847b">{formatQuantity(max * r)}</text></g>)}<polyline points={path(historical)} fill="none" stroke="#24644d" strokeWidth="2.5" /><polyline points={path(series.daily, historical.length)} fill="none" stroke="#d8a548" strokeWidth="2.5" strokeDasharray="5 4" /><line x1={x(historical.length)} x2={x(historical.length)} y1="25" y2="190" stroke="#cad5ca" strokeDasharray="3 4" /><text x="45" y="216" fontSize="11" fill="#78847b">{all[0]?.date}</text><text x="710" y="216" fontSize="11" textAnchor="end" fill="#78847b">{all.at(-1)?.date}</text></svg></div>;
-}
 export function ForecastsPage() {
   const { user } = useAuth(); const admin = user?.role === 'ADMIN';
   const [stores, setStores] = useState<Location[]>([]); const [locationId, setLocationId] = useState(''); const [horizon, setHorizon] = useState(3);

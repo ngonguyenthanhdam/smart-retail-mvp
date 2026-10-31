@@ -5,6 +5,7 @@ import { AlertTriangle, ArrowRight, CheckCircle2, Clock3, Layers3, PackageSearch
 import { DecisionList, useDecisionList } from './decision-list';
 import { DecisionSummary } from './decision-summary';
 import { InventoryLotsDialog } from './inventory-lots-dialog';
+import { StatusValue } from './status-value';
 import { ProductImage } from './product-image';
 import { catalogError } from './product-form';
 import { saveRecord } from '@/lib/catalog';
@@ -34,14 +35,14 @@ export function AlertsPage() {
       <div className="alert-priority"><Icon size={21} /><h2>{title}</h2><span className="planning-badge">{resolved ? p.resolved : c.severities[r.severity]}</span></div>
       <div className="planning-product"><ProductImage name={r.product.name} imageKey={r.product.imageKey} /><div><small>{r.product.sku}</small><h3>{r.product.name}</h3><p><Store size={13} />{r.location.name}</p></div></div>
       <div className="alert-reason"><p>{r.message}</p><small>{expiry ? p.lotBasis : fallback ? p.noForecast : p.forecastBasis}</small></div>
-      {expiry && r.lot && <dl className="planning-metrics alert-lot-metrics"><div><dt>{p.lot}</dt><dd>{r.lot.lotNumber ?? '—'}</dd></div><div><dt>{p.expiryDate}</dt><dd>{displayDate(r.lot.expiryDate)}</dd></div><div><dt>{p.lotQuantity}</dt><dd>{formatQuantity(r.lot.quantityOnHand)} <small>{unitLabel(r.product.baseUnit)}</small></dd></div></dl>}
+      {expiry && r.lot && <dl className="planning-metrics alert-lot-metrics"><div><dt>{p.lot}</dt><dd>{r.lot.lotNumber ?? '—'}</dd></div><div><dt>{p.expiryDate}</dt><dd>{displayDate(r.lot.expiryDate)}</dd></div><div><dt>{p.lotQuantity}</dt><dd><StatusValue tone={resolved || Number(r.lot.quantityOnHand) <= 0 ? "neutral" : expired ? "danger" : "warning"} label={resolved ? p.resolved : expired ? p.expired : p.expiring}>{formatQuantity(r.lot.quantityOnHand)} <small>{unitLabel(r.product.baseUnit)}</small></StatusValue></dd></div></dl>}
       <div className="alert-next"><strong><ArrowRight size={15} />{p.next}</strong><p>{action}</p></div>
       <p className="planning-caption">{p.detected}: {formatTimestamp(r.detectedAt)}{resolved && r.resolvedAt && <> · {p.resolved}: {formatTimestamp(r.resolvedAt)}</>}</p>
       <div className="planning-actions"><button className="secondary-button" disabled={busy} onClick={() => setLotAlert(r)}><PackageSearch size={16} />{p.viewLots}</button>{!resolved && !expiry && (!overstock && !fallback ? <Link className="primary-button" href={`/replenishment?${new URLSearchParams({ locationId: r.locationId, search: r.product.sku })}`}>{p.viewRecommendations}<ArrowRight size={15} /></Link> : <Link className="text-button" href="/forecasts">{p.viewForecast}<ArrowRight size={15} /></Link>)}</div>
     </article>;
   }
   return <div className="page-content decision-page"><div className="page-heading"><div><h1>{c.alertsTitle}</h1><p className="page-description">{c.alertsDescription}</p></div><button className="primary-button" disabled={busy} onClick={evaluate}><RefreshCw size={16} />{busy ? p.checking : p.check}</button></div>
-    <DecisionSummary counts={state.data?.summary} items={[{ key: 'open', label: p.openAlerts, icon: ShieldAlert, tone: 'amber' }, { key: 'urgent', label: p.urgent, icon: AlertTriangle, tone: 'red' }, { key: 'expiry', label: p.expiryAlerts, icon: Clock3, tone: 'blue' }, { key: 'resolved', label: p.resolved, icon: CheckCircle2, tone: 'green' }]} />
+    <DecisionSummary counts={state.data?.summary} items={[{ key: 'open', label: p.openAlerts, icon: ShieldAlert, tone: 'amber' }, { key: 'urgent', label: p.urgent, icon: AlertTriangle, tone: 'red' }, { key: 'expiry', label: p.expiryAlerts, icon: Clock3, tone: 'amber' }, { key: 'resolved', label: p.resolved, icon: CheckCircle2, tone: 'green' }]} />
     <div className="alert-check-info"><p><Clock3 size={15} />{lastCheck && lastCheck.scope === state.query.locationId ? `${p.latestCheck} ${formatTimestamp(lastCheck.at)}` : p.notChecked}</p><small>{p.sorted}</small></div>
     {success && <p className="form-success" role="status">{success}</p>}
     <DecisionList state={state} busy={busy} statuses={['OPEN','RESOLVED']} alertFilters card={card} />

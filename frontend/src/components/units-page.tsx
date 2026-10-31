@@ -1,4 +1,5 @@
 "use client";
+import { FilterPanel } from './filter-panel';
 import { useEffect, useState, type FormEvent } from "react";
 import { AdminDialog } from "@/components/admin-dialog";
 import { CatalogNav } from "@/components/catalog-nav";
@@ -42,9 +43,9 @@ export function UnitsPage() {
   }, [query, revision]);
   function reload() { setData(null); setError(""); setRevision(revision + 1); }
   const pages = Math.max(1, Math.ceil((data?.total ?? 0) / 20));
-  return <div className="page-content"><CatalogNav /><div className="page-heading"><div><h1>{c.units}</h1><p className="page-description">{c.unitsDescription}</p></div><button className="primary-button" onClick={() => { setSuccess(false); setDialog("new"); }}>{c.addUnit}</button></div>
-    {success && <p className="form-success admin-notice" role="status">{c.saved}</p>}{error && <div role="alert" className="form-error admin-notice">{error} <button className="text-button" onClick={reload}>{a.retry}</button></div>}
-    <section className="admin-card" aria-label={c.units}><form className="admin-filters" onSubmit={(e) => { e.preventDefault(); const form = new FormData(e.currentTarget); setData(null); setError(""); setQuery({ search: String(form.get("search")), page: 1 }); }}><div className="form-field admin-search"><label htmlFor="unit-search">{a.search}</label><input id="unit-search" name="search" type="search" maxLength={150} placeholder={c.search} /></div><button className="secondary-button">{a.applyFilters}</button></form>
+  return <div className="page-content"><div className="page-heading"><div><h1>{c.units}</h1><p className="page-description">{c.unitsDescription}</p></div><button className="primary-button" onClick={() => { setSuccess(false); setDialog("new"); }}>{c.addUnit}</button></div>
+    <CatalogNav />{success && <p className="form-success admin-notice" role="status">{c.saved}</p>}{error && <div role="alert" className="form-error admin-notice">{error} <button className="text-button" onClick={reload}>{a.retry}</button></div>}
+    <section className="admin-card" aria-label={c.units}><FilterPanel><form className="admin-filters" onSubmit={(e) => { e.preventDefault(); const form = new FormData(e.currentTarget); setData(null); setError(""); setQuery({ search: String(form.get("search")), page: 1 }); }}><div className="form-field admin-search"><label htmlFor="unit-search">{a.search}</label><input id="unit-search" name="search" type="search" maxLength={150} placeholder={c.search} /></div><button className="secondary-button">{a.applyFilters}</button></form></FilterPanel>
       {!data && !error && <p className="admin-loading" role="status">{c.loading}</p>}
       {data?.items.length === 0 && <div className="empty-state"><h2>{c.empty}</h2><p>{c.emptyHint}</p></div>}
       {!!data?.items.length && <div className="admin-table-scroll" tabIndex={0} role="region" aria-label={c.units}><table className="admin-table"><thead><tr><th>{c.code}</th><th>{c.name}</th><th>{c.symbol}</th><th>{a.actions}</th></tr></thead><tbody>{data.items.map((row) => <tr key={row.id}><td>{row.code}</td><th scope="row">{row.name}</th><td>{row.symbol ?? a.noValue}</td><td><button className="text-button" aria-label={a.editRecord(row.name)} onClick={() => { setSuccess(false); setDialog(row); }}>{a.edit}</button></td></tr>)}</tbody></table></div>}

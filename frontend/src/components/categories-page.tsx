@@ -1,4 +1,5 @@
 "use client";
+import { FilterPanel } from './filter-panel';
 import { useEffect, useState, type FormEvent } from "react";
 import { AdminDialog } from "@/components/admin-dialog";
 import { CatalogNav } from "@/components/catalog-nav";
@@ -72,11 +73,11 @@ export function CategoriesPage() {
     setQuery({ search: String(form.get("search") ?? ""), status: String(form.get("status")), page: 1 });
   }
   const pages = Math.max(1, Math.ceil((data?.total ?? 0) / 20));
-  return <div className="page-content"><CatalogNav /><div className="page-heading"><div><h1>{c.categories}</h1><p className="page-description">{c.categoriesDescription}</p></div><button className="primary-button" onClick={() => { setSuccess(false); setDialog("new"); }}>{c.addCategory}</button></div>
-    {success && <p role="status" className="form-success admin-notice">{c.saved}</p>}
+  return <div className="page-content"><div className="page-heading"><div><h1>{c.categories}</h1><p className="page-description">{c.categoriesDescription}</p></div><button className="primary-button" onClick={() => { setSuccess(false); setDialog("new"); }}>{c.addCategory}</button></div>
+    <CatalogNav />{success && <p role="status" className="form-success admin-notice">{c.saved}</p>}
     {error && <div role="alert" className="form-error admin-notice">{error} <button className="text-button" onClick={reload}>{a.retry}</button></div>}
     <section className="admin-card" aria-label={c.categories}>
-      <form className="admin-filters" onSubmit={filter}><div className="form-field admin-search"><label htmlFor="category-search">{a.search}</label><input id="category-search" name="search" type="search" maxLength={150} placeholder={c.search} /></div><div className="form-field"><label htmlFor="category-filter">{a.status}</label><select id="category-filter" name="status"><option value="all">{a.allStatuses}</option><option value="active">{a.active}</option><option value="inactive">{a.inactive}</option></select></div><button className="secondary-button">{a.applyFilters}</button></form>
+      <FilterPanel><form className="admin-filters" onSubmit={filter}><div className="form-field admin-search"><label htmlFor="category-search">{a.search}</label><input id="category-search" name="search" type="search" maxLength={150} placeholder={c.search} /></div><div className="form-field"><label htmlFor="category-filter">{a.status}</label><select id="category-filter" name="status"><option value="all">{a.allStatuses}</option><option value="active">{a.active}</option><option value="inactive">{a.inactive}</option></select></div><button className="secondary-button">{a.applyFilters}</button></form></FilterPanel>
       {!data && !error && <p className="admin-loading" role="status">{c.loading}</p>}
       {data?.items.length === 0 && <div className="empty-state"><h2>{c.empty}</h2><p>{c.emptyHint}</p></div>}
       {!!data?.items.length && <div className="admin-table-scroll" tabIndex={0} role="region" aria-label={c.categories}><table className="admin-table"><thead><tr><th>{c.code}</th><th>{c.name}</th><th>{c.parent}</th><th>{a.status}</th><th>{a.actions}</th></tr></thead><tbody>{data.items.map((row) => <tr key={row.id}><td>{row.code}</td><th scope="row">{row.name}</th><td>{row.parent?.name ?? a.noValue}</td><td><span className={`record-status ${row.isActive ? "is-active" : "is-inactive"}`}>{row.isActive ? a.active : a.inactive}</span></td><td><button className="text-button" aria-label={a.editRecord(row.name)} onClick={() => { setSuccess(false); setDialog(row); }}>{a.edit}</button></td></tr>)}</tbody></table></div>}
