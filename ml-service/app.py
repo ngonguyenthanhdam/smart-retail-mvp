@@ -95,15 +95,29 @@ def predict(body: PredictRequest, request: Request):
     keys = [(str(series.store_id), str(series.product_id)) for series in body.series]
     if len(keys) != len(set(keys)):
         return failure("INVALID_FORECAST_INPUT", 422)
-    history = pd.DataFrame([
-        {"store_id": str(series.store_id), "product_id": str(series.product_id),
-         "dt": pd.Timestamp(point.date), "sale_amount": point.quantity}
-        for series in body.series for point in series.history
-    ])
+    history = pd.DataFrame(
+        [
+            {
+                "store_id": str(series.store_id),
+                "product_id": str(series.product_id),
+                "dt": pd.Timestamp(point.date),
+                "sale_amount": point.quantity,
+            }
+            for series in body.series
+            for point in series.history
+        ]
+    )
     try:
         history_panel(history, body.origin)
     except ValueError as exc:
-        return failure("INSUFFICIENT_HISTORY" if str(exc).startswith("INSUFFICIENT_HISTORY") else "INVALID_FORECAST_INPUT", 422)
+        return failure(
+            (
+                "INSUFFICIENT_HISTORY"
+                if str(exc).startswith("INSUFFICIENT_HISTORY")
+                else "INVALID_FORECAST_INPUT"
+            ),
+            422,
+        )
     try:
         if metadata is None:
             frame, clipped = predict_demo(model, history, body.origin, body.horizon_days)
@@ -112,13 +126,28 @@ def predict(body: PredictRequest, request: Request):
             clipped = diagnostics["negative_predictions_clipped"]
         predictions = []
         for (store, product), group in frame.groupby(["store_id", "product_id"], sort=True):
-            predictions.append({"store_id": store, "product_id": product,
-                "daily": [{"date": row.dt.strftime("%Y-%m-%d"), "quantity": float(row.prediction)} for row in group.itertuples()]})
-        return {"model_version": model.version, "algorithm": model.algorithm, "usage_mode": body.usage_mode,
-                "model_target_space": model.target_space, "real_world_accuracy_verified": False,
-                 "operational_units_supported": metadata is not None,
-                "origin": body.origin, "horizon_days": body.horizon_days,
-                "negative_predictions_clipped": clipped, "predictions": predictions}
+            predictions.append(
+                {
+                    "store_id": store,
+                    "product_id": product,
+                    "daily": [
+                        {"date": row.dt.strftime("%Y-%m-%d"), "quantity": float(row.prediction)}
+                        for row in group.itertuples()
+                    ],
+                }
+            )
+        return {
+            "model_version": model.version,
+            "algorithm": model.algorithm,
+            "usage_mode": body.usage_mode,
+            "model_target_space": model.target_space,
+            "real_world_accuracy_verified": False,
+            "operational_units_supported": metadata is not None,
+            "origin": body.origin,
+            "horizon_days": body.horizon_days,
+            "negative_predictions_clipped": clipped,
+            "predictions": predictions,
+        }
     except Exception:
         return failure("PREDICTION_FAILED", 500)
 

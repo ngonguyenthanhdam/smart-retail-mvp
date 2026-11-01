@@ -6,6 +6,9 @@ import { ReportsService } from './reports.service';
 @Roles('ADMIN', 'STORE_MANAGER')
 export class ReportsController {
   constructor(private readonly service: ReportsService) {}
-  @Get('dashboard') @Header('Cache-Control', 'no-store')
-  dashboard(@Query() query: unknown, @CurrentUser() user: AuthenticatedUser) { return this.service.dashboard(query, user); }
+  @Get('dashboard')
+  @Header('Cache-Control', 'no-store')
+  dashboard(@Query() query: unknown, @CurrentUser() user: AuthenticatedUser) {
+    return this.service.dashboard(query, user);
+  }
 }

@@ -36,7 +36,9 @@ test('Password recovery API with a mocked mail transport', { timeout: 90_000 }, 
   app = await NestFactory.create(AppModule, { logger: false, abortOnError: false });
   configureApp(app);
   const mailer = app.get(ResetMailer);
-  const captureMail = async (email, resetUrl) => { messages.push({ email, resetUrl }); };
+  const captureMail = async (email, resetUrl) => {
+    messages.push({ email, resetUrl });
+  };
   mailer.sendPasswordReset = captureMail;
   await app.listen(0, '127.0.0.1');
   prisma = app.get(PrismaService);
@@ -47,9 +49,13 @@ test('Password recovery API with a mocked mail transport', { timeout: 90_000 }, 
   async function createUser(suffix, overrides = {}) {
     const user = await prisma.user.create({
       data: {
-        username: `${namespace}_${suffix}`, email: `${namespace}_${suffix}@example.test`,
-        fullName: `Password Recovery Test ${suffix}`, roleId: adminRole.id,
-        passwordHash: originalHash, createdAt: new Date(), updatedAt: new Date(),
+        username: `${namespace}_${suffix}`,
+        email: `${namespace}_${suffix}@example.test`,
+        fullName: `Password Recovery Test ${suffix}`,
+        roleId: adminRole.id,
+        passwordHash: originalHash,
+        createdAt: new Date(),
+        updatedAt: new Date(),
         ...overrides,
       },
     });
@@ -61,7 +67,8 @@ test('Password recovery API with a mocked mail transport', { timeout: 90_000 }, 
     return fetch(`${baseUrl}${path}`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json', Origin: process.env.FRONTEND_ORIGIN,
+        'Content-Type': 'application/json',
+        Origin: process.env.FRONTEND_ORIGIN,
         ...(cookie ? { Cookie: cookie } : {}),
       },
       body: JSON.stringify(body),
@@ -100,44 +107,55 @@ test('Password recovery API with a mocked mail transport', { timeout: 90_000 }, 
     assert.equal(saved.passwordHash === originalHash, true);
   }
 
-  await t.test('A known active account receives a random token while only its hash and 30-minute expiry are stored', async () => {
-    const user = await createUser('known');
-    const startedAt = Date.now();
-    const token = await requestToken(user);
-    const completedAt = Date.now();
-    const saved = await currentUser(user);
-    const expectedHash = createHash('sha256').update(token).digest('hex');
-    assert.equal(saved.passwordResetTokenHash === expectedHash, true);
-    assert.notEqual(saved.passwordResetTokenHash, token);
-    const expiresAt = saved.passwordResetExpiresAt.getTime();
-    assert.ok(expiresAt >= startedAt + 30 * 60_000);
-    assert.ok(expiresAt <= completedAt + 30 * 60_000);
-    await assertPasswordUnchanged(user);
-  });
+  await t.test(
+    'A known active account receives a random token while only its hash and 30-minute expiry are stored',
+    async () => {
+      const user = await createUser('known');
+      const startedAt = Date.now();
+      const token = await requestToken(user);
+      const completedAt = Date.now();
+      const saved = await currentUser(user);
+      const expectedHash = createHash('sha256').update(token).digest('hex');
+      assert.equal(saved.passwordResetTokenHash === expectedHash, true);
+      assert.notEqual(saved.passwordResetTokenHash, token);
+      const expiresAt = saved.passwordResetExpiresAt.getTime();
+      assert.ok(expiresAt >= startedAt + 30 * 60_000);
+      assert.ok(expiresAt <= completedAt + 30 * 60_000);
+      await assertPasswordUnchanged(user);
+    },
+  );
 
-  await t.test('Unknown email returns the same generic response and does not send mail', async () => {
-    const before = messages.length;
-    const response = await post('/auth/forgot-password', { email: `${namespace}_unknown@example.test` });
-    assert.equal(response.status, 200);
-    assert.deepEqual(await response.json(), genericResponse);
-    assert.equal(messages.length, before);
-  });
+  await t.test(
+    'Unknown email returns the same generic response and does not send mail',
+    async () => {
+      const before = messages.length;
+      const response = await post('/auth/forgot-password', {
+        email: `${namespace}_unknown@example.test`,
+      });
+      assert.equal(response.status, 200);
+      assert.deepEqual(await response.json(), genericResponse);
+      assert.equal(messages.length, before);
+    },
+  );
 
   for (const [name, overrides] of [
     ['inactive', { isActive: false }],
     ['deleted', { deletedAt: new Date() }],
   ]) {
-    await t.test(`An ${name} account receives the generic response without a reset token or email`, async () => {
-      const user = await createUser(name, overrides);
-      const before = messages.length;
-      const response = await post('/auth/forgot-password', { email: user.email });
-      assert.equal(response.status, 200);
-      assert.deepEqual(await response.json(), genericResponse);
-      assert.equal(messages.length, before);
-      const saved = await currentUser(user);
-      assert.equal(saved.passwordResetTokenHash, null);
-      assert.equal(saved.passwordResetExpiresAt, null);
-    });
+    await t.test(
+      `An ${name} account receives the generic response without a reset token or email`,
+      async () => {
+        const user = await createUser(name, overrides);
+        const before = messages.length;
+        const response = await post('/auth/forgot-password', { email: user.email });
+        assert.equal(response.status, 200);
+        assert.deepEqual(await response.json(), genericResponse);
+        assert.equal(messages.length, before);
+        const saved = await currentUser(user);
+        assert.equal(saved.passwordResetTokenHash, null);
+        assert.equal(saved.passwordResetExpiresAt, null);
+      },
+    );
   }
 
   await t.test('A newer request invalidates the previous token', async () => {
@@ -147,45 +165,60 @@ test('Password recovery API with a mocked mail transport', { timeout: 90_000 }, 
     assert.notEqual(firstToken, secondToken);
     assert.equal((await reset(firstToken)).status, 400);
     const saved = await currentUser(user);
-    assert.equal(saved.passwordResetTokenHash === createHash('sha256').update(secondToken).digest('hex'), true);
+    assert.equal(
+      saved.passwordResetTokenHash === createHash('sha256').update(secondToken).digest('hex'),
+      true,
+    );
     assert.equal((await reset(secondToken)).status, 200);
   });
 
-  await t.test('A valid token changes the bcrypt password, clears reset fields and expires the browser cookie', async () => {
-    const user = await createUser('success');
-    const token = await requestToken(user);
-    const login = await post('/auth/login', { identifier: user.username, password: originalPassword });
-    assert.equal(login.status, 200);
-    const cookie = login.headers.get('set-cookie').split(';')[0];
-    const newPassword = randomBytes(24).toString('hex');
-    const response = await reset(token, newPassword, cookie);
-    assert.equal(response.status, 200);
-    assert.deepEqual(Object.keys(await response.json()), ['message']);
-    assert.equal(response.headers.get('cache-control'), 'no-store');
-    const clearedCookie = response.headers.get('set-cookie');
-    assert.ok(clearedCookie?.startsWith(`${AUTH_COOKIE}=;`));
-    assert.match(clearedCookie, /;\s*HttpOnly/i);
-    const expires = /Expires=([^;]+)/i.exec(clearedCookie)?.[1];
-    assert.ok(expires && new Date(expires).getTime() < Date.now());
-    const saved = await currentUser(user);
-    assert.equal(saved.passwordResetTokenHash, null);
-    assert.equal(saved.passwordResetExpiresAt, null);
-    assert.notEqual(saved.passwordHash, newPassword);
-    assert.equal(bcrypt.getRounds(saved.passwordHash), 12);
-    assert.equal(await bcrypt.compare(newPassword, saved.passwordHash), true);
-    assert.equal(await bcrypt.compare(originalPassword, saved.passwordHash), false);
-    const oldLogin = await post('/auth/login', { identifier: user.username, password: originalPassword });
-    assert.equal(oldLogin.status, 401);
-    const newLogin = await post('/auth/login', { identifier: user.email, password: newPassword });
-    assert.equal(newLogin.status, 200);
-    assert.equal((await newLogin.json()).id, user.id);
-    assert.equal((await reset(token)).status, 400);
-  });
+  await t.test(
+    'A valid token changes the bcrypt password, clears reset fields and expires the browser cookie',
+    async () => {
+      const user = await createUser('success');
+      const token = await requestToken(user);
+      const login = await post('/auth/login', {
+        identifier: user.username,
+        password: originalPassword,
+      });
+      assert.equal(login.status, 200);
+      const cookie = login.headers.get('set-cookie').split(';')[0];
+      const newPassword = randomBytes(24).toString('hex');
+      const response = await reset(token, newPassword, cookie);
+      assert.equal(response.status, 200);
+      assert.deepEqual(Object.keys(await response.json()), ['message']);
+      assert.equal(response.headers.get('cache-control'), 'no-store');
+      const clearedCookie = response.headers.get('set-cookie');
+      assert.ok(clearedCookie?.startsWith(`${AUTH_COOKIE}=;`));
+      assert.match(clearedCookie, /;\s*HttpOnly/i);
+      const expires = /Expires=([^;]+)/i.exec(clearedCookie)?.[1];
+      assert.ok(expires && new Date(expires).getTime() < Date.now());
+      const saved = await currentUser(user);
+      assert.equal(saved.passwordResetTokenHash, null);
+      assert.equal(saved.passwordResetExpiresAt, null);
+      assert.notEqual(saved.passwordHash, newPassword);
+      assert.equal(bcrypt.getRounds(saved.passwordHash), 12);
+      assert.equal(await bcrypt.compare(newPassword, saved.passwordHash), true);
+      assert.equal(await bcrypt.compare(originalPassword, saved.passwordHash), false);
+      const oldLogin = await post('/auth/login', {
+        identifier: user.username,
+        password: originalPassword,
+      });
+      assert.equal(oldLogin.status, 401);
+      const newLogin = await post('/auth/login', { identifier: user.email, password: newPassword });
+      assert.equal(newLogin.status, 200);
+      assert.equal((await newLogin.json()).id, user.id);
+      assert.equal((await reset(token)).status, 400);
+    },
+  );
 
   await t.test('Expired tokens fail without changing the password', async () => {
     const user = await createUser('expired');
     const token = await requestToken(user);
-    await prisma.user.update({ where: { id: user.id }, data: { passwordResetExpiresAt: new Date(Date.now() - 1000) } });
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { passwordResetExpiresAt: new Date(Date.now() - 1000) },
+    });
     assert.equal((await reset(token)).status, 400);
     await assertPasswordUnchanged(user);
   });
@@ -224,29 +257,38 @@ test('Password recovery API with a mocked mail transport', { timeout: 90_000 }, 
     assert.equal(saved.passwordResetExpiresAt, null);
   });
 
-  await t.test('Mail delivery failure stays generic and removes the undelivered token', async () => {
-    const user = await createUser('mail_failed');
-    mailer.sendPasswordReset = async () => { throw new Error('Simulated SMTP failure'); };
-    try {
-      const response = await post('/auth/forgot-password', { email: user.email });
-      assert.equal(response.status, 200);
-      assert.deepEqual(await response.json(), genericResponse);
-      const saved = await currentUser(user);
-      assert.equal(saved.passwordResetTokenHash, null);
-      assert.equal(saved.passwordResetExpiresAt, null);
-      await assertPasswordUnchanged(user);
-    } finally {
-      mailer.sendPasswordReset = captureMail;
-    }
-  });
+  await t.test(
+    'Mail delivery failure stays generic and removes the undelivered token',
+    async () => {
+      const user = await createUser('mail_failed');
+      mailer.sendPasswordReset = async () => {
+        throw new Error('Simulated SMTP failure');
+      };
+      try {
+        const response = await post('/auth/forgot-password', { email: user.email });
+        assert.equal(response.status, 200);
+        assert.deepEqual(await response.json(), genericResponse);
+        const saved = await currentUser(user);
+        assert.equal(saved.passwordResetTokenHash, null);
+        assert.equal(saved.passwordResetExpiresAt, null);
+        await assertPasswordUnchanged(user);
+      } finally {
+        mailer.sendPasswordReset = captureMail;
+      }
+    },
+  );
 
   await t.test('A delayed SMTP failure cannot erase a newer successfully sent token', async () => {
     const user = await createUser('mail_race');
     let announceFirstMail;
     let failFirstMail;
     let firstRequest;
-    const firstMailStarted = new Promise((resolve) => { announceFirstMail = resolve; });
-    const firstMailFailure = new Promise((resolve) => { failFirstMail = resolve; });
+    const firstMailStarted = new Promise((resolve) => {
+      announceFirstMail = resolve;
+    });
+    const firstMailFailure = new Promise((resolve) => {
+      failFirstMail = resolve;
+    });
     let calls = 0;
     mailer.sendPasswordReset = async (email, resetUrl) => {
       calls += 1;
@@ -261,7 +303,9 @@ test('Password recovery API with a mocked mail transport', { timeout: 90_000 }, 
       firstRequest = post('/auth/forgot-password', { email: user.email });
       await Promise.race([
         firstMailStarted,
-        firstRequest.then(() => { throw new Error('The first request did not attempt to send email.'); }),
+        firstRequest.then(() => {
+          throw new Error('The first request did not attempt to send email.');
+        }),
       ]);
       const newerToken = await requestToken(user);
       failFirstMail();
@@ -269,7 +313,10 @@ test('Password recovery API with a mocked mail transport', { timeout: 90_000 }, 
       assert.equal(failedDeliveryResponse.status, 200);
       assert.deepEqual(await failedDeliveryResponse.json(), genericResponse);
       const saved = await currentUser(user);
-      assert.equal(saved.passwordResetTokenHash === createHash('sha256').update(newerToken).digest('hex'), true);
+      assert.equal(
+        saved.passwordResetTokenHash === createHash('sha256').update(newerToken).digest('hex'),
+        true,
+      );
       assert.equal((await reset(newerToken)).status, 200);
     } finally {
       failFirstMail();
@@ -280,7 +327,14 @@ test('Password recovery API with a mocked mail transport', { timeout: 90_000 }, 
 
   await t.test('Malformed email requests are rejected without sending mail', async () => {
     const before = messages.length;
-    for (const body of [{}, null, [], { email: '' }, { email: 'not-an-email' }, { email: ['user@example.test'] }]) {
+    for (const body of [
+      {},
+      null,
+      [],
+      { email: '' },
+      { email: 'not-an-email' },
+      { email: ['user@example.test'] },
+    ]) {
       assert.equal((await post('/auth/forgot-password', body)).status, 400);
     }
     assert.equal(messages.length, before);
@@ -290,7 +344,11 @@ test('Password recovery API with a mocked mail transport', { timeout: 90_000 }, 
     const user = await createUser('malformed');
     const token = await requestToken(user);
     for (const body of [
-      {}, null, [], { token }, { token, newPassword: [] },
+      {},
+      null,
+      [],
+      { token },
+      { token, newPassword: [] },
       { token: [], newPassword: originalPassword },
       { token: 'invalid', newPassword: originalPassword },
       { token, newPassword: 'short' },

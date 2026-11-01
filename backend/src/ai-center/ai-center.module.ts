@@ -10,6 +10,17 @@ import { DatasetsService } from './datasets.service';
 import { TrainingService } from './training.service';
 import { BusinessTools } from './business-tools';
 import { ChatService } from './chat.service';
-@Module({ imports: [DatabaseModule, AuthModule, ReportsModule, AlertsModule, ForecastsModule], controllers: [AiCenterController],
-  providers: [AiGuard, AiResourceInterceptor, AiStorage, DatasetsService, TrainingService, BusinessTools, ChatService] })
+@Module({
+  imports: [DatabaseModule, AuthModule, ReportsModule, AlertsModule, ForecastsModule],
+  controllers: [AiCenterController],
+  providers: [
+    AiGuard,
+    AiResourceInterceptor,
+    AiStorage,
+    DatasetsService,
+    TrainingService,
+    BusinessTools,
+    ChatService,
+  ],
+})
 export class AiCenterModule {}

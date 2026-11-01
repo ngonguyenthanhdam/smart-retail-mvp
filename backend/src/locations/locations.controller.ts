@@ -12,7 +12,9 @@ export class LocationsController {
 
   @Get()
   @Header('Cache-Control', 'no-store')
-  list(@Query() query: unknown) { return this.locations.list(query); }
+  list(@Query() query: unknown) {
+    return this.locations.list(query);
+  }
 
   @Get(':id')
   @Roles('ADMIN', 'STORE_MANAGER', 'STAFF')
@@ -25,9 +27,13 @@ export class LocationsController {
 
   @Post()
   @Header('Cache-Control', 'no-store')
-  create(@Body() body: unknown) { return this.locations.create(body); }
+  create(@Body() body: unknown) {
+    return this.locations.create(body);
+  }
 
   @Patch(':id')
   @Header('Cache-Control', 'no-store')
-  update(@Param('id') id: string, @Body() body: unknown) { return this.locations.update(id, body); }
+  update(@Param('id') id: string, @Body() body: unknown) {
+    return this.locations.update(id, body);
+  }
 }

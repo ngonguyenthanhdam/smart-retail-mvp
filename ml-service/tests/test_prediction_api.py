@@ -40,7 +40,9 @@ class PredictionApiTests(unittest.TestCase):
         cls.socket.bind(("127.0.0.1", 0))
         cls.url = f"http://127.0.0.1:{cls.socket.getsockname()[1]}"
         cls.server = uvicorn.Server(uvicorn.Config(app, log_level="error"))
-        cls.thread = threading.Thread(target=lambda: cls.server.run(sockets=[cls.socket]), daemon=True)
+        cls.thread = threading.Thread(
+            target=lambda: cls.server.run(sockets=[cls.socket]), daemon=True
+        )
         cls.thread.start()
         for _ in range(100):
             if cls.server.started:
@@ -60,15 +62,28 @@ class PredictionApiTests(unittest.TestCase):
 
     def setUp(self):
         app.state.model = self.saved_model
-        self.body = {"usage_mode": "SYNTHETIC_DEMO", "origin": "2026-01-30", "horizon_days": 30,
-                     "series": [{"store_id": "d5202600-0000-4000-8000-000000000100",
-                                 "product_id": "d5202600-0000-4000-8000-000000000200",
-                                 "history": [{"date": day.strftime("%Y-%m-%d"), "quantity": float(i % 7)}
-                                             for i, day in enumerate(pd.date_range("2026-01-01", periods=30))]}]}
+        self.body = {
+            "usage_mode": "SYNTHETIC_DEMO",
+            "origin": "2026-01-30",
+            "horizon_days": 30,
+            "series": [
+                {
+                    "store_id": "d5202600-0000-4000-8000-000000000100",
+                    "product_id": "d5202600-0000-4000-8000-000000000200",
+                    "history": [
+                        {"date": day.strftime("%Y-%m-%d"), "quantity": float(i % 7)}
+                        for i, day in enumerate(pd.date_range("2026-01-01", periods=30))
+                    ],
+                }
+            ],
+        }
 
     def request(self, body=None, path="/predict"):
-        request = Request(self.url + path, data=None if body is None else json.dumps(body).encode(),
-                          headers={"Content-Type": "application/json"})
+        request = Request(
+            self.url + path,
+            data=None if body is None else json.dumps(body).encode(),
+            headers={"Content-Type": "application/json"},
+        )
         try:
             with urlopen(request, timeout=10) as response:
                 return response.status, json.loads(response.read())
@@ -79,7 +94,9 @@ class PredictionApiTests(unittest.TestCase):
         digest = hashlib.sha256((ROOT / "models/demand_model.joblib").read_bytes()).hexdigest()
         self.assertEqual(digest, "1823f5f9cf6be1086819db79ad40a5cf6b0c5dbb913367f7b9acaf8d911033b0")
         self.assertEqual(load_model(ROOT / "models").version, self.saved_model.version)
-        self.assertEqual(self.request(path="/health"), (200, {"status": "ok", "service": "ml-service"}))
+        self.assertEqual(
+            self.request(path="/health"), (200, {"status": "ok", "service": "ml-service"})
+        )
 
     def test_http_30_and_90_days_are_deterministic_and_preserve_prefix(self):
         status, month = self.request(self.body)
@@ -99,15 +116,36 @@ class PredictionApiTests(unittest.TestCase):
 
     def test_invalid_contract_and_future_history_are_rejected(self):
         cases = []
-        for field, value in [("horizon_days", True), ("horizon_days", 31), ("usage_mode", "PRODUCTION"), ("origin", "2026-02-30")]:
-            body = copy.deepcopy(self.body); body[field] = value; cases.append(body)
-        body = copy.deepcopy(self.body); body["series"] *= 2; cases.append(body)
-        for field, value in [("date", "2026-01-31"), ("quantity", -1), ("quantity", True), ("quantity", "3")]:
-            body = copy.deepcopy(self.body); body["series"][0]["history"][0][field] = value; cases.append(body)
-        body = copy.deepcopy(self.body); body["weather"] = 27; cases.append(body)
+        for field, value in [
+            ("horizon_days", True),
+            ("horizon_days", 31),
+            ("usage_mode", "PRODUCTION"),
+            ("origin", "2026-02-30"),
+        ]:
+            body = copy.deepcopy(self.body)
+            body[field] = value
+            cases.append(body)
+        body = copy.deepcopy(self.body)
+        body["series"] *= 2
+        cases.append(body)
+        for field, value in [
+            ("date", "2026-01-31"),
+            ("quantity", -1),
+            ("quantity", True),
+            ("quantity", "3"),
+        ]:
+            body = copy.deepcopy(self.body)
+            body["series"][0]["history"][0][field] = value
+            cases.append(body)
+        body = copy.deepcopy(self.body)
+        body["weather"] = 27
+        cases.append(body)
         for body in cases:
             with self.subTest(body=body):
-                self.assertEqual(self.request(body), (422, {"code": "INVALID_FORECAST_INPUT", "message": "INVALID_FORECAST_INPUT"}))
+                self.assertEqual(
+                    self.request(body),
+                    (422, {"code": "INVALID_FORECAST_INPUT", "message": "INVALID_FORECAST_INPUT"}),
+                )
 
     def test_insufficient_and_duplicate_daily_history(self):
         self.body["series"][0]["history"].pop(0)
@@ -125,19 +163,36 @@ class PredictionApiTests(unittest.TestCase):
 
     def test_failures_do_not_return_predictions_or_internal_details(self):
         app.state.model = None
-        self.assertEqual(self.request(self.body), (503, {"code": "MODEL_UNAVAILABLE", "message": "MODEL_UNAVAILABLE"}))
+        self.assertEqual(
+            self.request(self.body),
+            (503, {"code": "MODEL_UNAVAILABLE", "message": "MODEL_UNAVAILABLE"}),
+        )
         app.state.model = DemandModel("LightGBM", self.saved_model.version, InvalidRegressor())
-        self.assertEqual(self.request(self.body), (500, {"code": "PREDICTION_FAILED", "message": "PREDICTION_FAILED"}))
+        self.assertEqual(
+            self.request(self.body),
+            (500, {"code": "PREDICTION_FAILED", "message": "PREDICTION_FAILED"}),
+        )
 
     def test_adapter_does_not_modify_history_or_benchmark_predictions(self):
         series = self.body["series"][0]
-        history = pd.DataFrame([{"store_id": series["store_id"], "product_id": series["product_id"],
-                                 "dt": pd.Timestamp(point["date"]), "sale_amount": point["quantity"]} for point in series["history"]])
+        history = pd.DataFrame(
+            [
+                {
+                    "store_id": series["store_id"],
+                    "product_id": series["product_id"],
+                    "dt": pd.Timestamp(point["date"]),
+                    "sale_amount": point["quantity"],
+                }
+                for point in series["history"]
+            ]
+        )
         original = history.copy(deep=True)
         direct, _ = self.saved_model.predict(history, self.body["origin"], 30)
         extended, _ = predict_demo(self.saved_model, history, self.body["origin"], 90)
         pd.testing.assert_frame_equal(history, original)
-        pd.testing.assert_frame_equal(extended.iloc[:30].reset_index(drop=True), direct, check_exact=True)
+        pd.testing.assert_frame_equal(
+            extended.iloc[:30].reset_index(drop=True), direct, check_exact=True
+        )
 
 
 if __name__ == "__main__":

@@ -6,7 +6,11 @@ const { Reflector } = require('@nestjs/core');
 const { Roles } = require('../dist/src/auth/auth.decorators.js');
 const { RolesGuard } = require('../dist/src/auth/roles.guard.js');
 const { resolveLocationScope } = require('../dist/src/auth/location-scope.js');
-const { AUTH_COOKIE, authCookieOptions, readAuthCookie } = require('../dist/src/auth/auth-cookie.js');
+const {
+  AUTH_COOKIE,
+  authCookieOptions,
+  readAuthCookie,
+} = require('../dist/src/auth/auth-cookie.js');
 const { validateEnvironment } = require('../dist/src/config/environment.js');
 const { loadInitialAdmin } = require('../dist/prisma/seed.js');
 const { validateTestDatabase } = require('./test-database.cjs');
@@ -19,8 +23,11 @@ function roleContext(role, allowedRoles, classRoles) {
   }
   if (classRoles) Roles(...classRoles)(ExampleController);
   if (allowedRoles) {
-    Roles(...allowedRoles)(ExampleController.prototype, 'action',
-      Object.getOwnPropertyDescriptor(ExampleController.prototype, 'action'));
+    Roles(...allowedRoles)(
+      ExampleController.prototype,
+      'action',
+      Object.getOwnPropertyDescriptor(ExampleController.prototype, 'action'),
+    );
   }
   return {
     getHandler: () => ExampleController.prototype.action,
@@ -43,7 +50,10 @@ test('RolesGuard permits each explicitly allowed role', () => {
 
 test('RolesGuard uses controller roles and allows a method-specific override', () => {
   const guard = new RolesGuard(new Reflector());
-  assert.throws(() => guard.canActivate(roleContext('STAFF', undefined, ['ADMIN'])), hasStatus(403));
+  assert.throws(
+    () => guard.canActivate(roleContext('STAFF', undefined, ['ADMIN'])),
+    hasStatus(403),
+  );
   assert.equal(guard.canActivate(roleContext('STAFF', ['STAFF'], ['ADMIN'])), true);
 });
 
@@ -75,12 +85,18 @@ test('Missing store assignments and unknown roles fail closed', () => {
   for (const role of ['STORE_MANAGER', 'STAFF', 'UNKNOWN']) {
     assert.throws(() => resolveLocationScope({ role, locationId: null }), hasStatus(403));
   }
-  assert.throws(() => resolveLocationScope({ role: 'ADMIN', locationId: null }, ' '), hasStatus(403));
+  assert.throws(
+    () => resolveLocationScope({ role: 'ADMIN', locationId: null }, ' '),
+    hasStatus(403),
+  );
 });
 
 test('Malformed client location values are rejected with a controlled authorization error', () => {
   for (const value of [null, 0, {}, [], '', ' ']) {
-    assert.throws(() => resolveLocationScope({ role: 'ADMIN', locationId: null }, value), hasStatus(403));
+    assert.throws(
+      () => resolveLocationScope({ role: 'ADMIN', locationId: null }, value),
+      hasStatus(403),
+    );
   }
 });
 
@@ -121,14 +137,29 @@ test('Authentication environment rejects weak secrets and invalid token lifetime
     assert.throws(() => validateEnvironment(environment({ JWT_SECRET: secret })), /JWT_SECRET/);
   }
   for (const duration of ['0s', '25h', '8', '-1h', 'forever']) {
-    assert.throws(() => validateEnvironment(environment({ JWT_EXPIRES_IN: duration })), /JWT_EXPIRES_IN/);
+    assert.throws(
+      () => validateEnvironment(environment({ JWT_EXPIRES_IN: duration })),
+      /JWT_EXPIRES_IN/,
+    );
   }
-  assert.equal(validateEnvironment(environment({ JWT_EXPIRES_IN: '24h' })).JWT_EXPIRES_SECONDS, 86400);
+  assert.equal(
+    validateEnvironment(environment({ JWT_EXPIRES_IN: '24h' })).JWT_EXPIRES_SECONDS,
+    86400,
+  );
 });
 
 test('CORS configuration accepts only an HTTP origin, without credentials or paths', () => {
-  for (const origin of ['*', 'file:///tmp', 'https://example.com/path', 'https://user@example.com', 'https://example.com?query=1']) {
-    assert.throws(() => validateEnvironment(environment({ FRONTEND_ORIGIN: origin })), /FRONTEND_ORIGIN/);
+  for (const origin of [
+    '*',
+    'file:///tmp',
+    'https://example.com/path',
+    'https://user@example.com',
+    'https://example.com?query=1',
+  ]) {
+    assert.throws(
+      () => validateEnvironment(environment({ FRONTEND_ORIGIN: origin })),
+      /FRONTEND_ORIGIN/,
+    );
   }
 });
 
@@ -143,16 +174,38 @@ test('Initial admin configuration validates required fields and bcrypt byte limi
   for (const key of Object.keys(valid)) {
     assert.throws(() => loadInitialAdmin({ ...valid, [key]: '' }), new RegExp(key));
   }
-  assert.throws(() => loadInitialAdmin({ ...valid, INITIAL_ADMIN_PASSWORD: 'a'.repeat(73) }), /INITIAL_ADMIN_PASSWORD/);
-  assert.throws(() => loadInitialAdmin({ ...valid, INITIAL_ADMIN_PASSWORD: 'é'.repeat(37) }), /INITIAL_ADMIN_PASSWORD/);
+  assert.throws(
+    () => loadInitialAdmin({ ...valid, INITIAL_ADMIN_PASSWORD: 'a'.repeat(73) }),
+    /INITIAL_ADMIN_PASSWORD/,
+  );
+  assert.throws(
+    () => loadInitialAdmin({ ...valid, INITIAL_ADMIN_PASSWORD: 'é'.repeat(37) }),
+    /INITIAL_ADMIN_PASSWORD/,
+  );
 });
 
 test('Integration database safety rejects application databases and misleading URL variants', () => {
   const application = 'postgresql://localhost/retailsense';
   assert.throws(() => validateTestDatabase(application, undefined), /TEST_DATABASE_URL/);
   assert.throws(() => validateTestDatabase(application, application), /TEST_DATABASE_URL/);
-  assert.throws(() => validateTestDatabase(application, 'postgresql://localhost/retailsense?schema=tests'), /TEST_DATABASE_URL/);
-  assert.throws(() => validateTestDatabase('postgresql://localhost/shared_test', 'postgresql://127.0.0.1/shared_test?schema=tests'), /TEST_DATABASE_URL/);
-  assert.throws(() => validateTestDatabase(application, 'https://localhost/retailsense_test'), /TEST_DATABASE_URL/);
-  assert.equal(validateTestDatabase(application, 'postgresql://localhost/retailsense_test'), 'postgresql://localhost/retailsense_test');
+  assert.throws(
+    () => validateTestDatabase(application, 'postgresql://localhost/retailsense?schema=tests'),
+    /TEST_DATABASE_URL/,
+  );
+  assert.throws(
+    () =>
+      validateTestDatabase(
+        'postgresql://localhost/shared_test',
+        'postgresql://127.0.0.1/shared_test?schema=tests',
+      ),
+    /TEST_DATABASE_URL/,
+  );
+  assert.throws(
+    () => validateTestDatabase(application, 'https://localhost/retailsense_test'),
+    /TEST_DATABASE_URL/,
+  );
+  assert.equal(
+    validateTestDatabase(application, 'postgresql://localhost/retailsense_test'),
+    'postgresql://localhost/retailsense_test',
+  );
 });

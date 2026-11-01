@@ -12,8 +12,14 @@ class HourlyAuditTests(unittest.TestCase):
     def audit(self, sales, statuses, total=2.0, count=1):
         with tempfile.TemporaryDirectory() as folder:
             path = Path(folder) / "sample.parquet"
-            pd.DataFrame({"sale_amount": [total], "stock_hour6_22_cnt": [count],
-                          "hours_sale": [sales], "hours_stock_status": [statuses]}).to_parquet(path)
+            pd.DataFrame(
+                {
+                    "sale_amount": [total],
+                    "stock_hour6_22_cnt": [count],
+                    "hours_sale": [sales],
+                    "hours_stock_status": [statuses],
+                }
+            ).to_parquet(path)
             return inspect_hourly(path)
 
     def test_stockout_mask_and_daily_total_semantics(self):

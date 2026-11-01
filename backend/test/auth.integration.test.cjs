@@ -56,7 +56,9 @@ test('Authentication API with the migrated test database', { timeout: 90_000 }, 
 
   async function login(identifier, suppliedPassword = password, origin = trustedOrigin) {
     return request('/auth/login', {
-      method: 'POST', body: { identifier, password: suppliedPassword }, origin,
+      method: 'POST',
+      body: { identifier, password: suppliedPassword },
+      origin,
     });
   }
 
@@ -74,49 +76,69 @@ test('Authentication API with the migrated test database', { timeout: 90_000 }, 
   };
   let admin;
 
-  await t.test('Initial seed creates three roles and one administrator with a bcrypt password', async () => {
-    assert.equal(await seedAuthentication(prisma, adminConfig), 'created');
-    admin = await prisma.user.findUniqueOrThrow({ where: { username: adminConfig.username } });
-    userIds.push(admin.id);
-    assert.equal(admin.locationId, null);
-    assert.equal(await bcrypt.compare(password, admin.passwordHash), true);
-    assert.equal(bcrypt.getRounds(admin.passwordHash), 12);
-    const codes = (await prisma.role.findMany()).map((role) => role.code).sort();
-    assert.deepEqual(codes, ['ADMIN', 'STAFF', 'STORE_MANAGER']);
-  });
+  await t.test(
+    'Initial seed creates three roles and one administrator with a bcrypt password',
+    async () => {
+      assert.equal(await seedAuthentication(prisma, adminConfig), 'created');
+      admin = await prisma.user.findUniqueOrThrow({ where: { username: adminConfig.username } });
+      userIds.push(admin.id);
+      assert.equal(admin.locationId, null);
+      assert.equal(await bcrypt.compare(password, admin.passwordHash), true);
+      assert.equal(bcrypt.getRounds(admin.passwordHash), 12);
+      const codes = (await prisma.role.findMany()).map((role) => role.code).sort();
+      assert.deepEqual(codes, ['ADMIN', 'STAFF', 'STORE_MANAGER']);
+    },
+  );
 
   assert.ok(admin, 'The initial test administrator must exist before API verification.');
 
-  await t.test('Repeated seed does not duplicate accounts or overwrite an existing password', async () => {
-    assert.equal(await seedAuthentication(prisma, {
-      ...adminConfig,
-      password: randomBytes(24).toString('hex'),
-      fullName: 'Changed bootstrap configuration',
-    }), 'unchanged');
-    const current = await prisma.user.findUniqueOrThrow({ where: { id: admin.id } });
-    assert.equal(current.passwordHash === admin.passwordHash, true);
-    assert.equal(current.fullName, adminConfig.fullName);
-    assert.equal(await prisma.user.count({ where: { username: adminConfig.username } }), 1);
-    assert.equal(await prisma.role.count(), 3);
-  });
+  await t.test(
+    'Repeated seed does not duplicate accounts or overwrite an existing password',
+    async () => {
+      assert.equal(
+        await seedAuthentication(prisma, {
+          ...adminConfig,
+          password: randomBytes(24).toString('hex'),
+          fullName: 'Changed bootstrap configuration',
+        }),
+        'unchanged',
+      );
+      const current = await prisma.user.findUniqueOrThrow({ where: { id: admin.id } });
+      assert.equal(current.passwordHash === admin.passwordHash, true);
+      assert.equal(current.fullName, adminConfig.fullName);
+      assert.equal(await prisma.user.count({ where: { username: adminConfig.username } }), 1);
+      assert.equal(await prisma.role.count(), 3);
+    },
+  );
 
-  await t.test('Changed bootstrap identifiers cannot create a second initial administrator', async () => {
-    await assert.rejects(seedAuthentication(prisma, {
-      ...adminConfig,
-      username: `${namespace}_second`,
-      email: `${namespace}_second@example.test`,
-    }), /administrator already exists/i);
-    assert.equal(await prisma.user.count({ where: { username: `${namespace}_second` } }), 0);
-  });
+  await t.test(
+    'Changed bootstrap identifiers cannot create a second initial administrator',
+    async () => {
+      await assert.rejects(
+        seedAuthentication(prisma, {
+          ...adminConfig,
+          username: `${namespace}_second`,
+          email: `${namespace}_second@example.test`,
+        }),
+        /administrator already exists/i,
+      );
+      assert.equal(await prisma.user.count({ where: { username: `${namespace}_second` } }), 0);
+    },
+  );
 
-  const roles = Object.fromEntries((await prisma.role.findMany()).map((role) => [role.code, role.id]));
+  const roles = Object.fromEntries(
+    (await prisma.role.findMany()).map((role) => [role.code, role.id]),
+  );
   const passwordHash = await bcrypt.hash(password, 12);
 
   async function createLocation(suffix, locationType = 'STORE') {
     const location = await prisma.location.create({
       data: {
-        code: `${namespace}_${suffix}`, name: `Authentication Test ${suffix}`,
-        locationType, createdAt: new Date(), updatedAt: new Date(),
+        code: `${namespace}_${suffix}`,
+        name: `Authentication Test ${suffix}`,
+        locationType,
+        createdAt: new Date(),
+        updatedAt: new Date(),
       },
     });
     locationIds.push(location.id);
@@ -126,9 +148,15 @@ test('Authentication API with the migrated test database', { timeout: 90_000 }, 
   async function createUser(suffix, role, locationId, overrides = {}) {
     const user = await prisma.user.create({
       data: {
-        username: `${namespace}_${suffix}`, email: `${namespace}_${suffix}@example.test`,
-        fullName: `Authentication Test ${suffix}`, roleId: roles[role], locationId,
-        passwordHash, createdAt: new Date(), updatedAt: new Date(), ...overrides,
+        username: `${namespace}_${suffix}`,
+        email: `${namespace}_${suffix}@example.test`,
+        fullName: `Authentication Test ${suffix}`,
+        roleId: roles[role],
+        locationId,
+        passwordHash,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        ...overrides,
       },
     });
     userIds.push(user.id);
@@ -145,29 +173,43 @@ test('Authentication API with the migrated test database', { timeout: 90_000 }, 
   const mutable = await createUser('mutable', 'STORE_MANAGER', storeA.id);
   let adminCookie;
 
-  await t.test('Valid ADMIN username login returns safe user data and an eight-hour HttpOnly cookie', async () => {
-    const response = await login(admin.username);
-    assert.equal(response.status, 200);
-    adminCookie = cookieFrom(response);
-    const body = await response.json();
-    assert.deepEqual(Object.keys(body).sort(), ['email', 'fullName', 'id', 'location', 'locationId', 'role', 'username']);
-    assert.equal(body.id, admin.id);
-    assert.equal(body.role, 'ADMIN');
-    assert.equal(body.location, null);
-    assert.equal(body.locationId, null);
-    const header = response.headers.get('set-cookie');
-    assert.match(header, /;\s*HttpOnly/i);
-    assert.match(header, /;\s*SameSite=Lax/i);
-    assert.match(header, /;\s*Path=\//i);
-    assert.doesNotMatch(header, /;\s*Secure/i);
-    assert.match(header, /;\s*Max-Age=28800/i);
-    const token = decodeURIComponent(adminCookie.slice(AUTH_COOKIE.length + 1));
-    const payload = new JwtService().verify(token, { secret: process.env.JWT_SECRET, algorithms: ['HS256'] });
-    assert.deepEqual(Object.keys(payload).sort(), ['exp', 'iat', 'sub']);
-    assert.equal(payload.sub, admin.id);
-    assert.equal(payload.exp - payload.iat, 28800);
-    assert.equal(response.headers.get('cache-control'), 'no-store');
-  });
+  await t.test(
+    'Valid ADMIN username login returns safe user data and an eight-hour HttpOnly cookie',
+    async () => {
+      const response = await login(admin.username);
+      assert.equal(response.status, 200);
+      adminCookie = cookieFrom(response);
+      const body = await response.json();
+      assert.deepEqual(Object.keys(body).sort(), [
+        'email',
+        'fullName',
+        'id',
+        'location',
+        'locationId',
+        'role',
+        'username',
+      ]);
+      assert.equal(body.id, admin.id);
+      assert.equal(body.role, 'ADMIN');
+      assert.equal(body.location, null);
+      assert.equal(body.locationId, null);
+      const header = response.headers.get('set-cookie');
+      assert.match(header, /;\s*HttpOnly/i);
+      assert.match(header, /;\s*SameSite=Lax/i);
+      assert.match(header, /;\s*Path=\//i);
+      assert.doesNotMatch(header, /;\s*Secure/i);
+      assert.match(header, /;\s*Max-Age=28800/i);
+      const token = decodeURIComponent(adminCookie.slice(AUTH_COOKIE.length + 1));
+      const payload = new JwtService().verify(token, {
+        secret: process.env.JWT_SECRET,
+        algorithms: ['HS256'],
+      });
+      assert.deepEqual(Object.keys(payload).sort(), ['exp', 'iat', 'sub']);
+      assert.equal(payload.sub, admin.id);
+      assert.equal(payload.exp - payload.iat, 28800);
+      assert.equal(response.headers.get('cache-control'), 'no-store');
+    },
+  );
 
   await t.test('ADMIN can also sign in using email', async () => {
     const response = await login(admin.email);
@@ -182,13 +224,24 @@ test('Authentication API with the migrated test database', { timeout: 90_000 }, 
     assert.equal((await response.json()).message, 'Invalid username/email or password.');
   });
 
-  await t.test('Malformed credentials and passwords exceeding bcrypt byte limits are rejected', async () => {
-    for (const body of [{}, { identifier: [], password }, { identifier: admin.username, password: 'é'.repeat(37) }]) {
-      const response = await request('/auth/login', { method: 'POST', body, origin: trustedOrigin });
-      assert.equal(response.status, 401);
-      assert.equal((await response.json()).message, 'Invalid username/email or password.');
-    }
-  });
+  await t.test(
+    'Malformed credentials and passwords exceeding bcrypt byte limits are rejected',
+    async () => {
+      for (const body of [
+        {},
+        { identifier: [], password },
+        { identifier: admin.username, password: 'é'.repeat(37) },
+      ]) {
+        const response = await request('/auth/login', {
+          method: 'POST',
+          body,
+          origin: trustedOrigin,
+        });
+        assert.equal(response.status, 401);
+        assert.equal((await response.json()).message, 'Invalid username/email or password.');
+      }
+    },
+  );
 
   for (const [description, identifier, suppliedPassword] of [
     ['Wrong password', admin.username, `${password}wrong`],
@@ -208,88 +261,129 @@ test('Authentication API with the migrated test database', { timeout: 90_000 }, 
     assert.equal((await request('/auth/me')).status, 401);
   });
 
-  await t.test('Authenticated /auth/me returns the current safe user and avoids caching', async () => {
-    const response = await request('/auth/me', { cookie: adminCookie });
-    assert.equal(response.status, 200);
-    const body = await response.json();
-    assert.deepEqual(Object.keys(body).sort(), ['email', 'fullName', 'id', 'location', 'locationId', 'role', 'username']);
-    assert.equal(body.id, admin.id);
-    assert.equal(body.username, admin.username);
-    assert.equal(body.email, admin.email);
-    assert.equal(body.fullName, admin.fullName);
-    assert.equal(response.headers.get('cache-control'), 'no-store');
-  });
-
-  await t.test('Managers and staff receive their assigned store without sensitive fields', async () => {
-    for (const account of [manager, staff]) {
-      const response = await login(account.username);
+  await t.test(
+    'Authenticated /auth/me returns the current safe user and avoids caching',
+    async () => {
+      const response = await request('/auth/me', { cookie: adminCookie });
       assert.equal(response.status, 200);
-      const current = await request('/auth/me', { cookie: cookieFrom(response) });
-      assert.equal(current.status, 200);
-      const body = await current.json();
-      assert.equal(body.locationId, storeA.id);
-      assert.deepEqual(body.location, { id: storeA.id, code: storeA.code, name: storeA.name });
-      assert.equal('passwordHash' in body || 'password_hash' in body, false);
-    }
-  });
+      const body = await response.json();
+      assert.deepEqual(Object.keys(body).sort(), [
+        'email',
+        'fullName',
+        'id',
+        'location',
+        'locationId',
+        'role',
+        'username',
+      ]);
+      assert.equal(body.id, admin.id);
+      assert.equal(body.username, admin.username);
+      assert.equal(body.email, admin.email);
+      assert.equal(body.fullName, admin.fullName);
+      assert.equal(response.headers.get('cache-control'), 'no-store');
+    },
+  );
 
-  await t.test('Invalid signatures, expired tokens, and invalid user subjects receive 401', async () => {
-    const jwt = new JwtService();
-    const invalidTokens = [
-      jwt.sign({ sub: admin.id }, { secret: randomBytes(32).toString('hex'), expiresIn: '8h' }),
-      jwt.sign({ sub: admin.id }, { secret: process.env.JWT_SECRET, expiresIn: -1 }),
-      jwt.sign({ sub: 'not-a-user-uuid' }, { secret: process.env.JWT_SECRET, expiresIn: '8h' }),
-      jwt.sign({ sub: randomUUID() }, { secret: process.env.JWT_SECRET, expiresIn: '8h' }),
-      jwt.sign({ sub: admin.id }, { secret: process.env.JWT_SECRET }),
-    ];
-    for (const token of invalidTokens) {
-      const response = await request('/auth/me', { cookie: `${AUTH_COOKIE}=${token}` });
-      assert.equal(response.status, 401);
-    }
-  });
+  await t.test(
+    'Managers and staff receive their assigned store without sensitive fields',
+    async () => {
+      for (const account of [manager, staff]) {
+        const response = await login(account.username);
+        assert.equal(response.status, 200);
+        const current = await request('/auth/me', { cookie: cookieFrom(response) });
+        assert.equal(current.status, 200);
+        const body = await current.json();
+        assert.equal(body.locationId, storeA.id);
+        assert.deepEqual(body.location, { id: storeA.id, code: storeA.code, name: storeA.name });
+        assert.equal('passwordHash' in body || 'password_hash' in body, false);
+      }
+    },
+  );
 
-  await t.test('An existing token stops working when the account is deactivated or soft-deleted', async () => {
-    const response = await login(mutable.username);
-    assert.equal(response.status, 200);
-    const cookie = cookieFrom(response);
-    try {
-      await prisma.user.update({ where: { id: mutable.id }, data: { isActive: false } });
-      assert.equal((await request('/auth/me', { cookie })).status, 401);
-      await prisma.user.update({ where: { id: mutable.id }, data: { isActive: true, deletedAt: new Date() } });
-      assert.equal((await request('/auth/me', { cookie })).status, 401);
-    } finally {
-      await prisma.user.update({ where: { id: mutable.id }, data: { isActive: true, deletedAt: null } });
-    }
-  });
+  await t.test(
+    'Invalid signatures, expired tokens, and invalid user subjects receive 401',
+    async () => {
+      const jwt = new JwtService();
+      const invalidTokens = [
+        jwt.sign({ sub: admin.id }, { secret: randomBytes(32).toString('hex'), expiresIn: '8h' }),
+        jwt.sign({ sub: admin.id }, { secret: process.env.JWT_SECRET, expiresIn: -1 }),
+        jwt.sign({ sub: 'not-a-user-uuid' }, { secret: process.env.JWT_SECRET, expiresIn: '8h' }),
+        jwt.sign({ sub: randomUUID() }, { secret: process.env.JWT_SECRET, expiresIn: '8h' }),
+        jwt.sign({ sub: admin.id }, { secret: process.env.JWT_SECRET }),
+      ];
+      for (const token of invalidTokens) {
+        const response = await request('/auth/me', { cookie: `${AUTH_COOKIE}=${token}` });
+        assert.equal(response.status, 401);
+      }
+    },
+  );
 
-  await t.test('Existing tokens use current role and store assignments from the database', async () => {
-    const response = await login(mutable.username);
-    assert.equal(response.status, 200);
-    const cookie = cookieFrom(response);
-    try {
-      await prisma.user.update({ where: { id: mutable.id }, data: { roleId: roles.STAFF, locationId: storeB.id } });
-      const current = await request('/auth/me', { cookie });
-      assert.equal(current.status, 200);
-      const body = await current.json();
-      assert.equal(body.role, 'STAFF');
-      assert.equal(body.locationId, storeB.id);
-      await prisma.user.update({ where: { id: mutable.id }, data: { locationId: null } });
-      assert.equal((await request('/auth/me', { cookie })).status, 401);
-    } finally {
-      await prisma.user.update({ where: { id: mutable.id }, data: { roleId: roles.STORE_MANAGER, locationId: storeA.id } });
-    }
-  });
+  await t.test(
+    'An existing token stops working when the account is deactivated or soft-deleted',
+    async () => {
+      const response = await login(mutable.username);
+      assert.equal(response.status, 200);
+      const cookie = cookieFrom(response);
+      try {
+        await prisma.user.update({ where: { id: mutable.id }, data: { isActive: false } });
+        assert.equal((await request('/auth/me', { cookie })).status, 401);
+        await prisma.user.update({
+          where: { id: mutable.id },
+          data: { isActive: true, deletedAt: new Date() },
+        });
+        assert.equal((await request('/auth/me', { cookie })).status, 401);
+      } finally {
+        await prisma.user.update({
+          where: { id: mutable.id },
+          data: { isActive: true, deletedAt: null },
+        });
+      }
+    },
+  );
+
+  await t.test(
+    'Existing tokens use current role and store assignments from the database',
+    async () => {
+      const response = await login(mutable.username);
+      assert.equal(response.status, 200);
+      const cookie = cookieFrom(response);
+      try {
+        await prisma.user.update({
+          where: { id: mutable.id },
+          data: { roleId: roles.STAFF, locationId: storeB.id },
+        });
+        const current = await request('/auth/me', { cookie });
+        assert.equal(current.status, 200);
+        const body = await current.json();
+        assert.equal(body.role, 'STAFF');
+        assert.equal(body.locationId, storeB.id);
+        await prisma.user.update({ where: { id: mutable.id }, data: { locationId: null } });
+        assert.equal((await request('/auth/me', { cookie })).status, 401);
+      } finally {
+        await prisma.user.update({
+          where: { id: mutable.id },
+          data: { roleId: roles.STORE_MANAGER, locationId: storeA.id },
+        });
+      }
+    },
+  );
 
   await t.test('Managers and staff cannot authenticate without a STORE assignment', async () => {
     for (const role of ['STORE_MANAGER', 'STAFF']) {
       for (const locationId of [null, warehouse.id]) {
-        await prisma.user.update({ where: { id: mutable.id }, data: { roleId: roles[role], locationId } });
+        await prisma.user.update({
+          where: { id: mutable.id },
+          data: { roleId: roles[role], locationId },
+        });
         const response = await login(mutable.username);
         assert.equal(response.status, 401);
         assert.equal((await response.json()).message, 'Invalid username/email or password.');
       }
     }
-    await prisma.user.update({ where: { id: mutable.id }, data: { roleId: roles.STORE_MANAGER, locationId: storeA.id } });
+    await prisma.user.update({
+      where: { id: mutable.id },
+      data: { roleId: roles.STORE_MANAGER, locationId: storeA.id },
+    });
   });
 
   await t.test('Credentialed CORS allows the configured frontend origin', async () => {
@@ -318,16 +412,23 @@ test('Authentication API with the migrated test database', { timeout: 90_000 }, 
     assert.equal(logout.headers.get('set-cookie'), null);
   });
 
-  await t.test('Logout expires the cookie and subsequent requests without it are unauthenticated', async () => {
-    const response = await request('/auth/logout', { method: 'POST', cookie: adminCookie, origin: trustedOrigin });
-    assert.equal(response.status, 204);
-    const header = response.headers.get('set-cookie');
-    assert.ok(header);
-    assert.ok(header.startsWith(`${AUTH_COOKIE}=;`));
-    assert.match(header, /;\s*HttpOnly/i);
-    assert.match(header, /;\s*SameSite=Lax/i);
-    const expires = /Expires=([^;]+)/i.exec(header)?.[1];
-    assert.ok(expires && new Date(expires).getTime() < Date.now());
-    assert.equal((await request('/auth/me')).status, 401);
-  });
+  await t.test(
+    'Logout expires the cookie and subsequent requests without it are unauthenticated',
+    async () => {
+      const response = await request('/auth/logout', {
+        method: 'POST',
+        cookie: adminCookie,
+        origin: trustedOrigin,
+      });
+      assert.equal(response.status, 204);
+      const header = response.headers.get('set-cookie');
+      assert.ok(header);
+      assert.ok(header.startsWith(`${AUTH_COOKIE}=;`));
+      assert.match(header, /;\s*HttpOnly/i);
+      assert.match(header, /;\s*SameSite=Lax/i);
+      const expires = /Expires=([^;]+)/i.exec(header)?.[1];
+      assert.ok(expires && new Date(expires).getTime() < Date.now());
+      assert.equal((await request('/auth/me')).status, 401);
+    },
+  );
 });

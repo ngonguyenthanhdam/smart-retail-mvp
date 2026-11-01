@@ -1,12 +1,12 @@
-import type { Metadata } from "next";
-import type { ReactNode } from "react";
+import type { Metadata } from 'next';
+import type { ReactNode } from 'react';
 
-import { AuthBoundary } from "@/components/auth-boundary";
-import { AuthProvider } from "@/components/auth-provider";
-import { vi } from "@/i18n/vi";
+import { AuthBoundary } from '@/components/auth-boundary';
+import { AuthProvider } from '@/components/auth-provider';
+import { vi } from '@/i18n/vi';
 
-import "./globals.css";
-import "./retail-system.css";
+import './globals.css';
+import './retail-system.css';
 
 export const metadata: Metadata = {
   title: { default: vi.brand, template: `%s | ${vi.brand}` },

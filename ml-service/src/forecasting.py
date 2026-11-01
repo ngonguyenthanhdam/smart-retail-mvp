@@ -1,5 +1,3 @@
-"""Offline fixed-origin forecasts in FreshRetailNet's published target space."""
-
 from dataclasses import dataclass
 from typing import Any
 
@@ -14,7 +12,6 @@ TARGET_SPACE = "freshretailnet_normalized"
 
 
 def history_panel(history: pd.DataFrame, origin: str | pd.Timestamp) -> pd.DataFrame:
-    """Require complete 30-day history for every supplied pair; never fill gaps."""
     required = KEY + ["sale_amount"]
     if not set(required).issubset(history.columns) or history.empty:
         raise ValueError("History must contain nonempty store_id, product_id, dt, sale_amount")
@@ -40,7 +37,9 @@ def history_panel(history: pd.DataFrame, origin: str | pd.Timestamp) -> pd.DataF
     pairs = pd.MultiIndex.from_frame(data[KEY[:2]].drop_duplicates()).sort_values()
     dates = pd.date_range(cutoff - pd.Timedelta(days=29), cutoff)
     recent = data.loc[data.dt >= dates[0]]
-    panel = recent.pivot(index=KEY[:2], columns="dt", values="sale_amount").reindex(index=pairs, columns=dates)
+    panel = recent.pivot(index=KEY[:2], columns="dt", values="sale_amount").reindex(
+        index=pairs, columns=dates
+    )
     if panel.isna().any().any():
         count = int(panel.isna().any(axis=1).sum())
         raise ValueError(f"INSUFFICIENT_HISTORY: {count} pairs lack 30 complete daily observations")
@@ -48,7 +47,6 @@ def history_panel(history: pd.DataFrame, origin: str | pd.Timestamp) -> pd.DataF
 
 
 def step_features(past: np.ndarray, date: pd.Timestamp) -> pd.DataFrame:
-    """Rows are pairs; columns are earlier daily values in chronological order."""
     if past.ndim != 2 or past.shape[1] < 30 or not np.isfinite(past).all() or (past < 0).any():
         raise ValueError("Step features require at least 30 finite nonnegative past days")
     columns = {f"lag_{lag}": past[:, -lag] for lag in LAGS}
@@ -65,7 +63,9 @@ class DemandModel:
     regressor: Any = None
     target_space: str = TARGET_SPACE
 
-    def predict(self, history: pd.DataFrame, origin: str, horizon: int) -> tuple[pd.DataFrame, dict]:
+    def predict(
+        self, history: pd.DataFrame, origin: str, horizon: int
+    ) -> tuple[pd.DataFrame, dict]:
         if self.algorithm not in ALGORITHMS or self.target_space != TARGET_SPACE:
             raise ValueError("Unsupported algorithm or target space")
         if isinstance(horizon, bool) or not isinstance(horizon, int) or not 1 <= horizon <= 30:
@@ -84,13 +84,23 @@ class DemandModel:
             if self.algorithm == "SeasonalNaive":
                 prediction = buffer[:, end - 7].copy()
             else:
-                inputs = step_features(buffer[:, end - 30:end], date)
-                prediction = np.asarray(self.regressor.predict(inputs, validate_features=True), dtype=float)
+                inputs = step_features(buffer[:, end - 30 : end], date)
+                prediction = np.asarray(
+                    self.regressor.predict(inputs, validate_features=True), dtype=float
+                )
             if prediction.shape != (len(panel),) or not np.isfinite(prediction).all():
                 raise ValueError("Model returned invalid or non-finite predictions")
             clipped += int((prediction < 0).sum())
             buffer[:, end] = np.maximum(prediction, 0)
-        result = panel.index.to_frame(index=False).loc[lambda x: x.index.repeat(horizon)].reset_index(drop=True)
+        result = (
+            panel.index.to_frame(index=False)
+            .loc[lambda x: x.index.repeat(horizon)]
+            .reset_index(drop=True)
+        )
         result["dt"] = np.tile(dates.to_numpy(), len(panel))
         result["prediction"] = buffer[:, 30:].reshape(-1)
-        return result, {"pairs": len(panel), "horizon_days": horizon, "negative_predictions_clipped": clipped}
+        return result, {
+            "pairs": len(panel),
+            "horizon_days": horizon,
+            "negative_predictions_clipped": clipped,
+        }

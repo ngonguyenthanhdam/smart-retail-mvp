@@ -3,5 +3,9 @@ import { DatabaseModule } from '../database/database.module';
 import { LocationsController } from './locations.controller';
 import { LocationsService } from './locations.service';
 
-@Module({ imports: [DatabaseModule], controllers: [LocationsController], providers: [LocationsService] })
+@Module({
+  imports: [DatabaseModule],
+  controllers: [LocationsController],
+  providers: [LocationsService],
+})
 export class LocationsModule {}

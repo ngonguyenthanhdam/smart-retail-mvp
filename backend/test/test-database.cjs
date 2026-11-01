@@ -13,8 +13,11 @@ function validateTestDatabase(applicationUrl, testUrl) {
 
   const database = decodeURIComponent(target.pathname.slice(1));
   const applicationDatabase = decodeURIComponent(application.pathname.slice(1));
-  if (!['postgres:', 'postgresql:'].includes(target.protocol) ||
-      !/^[a-zA-Z0-9_]+_test$/.test(database) || database === applicationDatabase) {
+  if (
+    !['postgres:', 'postgresql:'].includes(target.protocol) ||
+    !/^[a-zA-Z0-9_]+_test$/.test(database) ||
+    database === applicationDatabase
+  ) {
     throw new Error('TEST_DATABASE_URL must name a separate PostgreSQL database ending in _test.');
   }
 
@@ -23,7 +26,10 @@ function validateTestDatabase(applicationUrl, testUrl) {
 
 function prepareTestEnvironment() {
   require('dotenv').config({ path: resolve(__dirname, '../.env'), quiet: true });
-  const connectionString = validateTestDatabase(process.env.DATABASE_URL, process.env.TEST_DATABASE_URL);
+  const connectionString = validateTestDatabase(
+    process.env.DATABASE_URL,
+    process.env.TEST_DATABASE_URL,
+  );
   process.env.DATABASE_URL = connectionString;
   process.env.NODE_ENV = 'test';
   process.env.FRONTEND_ORIGIN = 'http://localhost:3000';

@@ -6,12 +6,24 @@ import { ExpensesService } from './expenses.service';
 @Roles('ADMIN', 'STORE_MANAGER')
 export class ExpensesController {
   constructor(private readonly service: ExpensesService) {}
-  @Get() @Header('Cache-Control', 'no-store')
-  list(@Query() query: unknown, @CurrentUser() user: AuthenticatedUser) { return this.service.list(query, user); }
-  @Get(':id') @Header('Cache-Control', 'no-store')
-  detail(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser) { return this.service.detail(id, user); }
-  @Post() @Header('Cache-Control', 'no-store')
-  create(@Body() body: unknown, @CurrentUser() user: AuthenticatedUser) { return this.service.create(body, user); }
-  @Patch(':id') @Header('Cache-Control', 'no-store')
-  update(@Param('id') id: string, @Body() body: unknown, @CurrentUser() user: AuthenticatedUser) { return this.service.update(id, body, user); }
+  @Get()
+  @Header('Cache-Control', 'no-store')
+  list(@Query() query: unknown, @CurrentUser() user: AuthenticatedUser) {
+    return this.service.list(query, user);
+  }
+  @Get(':id')
+  @Header('Cache-Control', 'no-store')
+  detail(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser) {
+    return this.service.detail(id, user);
+  }
+  @Post()
+  @Header('Cache-Control', 'no-store')
+  create(@Body() body: unknown, @CurrentUser() user: AuthenticatedUser) {
+    return this.service.create(body, user);
+  }
+  @Patch(':id')
+  @Header('Cache-Control', 'no-store')
+  update(@Param('id') id: string, @Body() body: unknown, @CurrentUser() user: AuthenticatedUser) {
+    return this.service.update(id, body, user);
+  }
 }

@@ -26,7 +26,9 @@ export function loadInitialAdmin(environment: NodeJS.ProcessEnv): InitialAdmin {
     throw new Error('INITIAL_ADMIN_USERNAME must contain between 1 and 100 characters.');
   }
   if (!email || email.length > 255 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    throw new Error('INITIAL_ADMIN_EMAIL must contain a valid email address of at most 255 characters.');
+    throw new Error(
+      'INITIAL_ADMIN_EMAIL must contain a valid email address of at most 255 characters.',
+    );
   }
   if (!fullName || fullName.length > 150) {
     throw new Error('INITIAL_ADMIN_FULL_NAME must contain between 1 and 150 characters.');
@@ -51,67 +53,74 @@ export async function seedAuthentication(
   });
   const passwordHash = await hash(admin.password, 12);
 
-  return prisma.$transaction(async (transaction) => {
-    for (const role of initialRoles) {
-      await transaction.role.upsert({
-        where: { code: role.code },
-        create: role,
-        update: {},
-      });
-    }
-
-    const adminRole = await transaction.role.findUniqueOrThrow({
-      where: { code: 'ADMIN' },
-    });
-    const identifiers = [admin.username, admin.email];
-    const matches = await transaction.user.findMany({
-      where: {
-        OR: [{ username: { in: identifiers } }, { email: { in: identifiers } }],
-      },
-    });
-
-    if (matches.length > 0) {
-      const existing = matches[0];
-      if (
-        matches.length !== 1 ||
-        !existing ||
-        existing.username !== admin.username ||
-        existing.email !== admin.email ||
-        existing.roleId !== adminRole.id ||
-        existing.isActive !== true ||
-        existing.deletedAt !== null
-      ) {
-        throw new Error('Initial administrator identifiers conflict with an existing account. No account was changed.');
+  return prisma.$transaction(
+    async (transaction) => {
+      for (const role of initialRoles) {
+        await transaction.role.upsert({
+          where: { code: role.code },
+          create: role,
+          update: {},
+        });
       }
 
-      return 'unchanged';
-    }
+      const adminRole = await transaction.role.findUniqueOrThrow({
+        where: { code: 'ADMIN' },
+      });
+      const identifiers = [admin.username, admin.email];
+      const matches = await transaction.user.findMany({
+        where: {
+          OR: [{ username: { in: identifiers } }, { email: { in: identifiers } }],
+        },
+      });
 
-    const administratorExists = await transaction.user.findFirst({
-      where: { roleId: adminRole.id },
-      select: { id: true },
-    });
-    if (administratorExists) {
-      throw new Error('An administrator already exists. A second initial administrator was not created.');
-    }
+      if (matches.length > 0) {
+        const existing = matches[0];
+        if (
+          matches.length !== 1 ||
+          !existing ||
+          existing.username !== admin.username ||
+          existing.email !== admin.email ||
+          existing.roleId !== adminRole.id ||
+          existing.isActive !== true ||
+          existing.deletedAt !== null
+        ) {
+          throw new Error(
+            'Initial administrator identifiers conflict with an existing account. No account was changed.',
+          );
+        }
 
-    const now = new Date();
-    await transaction.user.create({
-      data: {
-        username: admin.username,
-        email: admin.email,
-        passwordHash,
-        fullName: admin.fullName,
-        roleId: adminRole.id,
-        locationId: null,
-        isActive: true,
-        createdAt: now,
-        updatedAt: now,
-      },
-    });
+        return 'unchanged';
+      }
 
-    return 'created';
-  }, { isolationLevel: 'Serializable' });
+      const administratorExists = await transaction.user.findFirst({
+        where: { roleId: adminRole.id },
+        select: { id: true },
+      });
+      if (administratorExists) {
+        throw new Error(
+          'An administrator already exists. A second initial administrator was not created.',
+        );
+      }
+
+      const now = new Date();
+      await transaction.user.create({
+        data: {
+          username: admin.username,
+          email: admin.email,
+          passwordHash,
+          fullName: admin.fullName,
+          roleId: adminRole.id,
+          locationId: null,
+          isActive: true,
+          createdAt: now,
+          updatedAt: now,
+        },
+      });
+
+      return 'created';
+    },
+    { isolationLevel: 'Serializable' },
+  );
 }
 
 async function main(): Promise<void> {
@@ -120,7 +129,9 @@ async function main(): Promise<void> {
   if (!connectionString) {
     throw new Error('DATABASE_URL is required to seed authentication.');
   }
-  const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString, options: '-c timezone=UTC' }) });
+  const prisma = new PrismaClient({
+    adapter: new PrismaPg({ connectionString, options: '-c timezone=UTC' }),
+  });
 
   try {
     const result = await seedAuthentication(prisma, initialAdmin);
@@ -132,7 +143,9 @@ async function main(): Promise<void> {
 
 if (require.main === module) {
   void main().catch(() => {
-    console.error('Authentication seed failed. Check the database, INITIAL_ADMIN_* configuration, and existing account identities.');
+    console.error(
+      'Authentication seed failed. Check the database, INITIAL_ADMIN_* configuration, and existing account identities.',
+    );
     process.exitCode = 1;
   });
 }

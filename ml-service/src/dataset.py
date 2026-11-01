@@ -1,5 +1,3 @@
-"""Pinned public dataset acquisition. Never connects to the operational database."""
-
 import argparse
 import hashlib
 import json
@@ -34,8 +32,10 @@ def download(raw_dir: Path = RAW_DIR) -> None:
     for entry in manifest["files"]:
         path = raw_dir / entry["name"]
         if not path.exists():
-            url = (f"https://huggingface.co/datasets/{manifest['dataset']}/resolve/"
-                   f"{manifest['revision']}/data/{entry['name']}")
+            url = (
+                f"https://huggingface.co/datasets/{manifest['dataset']}/resolve/"
+                f"{manifest['revision']}/data/{entry['name']}"
+            )
             partial = path.with_suffix(".part")
             with urlopen(url, timeout=60) as response, partial.open("wb") as out:
                 while block := response.read(1024 * 1024):
@@ -47,6 +47,8 @@ def download(raw_dir: Path = RAW_DIR) -> None:
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser(
+        description="Pinned public dataset acquisition. Never connects to the operational database."
+    )
     parser.add_argument("--raw-dir", type=Path, default=RAW_DIR)
     download(parser.parse_args().raw_dir)

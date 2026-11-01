@@ -1,4 +1,3 @@
-/** Presentation only: use recorded states, never infer performance targets. */
 export type StatusTone = 'neutral' | 'success' | 'warning' | 'danger';
 
 export function profitTone(value: string | number): StatusTone {
@@ -7,7 +6,11 @@ export function profitTone(value: string | number): StatusTone {
   return amount < 0 ? 'danger' : 'success';
 }
 
-export function stockTone(quantity: string | number, lowStock: boolean, hasThreshold = true): StatusTone {
+export function stockTone(
+  quantity: string | number,
+  lowStock: boolean,
+  hasThreshold = true,
+): StatusTone {
   const amount = Number(quantity);
   if (!Number.isFinite(amount)) return 'neutral';
   if (amount <= 0) return 'danger';

@@ -6,10 +6,19 @@ import { SalesService } from './sales.service';
 @Roles('ADMIN', 'STORE_MANAGER', 'STAFF')
 export class SalesController {
   constructor(private readonly service: SalesService) {}
-  @Post() @Header('Cache-Control', 'no-store')
-  create(@Body() body: unknown, @CurrentUser() user: AuthenticatedUser) { return this.service.create(body, user); }
-  @Get() @Header('Cache-Control', 'no-store')
-  list(@Query() query: unknown, @CurrentUser() user: AuthenticatedUser) { return this.service.list(query, user); }
-  @Get(':id') @Header('Cache-Control', 'no-store')
-  detail(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser) { return this.service.detail(id, user); }
+  @Post()
+  @Header('Cache-Control', 'no-store')
+  create(@Body() body: unknown, @CurrentUser() user: AuthenticatedUser) {
+    return this.service.create(body, user);
+  }
+  @Get()
+  @Header('Cache-Control', 'no-store')
+  list(@Query() query: unknown, @CurrentUser() user: AuthenticatedUser) {
+    return this.service.list(query, user);
+  }
+  @Get(':id')
+  @Header('Cache-Control', 'no-store')
+  detail(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser) {
+    return this.service.detail(id, user);
+  }
 }

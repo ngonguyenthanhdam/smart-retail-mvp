@@ -1,8 +1,13 @@
 import { BadRequestException } from '@nestjs/common';
 import { bodyObject, emailAddress, passwordValue } from '../common/validation';
 
-export interface ForgotPasswordDto { email: string }
-export interface ResetPasswordDto { token: string; newPassword: string }
+export interface ForgotPasswordDto {
+  email: string;
+}
+export interface ResetPasswordDto {
+  token: string;
+  newPassword: string;
+}
 
 export function parseForgotPassword(input: unknown): ForgotPasswordDto {
   const body = bodyObject(input, ['email']);

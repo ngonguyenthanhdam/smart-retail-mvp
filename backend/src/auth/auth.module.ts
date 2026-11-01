@@ -11,16 +11,27 @@ import { PasswordResetService } from './password-reset.service';
 import { ResetMailer } from './reset-mailer.service';
 
 @Module({
-  imports: [DatabaseModule, JwtModule.registerAsync({
-    inject: [ConfigService],
-    useFactory: (config: ConfigService) => ({
-      secret: config.getOrThrow<string>('JWT_SECRET'),
-      signOptions: { algorithm: 'HS256', expiresIn: config.getOrThrow<number>('JWT_EXPIRES_SECONDS') },
-      verifyOptions: { algorithms: ['HS256'] },
+  imports: [
+    DatabaseModule,
+    JwtModule.registerAsync({
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        secret: config.getOrThrow<string>('JWT_SECRET'),
+        signOptions: {
+          algorithm: 'HS256',
+          expiresIn: config.getOrThrow<number>('JWT_EXPIRES_SECONDS'),
+        },
+        verifyOptions: { algorithms: ['HS256'] },
+      }),
     }),
-  })],
+  ],
   controllers: [AuthController],
-  providers: [AuthService, AuthGuard, RolesGuard, PasswordResetService, ResetMailer,
+  providers: [
+    AuthService,
+    AuthGuard,
+    RolesGuard,
+    PasswordResetService,
+    ResetMailer,
     { provide: APP_GUARD, useExisting: AuthGuard },
     { provide: APP_GUARD, useExisting: RolesGuard },
   ],

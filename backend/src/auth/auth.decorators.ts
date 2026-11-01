@@ -1,4 +1,9 @@
-import { createParamDecorator, ExecutionContext, SetMetadata, UnauthorizedException } from '@nestjs/common';
+import {
+  createParamDecorator,
+  ExecutionContext,
+  SetMetadata,
+  UnauthorizedException,
+} from '@nestjs/common';
 import type { AuthenticatedRequest, RoleCode } from './auth.types';
 
 export const PUBLIC_ROUTE = 'auth:public';

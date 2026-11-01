@@ -1,5 +1,3 @@
-"""Regression checks for model integrity across Git and Windows line endings."""
-
 import hashlib
 import json
 from pathlib import Path
@@ -24,10 +22,11 @@ class MetadataIntegrityTests(unittest.TestCase):
 
     def write_pointer(self, digest):
         pointer = {**self.pointer, "metadata_sha256": digest}
-        (self.root / "active-model.json").write_bytes((json.dumps(pointer, indent=2) + "\n").encode())
+        (self.root / "active-model.json").write_bytes(
+            (json.dumps(pointer, indent=2) + "\n").encode()
+        )
 
     def test_shipped_pointer_matches_git_normalized_metadata(self):
-        # Checking only the producer's working-tree bytes missed the release bug.
         self.assertEqual(self.pointer["metadata_sha256"], hashlib.sha256(self.lf).hexdigest())
 
     def test_lf_and_crlf_checkouts_load_with_current_and_legacy_pointers(self):
@@ -55,14 +54,18 @@ class MetadataIntegrityTests(unittest.TestCase):
         self.assertEqual(ModelRegistry(self.root).get()[0].version, self.version)
 
     def test_metadata_changes_are_rejected_for_both_digest_formats(self):
-        altered = self.lf.replace(b'"real_world_accuracy_verified": false', b'"real_world_accuracy_verified": true')
+        altered = self.lf.replace(
+            b'"real_world_accuracy_verified": false', b'"real_world_accuracy_verified": true'
+        )
         self.assertNotEqual(altered, self.lf)
         for digest_bytes in (self.lf, self.lf.replace(b"\n", b"\r\n")):
             self.write_pointer(hashlib.sha256(digest_bytes).hexdigest())
             for changed in (altered, self.lf + b" ", self.lf + b"\n"):
                 with self.subTest(legacy=b"\r" in digest_bytes, changed=changed[-12:]):
                     self.metadata.write_bytes(changed)
-                    with self.assertRaisesRegex(ValueError, "Active model metadata integrity failure"):
+                    with self.assertRaisesRegex(
+                        ValueError, "Active model metadata integrity failure"
+                    ):
                         ModelRegistry(self.root).get()
 
     def test_serialized_model_still_requires_exact_bytes(self):

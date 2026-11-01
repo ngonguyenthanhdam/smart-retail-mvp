@@ -4,13 +4,15 @@ const { prepareTestEnvironment } = require('./test-database.cjs');
 
 prepareTestEnvironment();
 
-const result = spawnSync(process.execPath, [
-  resolve(__dirname, '../node_modules/prisma/build/index.js'), 'migrate', 'deploy',
-], {
-  cwd: resolve(__dirname, '..'),
-  env: process.env,
-  stdio: 'inherit',
-});
+const result = spawnSync(
+  process.execPath,
+  [resolve(__dirname, '../node_modules/prisma/build/index.js'), 'migrate', 'deploy'],
+  {
+    cwd: resolve(__dirname, '..'),
+    env: process.env,
+    stdio: 'inherit',
+  },
+);
 
 if (result.error) {
   console.error('Could not run Prisma migrations against the test database.');

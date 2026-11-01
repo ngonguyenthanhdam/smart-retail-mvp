@@ -12,8 +12,12 @@ from src.preprocessing import CONTEXT, IDS, clean_daily
 
 
 def daily(days=45, product=1):
-    data = pd.DataFrame({"dt": pd.date_range("2024-01-01", periods=days).strftime("%Y-%m-%d"),
-                         "sale_amount": np.arange(days, dtype=float)})
+    data = pd.DataFrame(
+        {
+            "dt": pd.date_range("2024-01-01", periods=days).strftime("%Y-%m-%d"),
+            "sale_amount": np.arange(days, dtype=float),
+        }
+    )
     for column in IDS:
         data[column] = product if column == "product_id" else 0
     for column in CONTEXT:
@@ -65,9 +69,14 @@ class PreparationTests(unittest.TestCase):
         self.assertTrue(features.loc[41, "training_eligible"])
 
     def test_invalid_target_ids_and_dates_stop_processing(self):
-        for column, value in [("sale_amount", -1), ("sale_amount", np.inf),
-                              ("sale_amount", "abc"), ("store_id", np.nan),
-                              ("dt", "2024-02-30"), ("dt", "2024-1-01")]:
+        for column, value in [
+            ("sale_amount", -1),
+            ("sale_amount", np.inf),
+            ("sale_amount", "abc"),
+            ("store_id", np.nan),
+            ("dt", "2024-02-30"),
+            ("dt", "2024-1-01"),
+        ]:
             with self.subTest(column=column, value=value):
                 data = daily().astype({column: "object"})
                 data.loc[0, column] = value
@@ -95,7 +104,9 @@ class PreparationTests(unittest.TestCase):
         changed.loc[changed.dt >= cutoff, "sale_amount"] = 99999
         actual = build_features(changed)
         cols = ["dt"] + MODEL_FEATURES
-        assert_frame_equal(original.loc[original.dt <= cutoff, cols], actual.loc[actual.dt <= cutoff, cols])
+        assert_frame_equal(
+            original.loc[original.dt <= cutoff, cols], actual.loc[actual.dt <= cutoff, cols]
+        )
 
     def test_calendar_gap_is_not_zero_and_lags_use_dates(self):
         clean, _ = clean_daily(daily().drop(index=10))
@@ -110,7 +121,9 @@ class PreparationTests(unittest.TestCase):
     def test_chronological_boundaries_remain_disjoint(self):
         dates = pd.Series(pd.date_range("2024-03-28", "2024-07-02"))
         labels = assign_split(dates, "2024-05-26", "2024-06-25")
-        self.assertEqual(labels.value_counts().to_dict(), {"train": 60, "validation": 30, "test": 7})
+        self.assertEqual(
+            labels.value_counts().to_dict(), {"train": 60, "validation": 30, "test": 7}
+        )
         self.assertLess(dates[labels == "train"].max(), dates[labels == "validation"].min())
         self.assertLess(dates[labels == "validation"].max(), dates[labels == "test"].min())
         with self.assertRaises(ValueError):

@@ -8,8 +8,16 @@ export class InventoryController {
   constructor(private readonly inventory: InventoryService) {}
   @Get()
   @Header('Cache-Control', 'no-store')
-  list(@Query() query: unknown, @CurrentUser() user: AuthenticatedUser) { return this.inventory.list(query, user); }
+  list(@Query() query: unknown, @CurrentUser() user: AuthenticatedUser) {
+    return this.inventory.list(query, user);
+  }
   @Get(':locationId/:productId/lots')
   @Header('Cache-Control', 'no-store')
-  lots(@Param('locationId') locationId: string, @Param('productId') productId: string, @CurrentUser() user: AuthenticatedUser) { return this.inventory.lots(locationId, productId, user); }
+  lots(
+    @Param('locationId') locationId: string,
+    @Param('productId') productId: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.inventory.lots(locationId, productId, user);
+  }
 }

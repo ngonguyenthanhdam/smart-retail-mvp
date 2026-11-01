@@ -8,7 +8,17 @@
   "primary_horizon_days": 7,
   "supplementary_horizon_days": 30,
   "minimum_history_days": 30,
-  "features": ["lag_1", "lag_7", "lag_14", "lag_30", "rolling_mean_7", "rolling_mean_14", "rolling_mean_30", "day_of_week", "month"],
+  "features": [
+    "lag_1",
+    "lag_7",
+    "lag_14",
+    "lag_30",
+    "rolling_mean_7",
+    "rolling_mean_14",
+    "rolling_mean_30",
+    "day_of_week",
+    "month"
+  ],
   "selection": "validation_7d WAPE, then MAE, then RMSE; exact tie favors SeasonalNaive",
   "lightgbm": {
     "objective": "regression_l1",

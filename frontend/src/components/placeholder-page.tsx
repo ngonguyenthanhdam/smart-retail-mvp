@@ -1,13 +1,13 @@
-"use client";
+'use client';
 
-import { ArrowUpRight, Info } from "lucide-react";
-import Link from "next/link";
+import { ArrowUpRight, Info } from 'lucide-react';
+import Link from 'next/link';
 
-import { vi } from "@/i18n/vi";
-import { canAccessSection, findSection, type SectionId } from "@/lib/navigation";
-import { useAuth } from "@/components/auth-provider";
+import { vi } from '@/i18n/vi';
+import { canAccessSection, findSection, type SectionId } from '@/lib/navigation';
+import { useAuth } from '@/components/auth-provider';
 
-const exploreSections = ["stores", "products", "inventory"] as const;
+const exploreSections = ['stores', 'products', 'inventory'] as const;
 
 export function PlaceholderPage({ sectionId }: { sectionId: SectionId }) {
   const { user } = useAuth();
@@ -38,29 +38,30 @@ export function PlaceholderPage({ sectionId }: { sectionId: SectionId }) {
             <h2 id="placeholder-title">{copy.label}</h2>
             <p>{vi.placeholder.note}</p>
           </div>
-
         </section>
 
         <aside className="explore-card" aria-labelledby="explore-title">
           <h2 id="explore-title">{vi.placeholder.exploreTitle}</h2>
           <p className="explore-description">{vi.placeholder.exploreDescription}</p>
           <div className="explore-links">
-            {exploreSections.filter((id) => user && canAccessSection(user.role, id)).map((id) => {
-              const ExploreIcon = findSection(id)!.icon;
+            {exploreSections
+              .filter((id) => user && canAccessSection(user.role, id))
+              .map((id) => {
+                const ExploreIcon = findSection(id)!.icon;
 
-              return (
-                <Link className="explore-link" href={`/${id}`} key={id}>
-                  <span className="explore-icon" aria-hidden="true">
-                    <ExploreIcon size={19} strokeWidth={1.75} />
-                  </span>
-                  <span>
-                    <span className="explore-label">{vi.sections[id].label}</span>
-                    <span className="explore-caption">{vi.placeholder.links[id]}</span>
-                  </span>
-                  <ArrowUpRight size={16} className="ml-auto shrink-0" aria-hidden="true" />
-                </Link>
-              );
-            })}
+                return (
+                  <Link className="explore-link" href={`/${id}`} key={id}>
+                    <span className="explore-icon" aria-hidden="true">
+                      <ExploreIcon size={19} strokeWidth={1.75} />
+                    </span>
+                    <span>
+                      <span className="explore-label">{vi.sections[id].label}</span>
+                      <span className="explore-caption">{vi.placeholder.links[id]}</span>
+                    </span>
+                    <ArrowUpRight size={16} className="ml-auto shrink-0" aria-hidden="true" />
+                  </Link>
+                );
+              })}
           </div>
         </aside>
       </div>

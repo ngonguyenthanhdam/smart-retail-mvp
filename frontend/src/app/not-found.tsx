@@ -1,6 +1,6 @@
-import Link from "next/link";
+import Link from 'next/link';
 
-import { vi } from "@/i18n/vi";
+import { vi } from '@/i18n/vi';
 
 export default function NotFound() {
   return (

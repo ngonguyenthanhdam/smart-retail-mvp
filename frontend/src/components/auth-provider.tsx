@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import {
   createContext,
@@ -9,7 +9,7 @@ import {
   useRef,
   useState,
   type ReactNode,
-} from "react";
+} from 'react';
 
 import {
   AuthRequestError,
@@ -18,11 +18,11 @@ import {
   logout,
   type CurrentUser,
   type LoginCredentials,
-} from "@/lib/auth";
+} from '@/lib/auth';
 
 type AuthState =
-  | { status: "loading" | "unauthenticated" | "error"; user: null }
-  | { status: "authenticated"; user: CurrentUser };
+  | { status: 'loading' | 'unauthenticated' | 'error'; user: null }
+  | { status: 'authenticated'; user: CurrentUser };
 
 type AuthContextValue = AuthState & {
   signIn: (credentials: LoginCredentials) => Promise<void>;
@@ -34,36 +34,41 @@ type AuthContextValue = AuthState & {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<AuthState>({ status: "loading", user: null });
+  const [state, setState] = useState<AuthState>({ status: 'loading', user: null });
   const requestVersion = useRef(0);
 
-  const invalidateRequests = useCallback(() => { ++requestVersion.current; }, []);
+  const invalidateRequests = useCallback(() => {
+    ++requestVersion.current;
+  }, []);
 
   const loadCurrentUser = useCallback(() => {
     const version = ++requestVersion.current;
 
-    void fetchCurrentUser().then((user) => {
-      if (version === requestVersion.current) setState({ status: "authenticated", user });
-    }).catch((error: unknown) => {
-      if (version !== requestVersion.current) return;
-      setState({
-        status: error instanceof AuthRequestError && error.status === 401
-          ? "unauthenticated"
-          : "error",
-        user: null,
+    void fetchCurrentUser()
+      .then((user) => {
+        if (version === requestVersion.current) setState({ status: 'authenticated', user });
+      })
+      .catch((error: unknown) => {
+        if (version !== requestVersion.current) return;
+        setState({
+          status:
+            error instanceof AuthRequestError && error.status === 401 ? 'unauthenticated' : 'error',
+          user: null,
+        });
       });
-    });
   }, []);
 
   useEffect(() => {
     loadCurrentUser();
 
-    const refresh = () => { loadCurrentUser(); };
-    window.addEventListener("focus", refresh);
+    const refresh = () => {
+      loadCurrentUser();
+    };
+    window.addEventListener('focus', refresh);
 
     return () => {
       invalidateRequests();
-      window.removeEventListener("focus", refresh);
+      window.removeEventListener('focus', refresh);
     };
   }, [loadCurrentUser, invalidateRequests]);
 
@@ -71,28 +76,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     ++requestVersion.current;
     const user = await login(credentials);
     ++requestVersion.current;
-    setState({ status: "authenticated", user });
+    setState({ status: 'authenticated', user });
   }, []);
 
   const signOut = useCallback(async () => {
     ++requestVersion.current;
     await logout();
     ++requestVersion.current;
-    setState({ status: "unauthenticated", user: null });
+    setState({ status: 'unauthenticated', user: null });
   }, []);
 
   const retry = useCallback(() => {
-    setState({ status: "loading", user: null });
+    setState({ status: 'loading', user: null });
     loadCurrentUser();
   }, [loadCurrentUser]);
 
-  const value = useMemo(() => ({ ...state, signIn, signOut, retry, refresh: loadCurrentUser }), [state, signIn, signOut, retry, loadCurrentUser]);
+  const value = useMemo(
+    () => ({ ...state, signIn, signOut, retry, refresh: loadCurrentUser }),
+    [state, signIn, signOut, retry, loadCurrentUser],
+  );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {
   const auth = useContext(AuthContext);
-  if (!auth) throw new Error("useAuth requires AuthProvider");
+  if (!auth) throw new Error('useAuth requires AuthProvider');
   return auth;
 }

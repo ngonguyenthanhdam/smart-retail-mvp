@@ -16,9 +16,13 @@ export class ResetMailer {
       secure: this.config.getOrThrow<boolean>('SMTP_SECURE'),
       requireTLS: !['localhost', '127.0.0.1', '::1'].includes(host),
       auth: user ? { user, pass: this.config.getOrThrow<string>('SMTP_PASSWORD') } : undefined,
-      connectionTimeout: 5000, greetingTimeout: 5000, socketTimeout: 10000,
-      disableFileAccess: true, disableUrlAccess: true,
-      logger: false, debug: false,
+      connectionTimeout: 5000,
+      greetingTimeout: 5000,
+      socketTimeout: 10000,
+      disableFileAccess: true,
+      disableUrlAccess: true,
+      logger: false,
+      debug: false,
     });
     await transport.sendMail({
       from: { name: 'RetailSense', address: this.config.getOrThrow<string>('SMTP_FROM') },

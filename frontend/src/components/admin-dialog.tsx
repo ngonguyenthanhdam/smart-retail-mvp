@@ -1,8 +1,13 @@
-"use client";
+'use client';
 
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from 'react';
 
-export function AdminDialog({ titleId, busy = false, onClose, children }: {
+export function AdminDialog({
+  titleId,
+  busy = false,
+  onClose,
+  children,
+}: {
   titleId: string;
   busy?: boolean;
   onClose: () => void;
@@ -16,7 +21,8 @@ export function AdminDialog({ titleId, busy = false, onClose, children }: {
     dialog?.showModal();
     return () => {
       dialog?.close();
-      if (opener instanceof HTMLElement && opener.isConnected) opener.focus({ preventScroll: true });
+      if (opener instanceof HTMLElement && opener.isConnected)
+        opener.focus({ preventScroll: true });
     };
   }, []);
 

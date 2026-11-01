@@ -9,7 +9,11 @@ import { PasswordResetService } from './password-reset.service';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly auth: AuthService, private readonly config: ConfigService, private readonly passwords: PasswordResetService) {}
+  constructor(
+    private readonly auth: AuthService,
+    private readonly config: ConfigService,
+    private readonly passwords: PasswordResetService,
+  ) {}
 
   @Public()
   @Post('forgot-password')
@@ -25,7 +29,10 @@ export class AuthController {
   @Header('Cache-Control', 'no-store')
   async resetPassword(@Body() body: unknown, @Res({ passthrough: true }) response: Response) {
     const result = await this.passwords.reset(body);
-    response.clearCookie(AUTH_COOKIE, authCookieOptions(this.config.get('NODE_ENV') === 'production'));
+    response.clearCookie(
+      AUTH_COOKIE,
+      authCookieOptions(this.config.get('NODE_ENV') === 'production'),
+    );
     return result;
   }
 
@@ -33,7 +40,10 @@ export class AuthController {
   @Post('login')
   @HttpCode(200)
   @Header('Cache-Control', 'no-store')
-  async login(@Body() body: unknown, @Res({ passthrough: true }) response: Response): Promise<AuthenticatedUser> {
+  async login(
+    @Body() body: unknown,
+    @Res({ passthrough: true }) response: Response,
+  ): Promise<AuthenticatedUser> {
     const { user, token } = await this.auth.login(body);
     response.cookie(AUTH_COOKIE, token, {
       ...authCookieOptions(this.config.get('NODE_ENV') === 'production'),
@@ -47,7 +57,10 @@ export class AuthController {
   @HttpCode(204)
   @Header('Cache-Control', 'no-store')
   logout(@Res({ passthrough: true }) response: Response): void {
-    response.clearCookie(AUTH_COOKIE, authCookieOptions(this.config.get('NODE_ENV') === 'production'));
+    response.clearCookie(
+      AUTH_COOKIE,
+      authCookieOptions(this.config.get('NODE_ENV') === 'production'),
+    );
   }
 
   @Get('me')

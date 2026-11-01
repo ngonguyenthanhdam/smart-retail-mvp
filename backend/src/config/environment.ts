@@ -8,9 +8,7 @@ function validateUrl(value: unknown, name: string, protocols: string[]): string 
     if (protocols.includes(url.protocol)) {
       return value;
     }
-  } catch {
-    // Report only the field name; connection strings can contain credentials.
-  }
+  } catch {}
 
   throw new Error(`${name} must be a valid ${protocols.join(' or ')} URL`);
 }
@@ -32,9 +30,19 @@ export function validateEnvironment(environment: Record<string, unknown>) {
   if (!Number.isSafeInteger(seconds) || seconds < 1 || seconds > 86400) {
     throw new Error('JWT_EXPIRES_IN must be a duration between 1s and 24h');
   }
-  const frontendUrl = validateUrl(environment.FRONTEND_ORIGIN ?? 'http://localhost:3000', 'FRONTEND_ORIGIN', ['http:', 'https:']);
+  const frontendUrl = validateUrl(
+    environment.FRONTEND_ORIGIN ?? 'http://localhost:3000',
+    'FRONTEND_ORIGIN',
+    ['http:', 'https:'],
+  );
   const frontend = new URL(frontendUrl);
-  if (frontend.username || frontend.password || frontend.pathname !== '/' || frontend.search || frontend.hash) {
+  if (
+    frontend.username ||
+    frontend.password ||
+    frontend.pathname !== '/' ||
+    frontend.search ||
+    frontend.hash
+  ) {
     throw new Error('FRONTEND_ORIGIN must contain only an origin');
   }
   const nodeEnv = environment.NODE_ENV ?? 'development';
@@ -43,20 +51,24 @@ export function validateEnvironment(environment: Record<string, unknown>) {
   }
   const smtpHost = String(environment.SMTP_HOST ?? '').trim();
   const smtpPort = Number(environment.SMTP_PORT ?? 587);
-  if (!Number.isInteger(smtpPort) || smtpPort < 1 || smtpPort > 65535) throw new Error('SMTP_PORT must be a valid port');
+  if (!Number.isInteger(smtpPort) || smtpPort < 1 || smtpPort > 65535)
+    throw new Error('SMTP_PORT must be a valid port');
   const smtpSecure = String(environment.SMTP_SECURE ?? 'false');
   if (!['true', 'false'].includes(smtpSecure)) throw new Error('SMTP_SECURE must be true or false');
   const smtpUser = String(environment.SMTP_USER ?? '');
   const smtpPassword = String(environment.SMTP_PASSWORD ?? '');
-  if (Boolean(smtpUser) !== Boolean(smtpPassword)) throw new Error('SMTP_USER and SMTP_PASSWORD must be configured together');
+  if (Boolean(smtpUser) !== Boolean(smtpPassword))
+    throw new Error('SMTP_USER and SMTP_PASSWORD must be configured together');
   const smtpFrom = String(environment.SMTP_FROM ?? 'no-reply@retailsense.local');
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(smtpFrom)) throw new Error('SMTP_FROM must be a valid email address');
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(smtpFrom))
+    throw new Error('SMTP_FROM must be a valid email address');
 
   return {
     ...environment,
     INVENTORY_EXPIRY_WARNING_DAYS: (() => {
       const days = Number(environment.INVENTORY_EXPIRY_WARNING_DAYS ?? 7);
-      if (!Number.isInteger(days) || days < 0 || days > 365) throw new Error('INVENTORY_EXPIRY_WARNING_DAYS must be between 0 and 365');
+      if (!Number.isInteger(days) || days < 0 || days > 365)
+        throw new Error('INVENTORY_EXPIRY_WARNING_DAYS must be between 0 and 365');
       return days;
     })(),
     PORT: port,

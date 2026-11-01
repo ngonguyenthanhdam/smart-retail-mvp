@@ -27,7 +27,9 @@ export function emailAddress(value: unknown): string {
 
 export function passwordValue(value: unknown): string {
   if (typeof value !== 'string' || [...value].length < 8 || Buffer.byteLength(value) > 72) {
-    throw new BadRequestException('Password must contain at least 8 characters and at most 72 UTF-8 bytes.');
+    throw new BadRequestException(
+      'Password must contain at least 8 characters and at most 72 UTF-8 bytes.',
+    );
   }
   return value;
 }
@@ -41,18 +43,26 @@ export function optionalText(value: unknown, field: string, max: number): string
 }
 
 export function booleanValue(value: unknown): boolean {
-  if (typeof value !== 'boolean') throw new BadRequestException('Active status must be true or false.');
+  if (typeof value !== 'boolean')
+    throw new BadRequestException('Active status must be true or false.');
   return value;
 }
 
 export function uuidValue(value: unknown): string {
-  if (typeof value !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value)) {
+  if (
+    typeof value !== 'string' ||
+    !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value)
+  ) {
     throw new BadRequestException('A valid record ID is required.');
   }
   return value.toLowerCase();
 }
 
-export function choiceValue<T extends string>(value: unknown, choices: readonly T[], field: string): T {
+export function choiceValue<T extends string>(
+  value: unknown,
+  choices: readonly T[],
+  field: string,
+): T {
   if (typeof value !== 'string' || !choices.includes(value as T)) {
     throw new BadRequestException(`${field} must be one of: ${choices.join(', ')}.`);
   }
@@ -70,8 +80,11 @@ export function listQuery(input: unknown, extraFields: readonly string[] = []) {
   };
   return {
     query,
-    search: query.search === undefined ? '' : optionalText(query.search, 'Search', 150) ?? '',
-    status: query.status === undefined ? 'all' as const : choiceValue(query.status, ['all', 'active', 'inactive'], 'Status'),
+    search: query.search === undefined ? '' : (optionalText(query.search, 'Search', 150) ?? ''),
+    status:
+      query.status === undefined
+        ? ('all' as const)
+        : choiceValue(query.status, ['all', 'active', 'inactive'], 'Status'),
     page: number(query.page, 1, 1_000_000, 'Page'),
     pageSize: number(query.pageSize, 20, 100, 'Page size'),
   };

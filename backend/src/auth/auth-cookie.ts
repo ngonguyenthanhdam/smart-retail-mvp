@@ -7,7 +7,9 @@ export function authCookieOptions(production: boolean): CookieOptions {
 }
 
 export function readAuthCookie(header: string | undefined): string | undefined {
-  const values = header?.split(';').map((part) => part.trim())
+  const values = header
+    ?.split(';')
+    .map((part) => part.trim())
     .filter((part) => part.startsWith(`${AUTH_COOKIE}=`));
   if (values?.length !== 1) return undefined;
   try {

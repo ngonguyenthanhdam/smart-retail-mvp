@@ -8,11 +8,17 @@ export class CategoriesController {
   constructor(private readonly categories: CategoriesService) {}
   @Get()
   @Header('Cache-Control', 'no-store')
-  list(@Query() query: unknown) { return this.categories.list(query); }
+  list(@Query() query: unknown) {
+    return this.categories.list(query);
+  }
   @Post()
   @Header('Cache-Control', 'no-store')
-  create(@Body() body: unknown) { return this.categories.create(body); }
+  create(@Body() body: unknown) {
+    return this.categories.create(body);
+  }
   @Patch(':id')
   @Header('Cache-Control', 'no-store')
-  update(@Param('id') id: string, @Body() body: unknown) { return this.categories.update(id, body); }
+  update(@Param('id') id: string, @Body() body: unknown) {
+    return this.categories.update(id, body);
+  }
 }

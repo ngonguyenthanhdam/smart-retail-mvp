@@ -17,8 +17,15 @@ def observations(days=65):
     rows = []
     for product in [1, 2]:
         for offset, date in enumerate(pd.date_range("2024-01-01", periods=days)):
-            rows.append({"store_id": 10, "product_id": product, "dt": date,
-                         "sale_amount": float(product * 10 + offset % 7), "stock_hour6_22_cnt": offset % 2})
+            rows.append(
+                {
+                    "store_id": 10,
+                    "product_id": product,
+                    "dt": date,
+                    "sale_amount": float(product * 10 + offset % 7),
+                    "stock_hour6_22_cnt": offset % 2,
+                }
+            )
     return pd.DataFrame(rows)
 
 
@@ -48,7 +55,13 @@ class TrainingTests(unittest.TestCase):
         self.assertAlmostEqual(result["MAE"], 5 / 3)
         self.assertAlmostEqual(result["RMSE"], np.sqrt(11 / 3))
         self.assertIsNone(metrics(np.zeros(2), np.ones(2))["WAPE"])
-        for actual, prediction in [([], []), ([1], [1, 2]), ([np.nan], [0]), ([-1], [0]), ([1], [np.inf])]:
+        for actual, prediction in [
+            ([], []),
+            ([1], [1, 2]),
+            ([np.nan], [0]),
+            ([-1], [0]),
+            ([1], [np.inf]),
+        ]:
             with self.assertRaises(ValueError):
                 metrics(np.array(actual), np.array(prediction))
 
@@ -85,8 +98,12 @@ class TrainingTests(unittest.TestCase):
         changed["discount"] = 0.5
         again, _ = forecast_window(model, changed, "2024-01-30", 30)
         assert_frame_equal(predicted, again)
-        last = data.loc[data.product_id.eq(1) & data.dt.eq(pd.Timestamp("2024-01-30")), "sale_amount"].iloc[0]
-        np.testing.assert_array_equal(predicted.query("product_id == 1").prediction, last + np.arange(1, 31))
+        last = data.loc[
+            data.product_id.eq(1) & data.dt.eq(pd.Timestamp("2024-01-30")), "sale_amount"
+        ].iloc[0]
+        np.testing.assert_array_equal(
+            predicted.query("product_id == 1").prediction, last + np.arange(1, 31)
+        )
 
     def test_batch_features_match_training_features(self):
         data = observations(31)
@@ -99,9 +116,13 @@ class TrainingTests(unittest.TestCase):
     def test_invalid_history_and_horizon_rejected(self):
         data = observations(30)
         model = DemandModel("SeasonalNaive", "test-v1")
-        for changed in [data.iloc[1:], pd.concat([data, data.iloc[:1]]),
-                        data.assign(sale_amount=np.nan), data.assign(sale_amount=-1),
-                        data.assign(dt=data.dt + pd.Timedelta(days=1))]:
+        for changed in [
+            data.iloc[1:],
+            pd.concat([data, data.iloc[:1]]),
+            data.assign(sale_amount=np.nan),
+            data.assign(sale_amount=-1),
+            data.assign(dt=data.dt + pd.Timedelta(days=1)),
+        ]:
             with self.assertRaises(ValueError):
                 model.predict(changed, "2024-01-30", 7)
         for horizon in [True, 0, 31, 90, 1.5]:
@@ -113,23 +134,36 @@ class TrainingTests(unittest.TestCase):
     def test_nonfinite_outputs_fail_and_negative_outputs_clip(self):
         data = observations(30)
         with self.assertRaisesRegex(ValueError, "non-finite"):
-            DemandModel("LightGBM", "test-v1", InvalidRegressor(np.inf)).predict(data, "2024-01-30", 7)
-        prediction, stats = DemandModel("LightGBM", "test-v1", InvalidRegressor(-1)).predict(data, "2024-01-30", 7)
+            DemandModel("LightGBM", "test-v1", InvalidRegressor(np.inf)).predict(
+                data, "2024-01-30", 7
+            )
+        prediction, stats = DemandModel("LightGBM", "test-v1", InvalidRegressor(-1)).predict(
+            data, "2024-01-30", 7
+        )
         self.assertTrue(prediction.prediction.eq(0).all())
         self.assertEqual(stats["negative_predictions_clipped"], 14)
 
     def test_selection_is_validation_only_and_ties_favor_baseline(self):
-        baseline = {"daily": {"WAPE": .2, "MAE": 1, "RMSE": 2}}
-        better = {"daily": {"WAPE": .1, "MAE": 1, "RMSE": 2}}
-        self.assertEqual(select_algorithm({"SeasonalNaive": baseline, "LightGBM": better}), "LightGBM")
-        self.assertEqual(select_algorithm({"SeasonalNaive": baseline, "LightGBM": baseline}), "SeasonalNaive")
+        baseline = {"daily": {"WAPE": 0.2, "MAE": 1, "RMSE": 2}}
+        better = {"daily": {"WAPE": 0.1, "MAE": 1, "RMSE": 2}}
+        self.assertEqual(
+            select_algorithm({"SeasonalNaive": baseline, "LightGBM": better}), "LightGBM"
+        )
+        self.assertEqual(
+            select_algorithm({"SeasonalNaive": baseline, "LightGBM": baseline}), "SeasonalNaive"
+        )
         with self.assertRaises(ValueError):
             select_algorithm({"SeasonalNaive": baseline, "LightGBM": better, "test": better})
 
     def test_real_model_fit_uses_only_cutoff_and_roundtrips_artifact(self):
         data = observations()
         features = build_features(data)
-        params = {**load_config()["lightgbm"], "n_estimators": 10, "min_child_samples": 2, "n_jobs": 1}
+        params = {
+            **load_config()["lightgbm"],
+            "n_estimators": 10,
+            "min_child_samples": 2,
+            "n_jobs": 1,
+        }
         regressor, details = fit_lightgbm(features, "2024-01-01", "2024-02-14", params)
         self.assertEqual(details["rows"], 30)
         self.assertEqual(details["last_target"], "2024-02-14")
@@ -137,7 +171,9 @@ class TrainingTests(unittest.TestCase):
         changed = features.copy()
         changed.loc[changed.dt > "2024-02-14", "sale_amount"] = 99999
         other, _ = fit_lightgbm(changed, "2024-01-01", "2024-02-14", params)
-        np.testing.assert_array_equal(regressor.predict(features[MODEL_FEATURES]), other.predict(features[MODEL_FEATURES]))
+        np.testing.assert_array_equal(
+            regressor.predict(features[MODEL_FEATURES]), other.predict(features[MODEL_FEATURES])
+        )
         model = DemandModel("LightGBM", "synthetic-test-v1", regressor)
         expected, _ = forecast_window(model, data, "2024-02-14", 7)
         with tempfile.TemporaryDirectory() as folder:

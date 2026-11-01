@@ -11,6 +11,7 @@ export default tseslint.config(
     rules: { '@typescript-eslint/no-require-imports': 'off' },
   },
   {
+    rules: { 'no-empty': ['error', { allowEmptyCatch: true }] },
     languageOptions: {
       globals: globals.node,
     },

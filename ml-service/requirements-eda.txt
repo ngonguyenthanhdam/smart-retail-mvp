@@ -1,4 +1,3 @@
-# Offline preparation and reporting; runtime service dependencies remain separate.
 pandas==2.3.3
 numpy==2.4.6
 pyarrow==21.0.0

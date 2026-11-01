@@ -10,17 +10,25 @@ export class UsersController {
 
   @Get()
   @Header('Cache-Control', 'no-store')
-  list(@Query() query: unknown) { return this.users.list(query); }
+  list(@Query() query: unknown) {
+    return this.users.list(query);
+  }
 
   @Get(':id')
   @Header('Cache-Control', 'no-store')
-  detail(@Param('id') id: string) { return this.users.detail(id); }
+  detail(@Param('id') id: string) {
+    return this.users.detail(id);
+  }
 
   @Post()
   @Header('Cache-Control', 'no-store')
-  create(@Body() body: unknown, @CurrentUser() actor: AuthenticatedUser) { return this.users.create(body, actor.id); }
+  create(@Body() body: unknown, @CurrentUser() actor: AuthenticatedUser) {
+    return this.users.create(body, actor.id);
+  }
 
   @Patch(':id')
   @Header('Cache-Control', 'no-store')
-  update(@Param('id') id: string, @Body() body: unknown, @CurrentUser() actor: AuthenticatedUser) { return this.users.update(id, body, actor.id); }
+  update(@Param('id') id: string, @Body() body: unknown, @CurrentUser() actor: AuthenticatedUser) {
+    return this.users.update(id, body, actor.id);
+  }
 }
