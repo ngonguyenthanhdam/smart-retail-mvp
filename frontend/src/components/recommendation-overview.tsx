@@ -4,7 +4,8 @@ import { useMessages } from '@/i18n/provider';
 import { CalendarDays, CircleHelp, Store } from 'lucide-react';
 import { ProductImage } from './product-image';
 import type { Recommendation } from '@/lib/decision';
-import { formatEstimate, formatQuantity } from '@/lib/format';
+import { formatPlanningQuantity } from '@/lib/planning-format';
+import { isForecastValue } from '@/lib/forecast-format';
 
 export function RecommendationOverview({ record: r }: { record: Recommendation }) {
   const { unitLabel, displayDate } = useFormatters();
@@ -46,28 +47,28 @@ export function RecommendationOverview({ record: r }: { record: Recommendation }
             ? p.approvedQuantity
             : r.decisionStatus === 'REJECTED'
               ? p.originalQuantity
-              : Number(value) > 0
-                ? p.suggest
-                : p.noNeed}
+              : isForecastValue(value) && Number(value) === 0
+                ? p.noNeed
+                : p.suggest}
         </span>
         <strong>
-          {formatQuantity(value)} <small>{unit}</small>
+          {formatPlanningQuantity(value)} <small>{unit}</small>
         </strong>
       </div>
       <dl className="planning-metrics">
         <div>
           <dt>{p.available}</dt>
           <dd>
-            {formatQuantity(r.currentStockSnapshot)} <small>{unit}</small>
+            {formatPlanningQuantity(r.currentStockSnapshot, 1)} <small>{unit}</small>
           </dd>
         </div>
         <div>
           <dt>{p.demand}</dt>
           <dd>
-            ≈{' '}
-            {formatEstimate(
+            {formatPlanningQuantity(
               r.demandQuantitySnapshot ?? r.forecast.predictedQuantity,
-              r.product.baseUnit,
+              0,
+              true,
             )}{' '}
             <small>{unit}</small>
           </dd>
@@ -75,7 +76,7 @@ export function RecommendationOverview({ record: r }: { record: Recommendation }
         <div>
           <dt>{p.reserve}</dt>
           <dd>
-            {formatQuantity(r.safetyStockSnapshot)} <small>{unit}</small>
+            {formatPlanningQuantity(r.safetyStockSnapshot, 1)} <small>{unit}</small>
           </dd>
         </div>
       </dl>
@@ -83,10 +84,16 @@ export function RecommendationOverview({ record: r }: { record: Recommendation }
         <CircleHelp size={17} />
         <div>
           <strong>{p.why}</strong>
-          <p>{Number(r.recommendedQuantity) > 0 ? p.shortageReason : p.enoughReason}</p>
+          <p>
+            {!isForecastValue(r.recommendedQuantity)
+              ? p.quantityUnavailable
+              : Number(r.recommendedQuantity) > 0
+                ? p.shortageReason
+                : p.enoughReason}
+          </p>
           {Number(r.incomingStockSnapshot) > 0 && (
             <p>
-              {p.incoming}: {formatQuantity(r.incomingStockSnapshot)} {unit}.
+              {p.incoming}: {formatPlanningQuantity(r.incomingStockSnapshot, 1)} {unit}.
             </p>
           )}
         </div>

@@ -1,4 +1,5 @@
 import type { Page, Route } from '@playwright/test';
+import type { Recommendation } from '../../src/lib/decision';
 
 export const store = {
   id: 'store-1',
@@ -217,7 +218,12 @@ export const forecast = {
 
 export async function mockApi(
   page: Page,
-  options: { authenticated?: boolean; role?: string; forecastResult?: unknown } = {},
+  options: {
+    authenticated?: boolean;
+    role?: string;
+    forecastResult?: unknown;
+    recommendations?: Recommendation[];
+  } = {},
 ) {
   let authenticated = options.authenticated ?? true;
   const role = options.role ?? 'ADMIN';
@@ -229,12 +235,13 @@ export async function mockApi(
   };
   const writes: { path: string; body: unknown }[] = [];
   const unknown: string[] = [];
+  const frontendOrigin = `http://127.0.0.1:${process.env.PLAYWRIGHT_PORT || '3000'}`;
   const reply = (route: Route, body: unknown, status = 200) =>
     route.fulfill({
       status,
       json: body,
       headers: {
-        'Access-Control-Allow-Origin': 'http://127.0.0.1:3000',
+        'Access-Control-Allow-Origin': frontendOrigin,
         'Access-Control-Allow-Credentials': 'true',
         'Access-Control-Allow-Headers': '*',
         'Access-Control-Allow-Methods': '*',
@@ -242,7 +249,7 @@ export async function mockApi(
     });
   await page.route('**/*', async (route) => {
     const url = new URL(route.request().url());
-    if (url.port === '3000') return route.continue();
+    if (url.origin === frontendOrigin) return route.continue();
     // Never allow browser scenarios to reach a real backend or external service.
     if (!['localhost', '127.0.0.1'].includes(url.hostname)) return route.abort();
     const endpoint = url.pathname;
@@ -261,6 +268,17 @@ export async function mockApi(
       return reply(route, {});
     if (!['GET', 'HEAD'].includes(route.request().method())) {
       writes.push({ path: endpoint, body: route.request().postDataJSON() });
+      const recommendation = options.recommendations?.find(
+        (r) => endpoint === `/replenishment/${r.id}/decision`,
+      );
+      if (recommendation) {
+        const body = route.request().postDataJSON();
+        return reply(route, {
+          ...recommendation,
+          decisionStatus: body.decision,
+          managerQuantity: body.managerQuantity ?? null,
+        });
+      }
       if (endpoint === '/sales')
         return reply(route, {
           id: 'saved',
@@ -377,6 +395,12 @@ export async function mockApi(
         minimumHistoryDays: 30,
       });
     if (endpoint === '/forecasts/data/model') return reply(route, { available: false });
+    if (options.recommendations && endpoint === '/replenishment')
+      return reply(route, { ...list(options.recommendations), summary: {} });
+    const recommendation = options.recommendations?.find(
+      (r) => endpoint === `/replenishment/${r.id}`,
+    );
+    if (recommendation) return reply(route, recommendation);
     if (endpoint.includes('replenishment') || endpoint.includes('alerts'))
       return reply(route, { ...list([]), summary: {} });
     if (endpoint === '/ai-center/config')

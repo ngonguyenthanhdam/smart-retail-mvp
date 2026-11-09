@@ -285,6 +285,7 @@ function ReplenishmentContent({ location, search }: { location: string; search: 
             <p className="page-description">
               {p.reviewHint} {c.snapshot}
             </p>
+            <p className="planning-caption">{p.estimateHint}</p>
             <details className="planning-calculation">
               <summary>{p.details}</summary>
               <dl className="decision-values">
@@ -363,6 +364,12 @@ function ReplenishmentContent({ location, search }: { location: string; search: 
                     }}
                   >
                     <p>{c.decisionPrompt}</p>
+                    <p>
+                      {c.recommended}:{' '}
+                      <strong>
+                        {quantity(detail.recommendedQuantity)} {unitLabel(detail.product.baseUnit)}
+                      </strong>
+                    </p>
                     {choice === 'ADJUSTED' && (
                       <div className="form-field">
                         <label htmlFor="adjust-quantity">

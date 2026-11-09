@@ -18,7 +18,9 @@ export const planningCopy = {
   approvedQuantity: 'Lượng đã duyệt',
   noNeed: 'Chưa cần nhập thêm',
   originalQuantity: 'Lượng đề xuất ban đầu',
-  estimateHint: 'Lượng bán và lượng nhập hiển thị theo số dự báo gốc.',
+  estimateHint:
+    'Tóm tắt: lượng bán và lượng nhập làm tròn đến số nguyên; tồn kho tối đa 1 chữ số thập phân. ≈ là số gần đúng. Xem số chính xác trong chi tiết trước khi duyệt.',
+  quantityUnavailable: 'Chưa có số lượng hợp lệ để đánh giá đề xuất.',
   available: 'Tồn còn bán được',
   demand: 'Dự kiến bán · 30 ngày',
   reserve: 'Tồn an toàn',

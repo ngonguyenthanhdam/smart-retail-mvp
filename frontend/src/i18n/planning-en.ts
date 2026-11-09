@@ -20,7 +20,9 @@ export const planningEn = {
   approvedQuantity: 'Approved quantity',
   noNeed: 'No additional purchase needed',
   originalQuantity: 'Original recommended quantity',
-  estimateHint: 'Sales and purchase quantities use the original forecast values.',
+  estimateHint:
+    'Summary: sales and purchase quantities round to whole units; stock uses at most 1 decimal place. ≈ means approximate. Review exact figures in the details before approving.',
+  quantityUnavailable: 'A valid quantity is not available to assess this recommendation.',
   available: 'Usable stock',
   demand: 'Expected sales · 30 days',
   reserve: 'Safety stock',
