@@ -3,7 +3,7 @@ import { useDynamic } from '@/i18n/dynamic';
 import { useScreen } from '@/i18n/provider';
 import { useEffect, useId, useRef, useState } from 'react';
 import type { ForecastDetail } from '@/lib/forecasts';
-import { formatQuantity } from '@/lib/format';
+import { formatForecastDailyQuantity, isForecastValue } from '@/lib/forecast-format';
 import { useFormatters } from '@/i18n/formatters';
 import type { DisplayUnit } from '@/lib/format';
 
@@ -16,7 +16,9 @@ export function DemandChart({
   name: string;
   unit?: DisplayUnit | null;
 }) {
-  const { unitLabel, formatQuantityWithUnit } = useFormatters();
+  const { unitLabel } = useFormatters();
+  const displayQuantity = (value: number) =>
+    `${formatForecastDailyQuantity(value)} ${unitLabel(unit)}`;
   const dynamic = useDynamic();
   const { t } = usePageCopy();
   const container = useRef<HTMLDivElement>(null);
@@ -33,7 +35,10 @@ export function DemandChart({
   }, []);
   const historical = series.history ?? [];
   const all = [...historical, ...series.daily];
-  const max = Math.max(1, ...all.map((point) => point.quantity));
+  const max = Math.max(
+    1,
+    ...all.filter((point) => isForecastValue(point.quantity)).map((point) => point.quantity),
+  );
   const left = 46;
   const right = width - 16;
   const x = (index: number) =>
@@ -41,8 +46,20 @@ export function DemandChart({
       ? (left + right) / 2
       : left + (index * (right - left)) / Math.max(1, all.length - 1);
   const y = (value: number) => 190 - (value * 155) / max;
-  const path = (rows: typeof all, offset = 0) =>
-    rows.map((point, index) => `${x(index + offset)},${y(point.quantity)}`).join(' ');
+  const path = (rows: typeof all, offset = 0) => {
+    let connected = false;
+    return rows
+      .map((point, index) => {
+        if (!isForecastValue(point.quantity)) {
+          connected = false;
+          return '';
+        }
+        const command = connected ? 'L' : 'M';
+        connected = true;
+        return `${command}${x(index + offset)},${y(point.quantity)}`;
+      })
+      .join(' ');
+  };
   const activeIndex = Math.max(0, Math.min(selected ?? historical.length, all.length - 1));
   const active = all[activeIndex];
   const activeKind = activeIndex < historical.length ? t.sold : t.expected;
@@ -64,7 +81,7 @@ export function DemandChart({
       <div className="demand-chart-readout">
         <output htmlFor={sliderId}>
           {active
-            ? `${active.date} · ${activeKind}: ${formatQuantityWithUnit(active.quantity, unit)}`
+            ? `${active.date} · ${activeKind}: ${displayQuantity(active.quantity)}`
             : t.noDataPointsYet}
         </output>
       </div>
@@ -101,24 +118,19 @@ export function DemandChart({
                 stroke="var(--ds-border)"
               />
               <text x={left - 8} y={y(max * ratio) + 4} textAnchor="end">
-                {formatQuantity(max * ratio)}
+                {formatForecastDailyQuantity(max * ratio)}
               </text>
             </g>
           ))}
-          <polyline
-            points={path(historical)}
-            fill="none"
-            stroke="var(--ds-primary)"
-            strokeWidth="2.5"
-          />
-          <polyline
-            points={path(series.daily, historical.length)}
+          <path d={path(historical)} fill="none" stroke="var(--ds-primary)" strokeWidth="2.5" />
+          <path
+            d={path(series.daily, historical.length)}
             fill="none"
             stroke="var(--ds-warning)"
             strokeWidth="2.5"
             strokeDasharray="5 4"
           />
-          {active && (
+          {active && isForecastValue(active.quantity) && (
             <g>
               <line
                 x1={x(activeIndex)}
@@ -158,7 +170,7 @@ export function DemandChart({
             value={activeIndex}
             aria-valuetext={
               active
-                ? `${active.date} · ${activeKind}: ${formatQuantityWithUnit(active.quantity, unit)}`
+                ? `${active.date} · ${activeKind}: ${displayQuantity(active.quantity)}`
                 : undefined
             }
             onChange={(event) => setSelected(Number(event.target.value))}
@@ -188,7 +200,7 @@ export function DemandChart({
                 <tr key={`${point.date}-${index}`}>
                   <th scope="row">{point.date}</th>
                   <td>{index < historical.length ? t.sold : t.expected}</td>
-                  <td className="numeric-cell">{formatQuantityWithUnit(point.quantity, unit)}</td>
+                  <td className="numeric-cell">{displayQuantity(point.quantity)}</td>
                 </tr>
               ))}
             </tbody>

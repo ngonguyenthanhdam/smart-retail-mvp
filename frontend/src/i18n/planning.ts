@@ -5,7 +5,7 @@ export const planningCopy = {
   daily: 'Trung bình khoảng',
   search: 'Tên hoặc mã sản phẩm',
   forecastRounding:
-    'Số ước tính giữ nguyên giá trị dự báo; lượng bán mỗi ngày là trung bình của tháng. Đơn vị lấy theo cấu hình sản phẩm.',
+    'Hiển thị làm tròn: lượng bán theo tháng đến số nguyên, số liệu theo ngày tối đa 1 chữ số thập phân, tiền đến đồng. Trung bình ngày tính từ dự báo gốc; dữ liệu và kết quả AI không thay đổi. Đơn vị theo cấu hình sản phẩm.',
   why: 'Vì sao có đề xuất này?',
   next: 'Nên làm gì?',
   details: 'Xem số liệu và cách tính',

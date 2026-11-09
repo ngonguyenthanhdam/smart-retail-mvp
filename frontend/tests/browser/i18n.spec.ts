@@ -254,10 +254,10 @@ test('forecast quantities, revenue and daily chart use product metadata in VI an
   await page.goto('/forecasts');
   await expect(page.locator('#forecast-run')).toHaveValue('forecast-1');
   await expect(page.locator('.forecast-results-table tbody tr').first()).toContainText(
-    '15.000,75 VND',
+    '15.001 VND',
   );
   await expect(
-    page.locator('.forecast-results-table').getByText('1,5 kg', { exact: true }),
+    page.locator('.forecast-results-table').getByText('2 kg', { exact: true }),
   ).toBeVisible();
   await page.getByRole('button', { name: 'English', exact: true }).click();
   await expect(page.locator('#forecast-run')).toHaveValue('forecast-1');

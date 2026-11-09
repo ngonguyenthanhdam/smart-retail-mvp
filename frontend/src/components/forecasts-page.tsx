@@ -22,7 +22,12 @@ import { apiRequest } from '@/lib/api';
 import { catalogError, allOptions } from '@/lib/catalog';
 import type { Location } from '@/lib/locations';
 import type { ForecastDetail, ForecastRun, ForecastReadiness } from '@/lib/forecasts';
-import { formatMoney, formatEstimate, formatEstimatedMoney, periodDays } from '@/lib/format';
+import {
+  formatForecastMonthlyQuantity,
+  formatForecastDailyAverage,
+  formatForecastMoney,
+  formatForecastRevenueTotal,
+} from '@/lib/forecast-format';
 
 export function ForecastsPage() {
   const { formatMonth, formatTimestamp, unitLabel } = useFormatters();
@@ -335,9 +340,7 @@ export function ForecastsPage() {
                         <strong>{formatMonth(value)}</strong>
                         <small>
                           {pcopy.approximate}{' '}
-                          {formatEstimatedMoney(
-                            rows.reduce((sum, p) => sum + Number(p.predictedRevenue), 0),
-                          )}{' '}
+                          {formatForecastRevenueTotal(rows.map((p) => p.predictedRevenue))}{' '}
                           {t.expected}
                         </small>
                       </span>
@@ -391,24 +394,24 @@ export function ForecastsPage() {
                             <span>
                               {pcopy.approximate}{' '}
                               <strong>
-                                {formatEstimate(p.predictedQuantity, p.product.baseUnit)}{' '}
+                                {formatForecastMonthlyQuantity(p.predictedQuantity)}{' '}
                                 {unitLabel(p.product.baseUnit)}
                               </strong>
                               /{pcopy.month}
                             </span>
                             <small>
                               {pcopy.daily}{' '}
-                              {formatEstimate(
-                                Number(p.predictedQuantity) /
-                                  periodDays(p.periodStart, p.periodEnd),
-                                p.product.baseUnit,
+                              {formatForecastDailyAverage(
+                                p.predictedQuantity,
+                                p.periodStart,
+                                p.periodEnd,
                               )}{' '}
                               {unitLabel(p.product.baseUnit)}/{pcopy.day}
                             </small>
                           </td>
-                          <td>{formatMoney(p.estimatedUnitPrice)}</td>
+                          <td>{formatForecastMoney(p.estimatedUnitPrice)}</td>
                           <td>
-                            {pcopy.approximate} {formatEstimatedMoney(p.predictedRevenue)}
+                            {pcopy.approximate} {formatForecastMoney(p.predictedRevenue)}
                           </td>
                         </tr>
                       ))}

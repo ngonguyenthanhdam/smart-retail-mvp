@@ -7,7 +7,7 @@ export const planningEn = {
   daily: 'Daily average',
   search: 'Product name or SKU',
   forecastRounding:
-    'Estimates use the original forecast values. Daily sales are the monthly average. Units come from the product configuration.',
+    'Display rounding: monthly quantities to whole units, daily figures to at most 1 decimal place, and money to whole VND. Daily averages use the original forecast; source data and AI results are unchanged. Units follow the product configuration.',
   why: 'Why this recommendation?',
   next: 'What should I do?',
   details: 'View figures and calculation',

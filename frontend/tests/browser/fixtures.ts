@@ -173,7 +173,7 @@ const job = {
   result: trainingResult,
 };
 const list = (items: unknown[]) => ({ items, page: 1, pageSize: 20, total: items.length });
-const forecast = {
+export const forecast = {
   id: 'forecast-1',
   modelVersion: 'fixture-model',
   algorithm: 'LightGBM',
@@ -217,7 +217,7 @@ const forecast = {
 
 export async function mockApi(
   page: Page,
-  options: { authenticated?: boolean; role?: string } = {},
+  options: { authenticated?: boolean; role?: string; forecastResult?: unknown } = {},
 ) {
   let authenticated = options.authenticated ?? true;
   const role = options.role ?? 'ADMIN';
@@ -357,7 +357,8 @@ export async function mockApi(
     if (['/sales', '/purchases', '/expenses', '/imports'].includes(endpoint))
       return reply(route, list([]));
     if (endpoint === '/forecasts/runs') return reply(route, list([forecast]));
-    if (endpoint === '/forecasts/runs/forecast-1') return reply(route, forecast);
+    if (endpoint === '/forecasts/runs/forecast-1')
+      return reply(route, options.forecastResult ?? forecast);
     if (endpoint === '/imports/templates')
       return reply(route, {
         types: Object.fromEntries(
