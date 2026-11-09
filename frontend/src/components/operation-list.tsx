@@ -1,15 +1,16 @@
 'use client';
+import { Feedback } from '@/i18n/feedback';
+import { useMessages } from '@/i18n/provider';
+import type { vi } from '@/i18n/vi';
 import { FilterPanel } from './filter-panel';
 import { useEffect, useState, type ReactNode } from 'react';
 import { useAuth } from '@/components/auth-provider';
 import { apiRequest } from '@/lib/api';
 import { catalogError, allOptions, type Page } from '@/lib/catalog';
 import type { Location } from '@/lib/locations';
-import { vi } from '@/i18n/vi';
+
 import { Plus } from 'lucide-react';
-import { statusCopy } from '@/i18n/status';
-const o = vi.operations;
-const a = vi.admin;
+
 export function OperationList<T extends { id: string }>({
   path,
   title,
@@ -29,10 +30,11 @@ export function OperationList<T extends { id: string }>({
   onCreate?: () => void;
   revision: number;
   embedded?: boolean;
-  statuses?: (keyof typeof o.status)[];
+  statuses?: (keyof typeof vi.operations.status)[];
   columns: string[];
   row: (record: T) => ReactNode;
 }) {
+  const { vi, statusCopy, o, a } = usePageCopy();
   const { user } = useAuth();
   const admin = user?.role === 'ADMIN';
   const [locations, setLocations] = useState<Location[]>([]);
@@ -95,7 +97,7 @@ export function OperationList<T extends { id: string }>({
       </div>
       {error && (
         <p className="form-error admin-notice" role="alert">
-          {error}{' '}
+          {<Feedback text={error} />}{' '}
           <button
             className="text-button"
             onClick={() => {
@@ -181,7 +183,7 @@ export function OperationList<T extends { id: string }>({
             <p>{vi.catalog.emptyHint}</p>
           </div>
         )}
-        {!!data?.items.length && <p className="table-scroll-hint">{statusCopy.vi.tableHint}</p>}
+        {!!data?.items.length && <p className="table-scroll-hint">{statusCopy.tableHint}</p>}
         {!!data?.items.length && (
           <div className="admin-table-scroll" tabIndex={0} role="region" aria-label={title}>
             <table className="admin-table">
@@ -240,4 +242,11 @@ export function OperationList<T extends { id: string }>({
       </section>
     </>
   );
+}
+
+function usePageCopy() {
+  const { vi, statusCopy } = useMessages();
+  const o = vi.operations;
+  const a = vi.admin;
+  return { vi, statusCopy, o, a };
 }

@@ -1,11 +1,12 @@
 'use client';
-
+import { Feedback } from '@/i18n/feedback';
+import { useMessages } from '@/i18n/provider';
 import { LoaderCircle, Plus, Store } from 'lucide-react';
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 
 import { AdminDialog } from '@/components/admin-dialog';
 import { useAuth } from '@/components/auth-provider';
-import { vi } from '@/i18n/vi';
+
 import { ApiRequestError } from '@/lib/api';
 import {
   fetchLocation,
@@ -19,8 +20,6 @@ import {
   type RecordStatus,
 } from '@/lib/locations';
 
-const copy = vi.locations;
-const common = vi.admin;
 const initialQuery: LocationQuery = { search: '', type: '', status: 'all', page: 1, pageSize: 20 };
 
 type DialogState = { kind: 'create' } | { kind: 'edit' | 'deactivate'; location: Location };
@@ -36,6 +35,7 @@ function LocationForm({
   onSaved: (message: string) => void;
   failureMessage: (error: unknown) => string;
 }) {
+  const { copy, common } = usePageCopy();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [pending, setPending] = useState<LocationValues | null>(null);
@@ -173,7 +173,7 @@ function LocationForm({
         )}
         {error && (
           <p className="form-error" role="alert">
-            {error}
+            {<Feedback text={error} />}
           </p>
         )}
         <div className="admin-form-actions">
@@ -228,6 +228,7 @@ function DeactivateLocation({
   onSaved: (message: string) => void;
   failureMessage: (error: unknown) => string;
 }) {
+  const { copy, common } = usePageCopy();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
@@ -249,7 +250,7 @@ function DeactivateLocation({
       <p className="admin-dialog-description">{copy.deactivateDescription(location.name)}</p>
       {error && (
         <p className="form-error" role="alert">
-          {error}
+          {<Feedback text={error} />}
         </p>
       )}
       <div className="admin-form-actions">
@@ -278,6 +279,7 @@ function DeactivateLocation({
 }
 
 export function LocationsPage() {
+  const { vi, copy, common } = usePageCopy();
   const { retry } = useAuth();
   const [query, setQuery] = useState<LocationQuery>(initialQuery);
   const [revision, setRevision] = useState(0);
@@ -298,7 +300,7 @@ export function LocationsPage() {
       }
       return common.requestFailed;
     },
-    [retry],
+    [retry, common.requestFailed, common.sessionExpired],
   );
 
   useEffect(() => {
@@ -401,12 +403,12 @@ export function LocationsPage() {
 
       {success && (
         <p className="form-success admin-notice" role="status">
-          {success}
+          {<Feedback text={success} />}
         </p>
       )}
       {error && (
         <div className="form-error admin-notice" role="alert">
-          <p>{error}</p>
+          <p>{<Feedback text={error} />}</p>
           <button type="button" className="text-button" onClick={refresh}>
             {common.retry}
           </button>
@@ -583,4 +585,11 @@ export function LocationsPage() {
       )}
     </div>
   );
+}
+
+function usePageCopy() {
+  const { vi } = useMessages();
+  const copy = vi.locations;
+  const common = vi.admin;
+  return { copy, common, vi };
 }

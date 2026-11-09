@@ -1,5 +1,7 @@
+'use client';
+import { useMessages } from '@/i18n/provider';
 import type { LucideIcon } from 'lucide-react';
-import { planningCopy as p } from '@/i18n/planning';
+
 import { formatQuantity } from '@/lib/format';
 export function DecisionSummary({
   counts,
@@ -8,6 +10,7 @@ export function DecisionSummary({
   counts?: Record<string, number>;
   items: { key: string; label: string; icon: LucideIcon; tone: string }[];
 }) {
+  const { p } = usePageCopy();
   return (
     <div className="decision-summary">
       <div>
@@ -40,4 +43,10 @@ export function DecisionSummary({
       <p>{p.summaryScope}</p>
     </div>
   );
+}
+
+function usePageCopy() {
+  const { planningCopy: p } = useMessages();
+
+  return { p };
 }

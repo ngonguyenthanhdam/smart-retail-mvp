@@ -1,6 +1,9 @@
 import { ForecastsPage } from '@/components/forecasts-page';
-import { forecastCopy } from '@/i18n/vi';
-export const metadata = { title: forecastCopy.title };
+import { getServerMessages } from '@/i18n/server';
+export async function generateMetadata() {
+  const { forecastCopy } = await getServerMessages();
+  return { title: forecastCopy.title };
+}
 export default function Page() {
   return <ForecastsPage />;
 }

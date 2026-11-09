@@ -1,11 +1,11 @@
 'use client';
-
-import { ChevronRight, Languages, LogOut, Menu, X } from 'lucide-react';
+import { useMessages } from '@/i18n/provider';
+import { ChevronRight, LogOut, Menu, X } from 'lucide-react';
+import { LanguageSwitcher } from './language-switcher';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState, type ReactNode } from 'react';
 
-import { vi } from '@/i18n/vi';
 import {
   canAccessSection,
   defaultRoute,
@@ -16,6 +16,7 @@ import {
 import { useAuth } from '@/components/auth-provider';
 
 export function AppShell({ children }: { children: ReactNode }) {
+  const { vi } = usePageCopy();
   const pathname = usePathname();
   const { user, signOut } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -141,10 +142,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <ChevronRight className="breadcrumb-root" size={14} aria-hidden="true" />
             <span className="font-medium text-ink">{currentTitle}</span>
           </div>
-          <span className="language-label" aria-label={vi.shell.languageLabel}>
-            <Languages size={16} aria-hidden="true" />
-            {vi.shell.language}
-          </span>
+          <LanguageSwitcher />
         </header>
 
         <main className="main-content" id="main-content" tabIndex={-1}>
@@ -153,4 +151,10 @@ export function AppShell({ children }: { children: ReactNode }) {
       </div>
     </div>
   );
+}
+
+function usePageCopy() {
+  const { vi } = useMessages();
+
+  return { vi };
 }

@@ -1,4 +1,6 @@
 'use client';
+import { Feedback } from '@/i18n/feedback';
+import { useMessages } from '@/i18n/provider';
 import { useEffect, useState, type FormEvent } from 'react';
 import { AdminDialog } from '@/components/admin-dialog';
 import { apiRequest } from '@/lib/api';
@@ -10,9 +12,6 @@ import {
   type Product,
   type Unit,
 } from '@/lib/catalog';
-import { vi } from '@/i18n/vi';
-const c = vi.catalog;
-const a = vi.admin;
 
 export function ProductForm({
   id,
@@ -23,6 +22,7 @@ export function ProductForm({
   onClose: () => void;
   onSaved: () => void;
 }) {
+  const { c, a } = usePageCopy();
   const [options, setOptions] = useState<{
     categories: Category[];
     units: Unit[];
@@ -87,7 +87,7 @@ export function ProductForm({
       </h2>
       {error && (
         <p className="form-error" role="alert">
-          {error}
+          {<Feedback text={error} />}
         </p>
       )}
       {!options && (
@@ -199,7 +199,7 @@ export function ProductForm({
                 <p className="field-hint">{c.ratioHint}</p>
               </div>
               <div className="form-field">
-                <label htmlFor="product-cost">{c.cost}</label>
+                <label htmlFor="product-cost">{c.cost} (VND)</label>
                 <input
                   id="product-cost"
                   name="defaultCost"
@@ -283,4 +283,11 @@ export function ProductForm({
       )}
     </AdminDialog>
   );
+}
+
+function usePageCopy() {
+  const { vi } = useMessages();
+  const c = vi.catalog;
+  const a = vi.admin;
+  return { c, a };
 }

@@ -1,12 +1,14 @@
+'use client';
+import { useFormatters } from '@/i18n/formatters';
+import { useMessages } from '@/i18n/provider';
 import { CalendarDays, CircleHelp, Store } from 'lucide-react';
 import { ProductImage } from './product-image';
 import type { Recommendation } from '@/lib/decision';
-import { formatEstimate, formatQuantity, unitLabel } from '@/lib/format';
-import { displayDate } from '@/lib/operations';
-import { planningCopy as p } from '@/i18n/planning';
-import { decisionCopy as c } from '@/i18n/vi';
+import { formatEstimate, formatQuantity } from '@/lib/format';
 
 export function RecommendationOverview({ record: r }: { record: Recommendation }) {
+  const { unitLabel, displayDate } = useFormatters();
+  const { p, c } = usePageCopy();
   const unit = unitLabel(r.product.baseUnit);
   const approved = ['ACCEPTED', 'ADJUSTED'].includes(r.decisionStatus);
   const value =
@@ -101,4 +103,10 @@ export function RecommendationOverview({ record: r }: { record: Recommendation }
       )}
     </>
   );
+}
+
+function usePageCopy() {
+  const { planningCopy: p, decisionCopy: c } = useMessages();
+
+  return { p, c };
 }

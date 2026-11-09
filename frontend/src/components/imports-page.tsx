@@ -1,4 +1,9 @@
 'use client';
+import { useFormatters } from '@/i18n/formatters';
+import { Feedback } from '@/i18n/feedback';
+import { useDynamic } from '@/i18n/dynamic';
+import { useMessages, useScreen } from '@/i18n/provider';
+import type { importCopy as c } from '@/i18n/vi';
 import { catalogError } from '@/lib/catalog';
 import { useEffect, useRef, useState } from 'react';
 import { FileUp, CheckCircle2, Trash2 } from 'lucide-react';
@@ -7,8 +12,7 @@ import { apiRequest } from '@/lib/api';
 import Link from 'next/link';
 import { translateMessage } from '@/lib/error-copy';
 import type { Page } from '@/lib/catalog';
-import { displayDate } from '@/lib/operations';
-import { vi, importCopy as c } from '@/i18n/vi';
+
 import { StatusValue } from './status-value';
 import { formatQuantity } from '@/lib/format';
 type ImportType = keyof typeof c.types;
@@ -33,32 +37,9 @@ type Job = {
   sampleRows?: { row: number; values: Record<string, string>; valid: boolean }[];
 };
 type Pick = { key: string; file: File; type: ImportType | 'AUTO'; job?: Job; error?: string };
-const statusText = (job: Job) =>
-  job.status === 'FAILED' && job.errorReport?.some((e) => e.error === 'Cancelled before importing.')
-    ? 'Đã hủy'
-    : ({
-        PENDING: 'Chờ nhập',
-        PROCESSING: 'Đang nhập',
-        COMPLETED: 'Đã nhập',
-        PARTIAL: 'Nhập một phần',
-        FAILED: 'Thất bại',
-      }[job.status] ?? job.status);
-const errorText = (message: string) =>
-  message === 'Cancelled before importing.'
-    ? 'Đã hủy trước khi ghi dữ liệu.'
-    : translateMessage(message.replace(/^Entire (invoice|purchase order|order) rejected: /, ''));
-const help: Record<ImportType, string> = {
-  PRODUCT:
-    'Cần có danh mục và đơn vị tính trước. Chỉ thêm sản phẩm mới; không ghi đè SKU đã tồn tại.',
-  SALE: 'Cần có cửa hàng và sản phẩm trước. Giá vốn là tổng cho cả dòng. Nhập lịch sử không trừ tồn kho.',
-  INVENTORY:
-    'Cần có cửa hàng, sản phẩm đang hoạt động. Chỉ nhận cặp cửa hàng × sản phẩm chưa có lô tồn.',
-  PURCHASE:
-    'Cần có địa điểm và sản phẩm trước. Chỉ nhận lịch sử RECEIVED hoặc CANCELLED; không chạy nhận hàng.',
-  EXPENSE:
-    'Mã địa điểm phải tồn tại; để trống nếu là chi phí chung. Không nhập lại khoản chi đã nhập thành công.',
-};
+
 function Errors({ errors }: { errors: NonNullable<Job['errorReport']> }) {
+  const { t, errorText } = usePageCopy();
   const [page, setPage] = useState(0);
   const count = Math.ceil(errors.length / 10);
   const current = Math.min(page, count - 1);
@@ -68,8 +49,8 @@ function Errors({ errors }: { errors: NonNullable<Job['errorReport']> }) {
         <table className="admin-table">
           <thead>
             <tr>
-              <th>Dòng CSV</th>
-              <th>Lỗi cần sửa</th>
+              <th>{t.csvRow}</th>
+              <th>{t.issuesToFix}</th>
             </tr>
           </thead>
           <tbody>
@@ -85,21 +66,21 @@ function Errors({ errors }: { errors: NonNullable<Job['errorReport']> }) {
       {count > 1 && (
         <div className="import-pagination">
           <span>
-            {current + 1}/{count} · {errors.length} dòng lỗi
+            {current + 1}/{count} · {errors.length} {t.rowsWithErrors}
           </span>
           <button
             className="text-button"
             disabled={current === 0}
             onClick={() => setPage(current - 1)}
           >
-            Trước
+            {t.previous}
           </button>
           <button
             className="text-button"
             disabled={current + 1 === count}
             onClick={() => setPage(current + 1)}
           >
-            Sau
+            {t.next}
           </button>
         </div>
       )}
@@ -107,6 +88,9 @@ function Errors({ errors }: { errors: NonNullable<Job['errorReport']> }) {
   );
 }
 export function ImportsPage() {
+  const { displayDate } = useFormatters();
+  const dynamic = useDynamic();
+  const { vi, c, t, statusText, help } = usePageCopy();
   const [type, setType] = useState<ImportType | 'AUTO'>('AUTO');
   const [definitions, setDefinitions] = useState<Definitions | null>(null);
   const [history, setHistory] = useState<Page<Job> | null>(null);
@@ -170,7 +154,7 @@ export function ImportsPage() {
       picks.length + incoming.length > 20 ||
       incoming.some((f) => !/\.(csv|xlsx)$/i.test(f.name) || f.size > 2 * 1024 * 1024 || !f.size)
     ) {
-      setError('Chọn tối đa 20 tệp CSV/XLSX, mỗi tệp có dữ liệu và không quá 2 MB.');
+      setError(t.selectUpTo20NonemptyCsvXlsx);
       return;
     }
     setPicks((previous) => [
@@ -193,7 +177,7 @@ export function ImportsPage() {
       const targets = picks.filter((p) => !p.job);
       let succeeded = 0;
       for (const [i, pick] of targets.entries()) {
-        setProgress(`Đang kiểm tra ${i + 1}/${targets.length}: ${pick.file.name}`);
+        setProgress(dynamic.validating(i + 1, targets.length, pick.file.name));
         try {
           const job = await preview(pick);
           succeeded++;
@@ -207,9 +191,7 @@ export function ImportsPage() {
           );
         }
       }
-      setNotice(
-        `Đã kiểm tra ${succeeded}/${targets.length} tệp. Mở từng kết quả để xem lỗi hoặc nhập dữ liệu. Chưa ghi dữ liệu nghiệp vụ.`,
-      );
+      setNotice(dynamic.validatedFiles(succeeded, targets.length));
       refresh();
     });
   }
@@ -240,10 +222,10 @@ export function ImportsPage() {
         refresh();
         setNotice(
           action === 'confirm'
-            ? `Đã nhập ${job.successRows} dòng từ ${job.fileName}; ${job.failedRows} dòng bị từ chối.`
+            ? dynamic.importResult(job.successRows, job.fileName, job.failedRows)
             : action === 'cancel'
-              ? `Đã hủy ${job.fileName}. Chưa ghi dữ liệu nghiệp vụ.`
-              : 'Đã kiểm tra lại với danh mục hiện tại.',
+              ? dynamic.cancelledFile(job.fileName)
+              : t.revalidatedAgainstTheCurrentCatalog,
         );
       } catch (e) {
         setUncertain(true);
@@ -257,7 +239,7 @@ export function ImportsPage() {
       await apiRequest(`/imports/${job.id}`, { method: 'DELETE' });
       setDetail(null);
       setPicks((items) => items.filter((p) => p.job?.id !== job.id));
-      setNotice('Đã xóa lần nhập khỏi danh sách. Thông tin đối chiếu vẫn được lưu.');
+      setNotice(t.theImportHasBeenRemovedFromThe);
       refresh();
     });
   }
@@ -280,7 +262,7 @@ export function ImportsPage() {
       ? !detail.previewAvailable
         ? c.expired
         : !detail.validRows
-          ? 'Chưa thể nhập: không có dòng hợp lệ. Xem lỗi bên dưới, bổ sung danh mục/cửa hàng/sản phẩm còn thiếu rồi bấm Kiểm tra lại.'
+          ? t.cannotImportNoValidRowsReviewThe
           : uncertain
             ? c.uncertain
             : ''
@@ -290,25 +272,25 @@ export function ImportsPage() {
       <div className="page-heading">
         <div>
           <h1>{c.title}</h1>
-          <p className="page-description">Chọn tệp → kiểm tra → xem kết quả → nhập dữ liệu.</p>
+          <p className="page-description">{t.selectFilesValidateReviewResultsImportData}</p>
         </div>
       </div>
       {notice && (
         <p className="form-success import-feedback" role="status">
           <CheckCircle2 size={18} />
-          {notice}
+          {<Feedback text={notice} />}
         </p>
       )}
       {!detail && error && (
         <p className="form-error import-feedback" role="alert">
-          {error}
+          {<Feedback text={error} />}
         </p>
       )}
       <section className="admin-card import-upload">
-        <h2>1. Chọn dữ liệu cần nhập</h2>
+        <h2>{t.label1SelectDataToImport}</h2>
         <p>
-          CSV nghiệp vụ trong <strong>datasets/chatbot-business</strong> dùng ở trang này. CSV trong{' '}
-          <strong>datasets/ai-center</strong> dùng tại{' '}
+          {t.businessCsvFilesIn} <strong>datasets/chatbot-business</strong>{' '}
+          {t.areUsedOnThisPageCsvFiles} <strong>datasets/ai-center</strong> {t.areUsedIn}{' '}
           <Link className="text-button" href="/ai-center">
             AI Center
           </Link>
@@ -316,14 +298,14 @@ export function ImportsPage() {
         </p>
         <div className="admin-filters">
           <div className="form-field">
-            <label htmlFor="import-type">Nhận diện loại dữ liệu</label>
+            <label htmlFor="import-type">{t.detectDataType}</label>
             <select
               id="import-type"
               value={type}
               disabled={busy}
               onChange={(e) => setType(e.target.value as ImportType | 'AUTO')}
             >
-              <option value="AUTO">Tự nhận diện theo cột (khuyên dùng)</option>
+              <option value="AUTO">{t.automaticallyDetectFromColumnsRecommended}</option>
               {Object.entries(c.types).map(([value, label]) => (
                 <option key={value} value={value}>
                   {label}
@@ -332,7 +314,7 @@ export function ImportsPage() {
             </select>
           </div>
           <div className="form-field">
-            <label htmlFor="import-file">Chọn một hoặc nhiều tệp</label>
+            <label htmlFor="import-file">{t.selectOneOrMoreFiles}</label>
             <input
               id="import-file"
               type="file"
@@ -346,26 +328,23 @@ export function ImportsPage() {
             />
           </div>
         </div>
-        <p>
-          Tối đa 20 tệp/lần chọn · mỗi tệp 2 MB, 1.000 dòng · XLSX một trang tính. Chọn tệp chưa
-          thay đổi dữ liệu.
-        </p>
+        <p>{t.upTo20FilesPerSelection2}</p>
         <details className="import-help">
-          <summary>Mẫu CSV và những dữ liệu cần có trước</summary>
+          <summary>{t.csvTemplatesAndPrerequisites}</summary>
           <p>
-            Tạo cửa hàng tại{' '}
+            {t.createStoresIn}{' '}
             <Link className="text-button" href="/stores">
-              Cửa hàng
+              {t.store}
             </Link>
-            , danh mục tại{' '}
+            {t.categoriesIn}{' '}
             <Link className="text-button" href="/products/categories">
-              Danh mục
+              {t.categories}
             </Link>{' '}
-            và đơn vị tại{' '}
+            {t.andUnitsIn}{' '}
             <Link className="text-button" href="/products/units">
-              Đơn vị
+              {t.unit}
             </Link>
-            . Sau đó nhập sản phẩm trước lịch sử bán/tồn kho.
+            {t.thenImportProductsBeforeSalesInventoryHistory}
           </p>
           {Object.entries(help).map(([key, text]) => (
             <p key={key}>
@@ -374,38 +353,45 @@ export function ImportsPage() {
           ))}
           {type !== 'AUTO' && definitions ? (
             <>
-              <p>Cột bắt buộc: {definitions.types[type].required.join(', ')}</p>
+              <p>
+                {t.requiredColumns} {definitions.types[type].required.join(', ')}
+              </p>
               <button type="button" className="secondary-button" onClick={download}>
-                Tải mẫu CSV
+                {t.downloadCsvTemplate}
               </button>
             </>
           ) : (
-            <p>Chọn một loại cụ thể phía trên để tải mẫu của loại đó.</p>
+            <p>{t.selectASpecificTypeAboveToDownload}</p>
           )}
         </details>
         {!!picks.length && (
           <div className="import-picked">
-            <h3>2. Tệp đã chọn ({picks.length})</h3>
+            <h3>
+              {t.label2SelectedFiles}
+              {picks.length})
+            </h3>
             {picks.map((p) => (
               <article className="import-pick" key={p.key}>
                 <div>
                   <strong>{p.file.name}</strong>
                   <p>
-                    {(p.file.size / 1024).toFixed(1)} KB ·{' '}
-                    {p.job
-                      ? `${c.types[p.job.importType]} · ${statusText(p.job)}`
-                      : 'Chưa kiểm tra'}
+                    {(p.file.size / 1024).toFixed(1)} {t.kb}{' '}
+                    {p.job ? `${c.types[p.job.importType]} · ${statusText(p.job)}` : t.notValidated}
                     {p.job?.status === 'PENDING'
-                      ? ` · ${p.job.validRows ?? 0} hợp lệ / ${p.job.invalidRows ?? 0} lỗi`
+                      ? ` · ${dynamic.validationCounts(p.job.validRows ?? 0, p.job.invalidRows ?? 0)}`
                       : ''}
                   </p>
-                  {p.error && <p className="form-error">{p.error}</p>}
+                  {p.error && (
+                    <p className="form-error">
+                      <Feedback text={p.error} />
+                    </p>
+                  )}
                 </div>
                 <div className="import-pick-actions">
                   {!p.job && (
                     <>
                       <select
-                        aria-label={`Loại dữ liệu ${p.file.name}`}
+                        aria-label={dynamic.fileType(p.file.name)}
                         disabled={busy}
                         value={p.type}
                         onChange={(e) =>
@@ -422,7 +408,7 @@ export function ImportsPage() {
                           )
                         }
                       >
-                        <option value="AUTO">Tự nhận diện</option>
+                        <option value="AUTO">{t.autoDetect}</option>
                         {Object.entries(c.types).map(([value, label]) => (
                           <option key={value} value={value}>
                             {label}
@@ -436,7 +422,7 @@ export function ImportsPage() {
                           setPicks((items) => items.filter((item) => item.key !== p.key))
                         }
                       >
-                        Bỏ tệp
+                        {t.removeFile}
                       </button>
                     </>
                   )}
@@ -446,7 +432,7 @@ export function ImportsPage() {
                       disabled={busy}
                       onClick={() => void open(p.job!.id)}
                     >
-                      Xem kết quả / nhập
+                      {t.viewResultsImport}
                     </button>
                   )}
                 </div>
@@ -459,10 +445,10 @@ export function ImportsPage() {
                 onClick={() => void validatePicks()}
               >
                 <FileUp size={17} />
-                {busy ? 'Đang xử lý…' : 'Kiểm tra và xem trước'}
+                {busy ? t.processing : t.validateAndPreview}
               </button>
               <span role="status">
-                {progress || 'Mỗi tệp có kết quả riêng; tệp hợp lệ được giữ khi tệp khác có lỗi.'}
+                {progress ? <Feedback text={progress} /> : t.eachFileHasItsOwnResultValid}
               </span>
             </div>
           </div>
@@ -470,9 +456,9 @@ export function ImportsPage() {
       </section>
       <section className="admin-card">
         <div className="report-section-heading">
-          <h2>Lịch sử và kết quả nhập</h2>
+          <h2>{t.importHistoryAndResults}</h2>
           <button className="secondary-button" disabled={busy} onClick={refresh}>
-            Làm mới
+            {t.refresh}
           </button>
         </div>
         {!history && !error && (
@@ -486,7 +472,7 @@ export function ImportsPage() {
             <table className="admin-table">
               <thead>
                 <tr>
-                  {[c.fileName, c.type, c.status, 'Kết quả', c.created, vi.admin.actions].map(
+                  {[c.fileName, c.type, c.status, t.results, c.created, vi.admin.actions].map(
                     (s) => (
                       <th key={s}>{s}</th>
                     ),
@@ -501,8 +487,8 @@ export function ImportsPage() {
                     <td>{statusText(job)}</td>
                     <td>
                       {job.status === 'PENDING'
-                        ? `${job.totalRows} dòng chờ kiểm tra/nhập`
-                        : `${job.successRows} đã nhập · ${job.failedRows} lỗi`}
+                        ? dynamic.pendingRows(job.totalRows)
+                        : dynamic.importedRows(job.successRows, job.failedRows)}
                     </td>
                     <td>{displayDate(job.createdAt)}</td>
                     <td>
@@ -512,7 +498,7 @@ export function ImportsPage() {
                           disabled={busy}
                           onClick={() => void open(job.id)}
                         >
-                          Xem kết quả
+                          {t.viewResults}
                         </button>
                         {job.status === 'FAILED' && !job.successRows && (
                           <button
@@ -521,7 +507,7 @@ export function ImportsPage() {
                             onClick={() => void dismiss(job)}
                           >
                             <Trash2 size={14} />
-                            Xóa khỏi danh sách
+                            {t.removeFromList}
                           </button>
                         )}
                       </div>
@@ -571,19 +557,22 @@ export function ImportsPage() {
             </p>
             {error && (
               <p className="form-error" role="alert">
-                {error}
+                {<Feedback text={error} />}
               </p>
             )}
             <div className="import-counts">
               <p>
-                Tổng dòng <strong>{formatQuantity(detail.totalRows)}</strong>
+                {t.totalRows} <strong>{formatQuantity(detail.totalRows)}</strong>
               </p>
               {detail.status === 'PENDING' ? (
                 <>
-                  <StatusValue tone={detail.validRows ? 'success' : 'neutral'} label="Dòng hợp lệ">
+                  <StatusValue tone={detail.validRows ? 'success' : 'neutral'} label={t.validRows}>
                     {detail.validRows == null ? '—' : formatQuantity(detail.validRows)}
                   </StatusValue>
-                  <StatusValue tone={detail.invalidRows ? 'danger' : 'neutral'} label="Dòng có lỗi">
+                  <StatusValue
+                    tone={detail.invalidRows ? 'danger' : 'neutral'}
+                    label={t.invalidRows}
+                  >
                     {detail.invalidRows == null ? '—' : formatQuantity(detail.invalidRows)}
                   </StatusValue>
                 </>
@@ -591,13 +580,13 @@ export function ImportsPage() {
                 <>
                   <StatusValue
                     tone={detail.successRows ? 'success' : 'neutral'}
-                    label="Dòng đã nhập"
+                    label={t.importedRows}
                   >
                     {formatQuantity(detail.successRows)}
                   </StatusValue>
                   <StatusValue
                     tone={detail.failedRows ? 'danger' : 'neutral'}
-                    label="Dòng bị từ chối"
+                    label={t.rejectedRows}
                   >
                     {formatQuantity(detail.failedRows)}
                   </StatusValue>
@@ -616,23 +605,23 @@ export function ImportsPage() {
             )}
             {detail.status === 'PENDING' && !detail.validRows && (
               <p className="import-reference-links">
-                Bổ sung tại:{' '}
+                {t.addMissingRecordsIn}{' '}
                 <Link href="/stores" target="_blank" rel="noreferrer">
-                  Cửa hàng
+                  {t.store}
                 </Link>{' '}
                 ·{' '}
                 <Link href="/products/categories" target="_blank" rel="noreferrer">
-                  Danh mục
+                  {t.categories}
                 </Link>{' '}
                 ·{' '}
                 <Link href="/products/units" target="_blank" rel="noreferrer">
-                  Đơn vị
+                  {t.unit}
                 </Link>{' '}
                 ·{' '}
                 <Link href="/products" target="_blank" rel="noreferrer">
-                  Sản phẩm
+                  {t.products}
                 </Link>
-                . Sau khi lưu, quay lại và kiểm tra lại tệp này.
+                {t.afterSavingReturnAndRevalidateThisFile}
               </p>
             )}
             {!!detail.errorReport?.length && (
@@ -640,12 +629,12 @@ export function ImportsPage() {
             )}
             {detail.sampleRows && (
               <details className="import-help">
-                <summary>Xem trước dữ liệu (tối đa 20 dòng)</summary>
+                <summary>{t.dataPreviewUpTo20Rows}</summary>
                 <div className="admin-table-scroll">
                   <table className="admin-table">
                     <thead>
                       <tr>
-                        <th>Dòng</th>
+                        <th>{t.row}</th>
                         {detail.columns?.map((column) => (
                           <th key={column}>{column}</th>
                         ))}
@@ -674,7 +663,7 @@ export function ImportsPage() {
                   setError('');
                 }}
               >
-                Đóng
+                {t.close}
               </button>
               {detail.status === 'PENDING' && (
                 <>
@@ -683,21 +672,21 @@ export function ImportsPage() {
                     disabled={busy || uncertain}
                     onClick={() => void transition('cancel')}
                   >
-                    Hủy nhập
+                    {t.cancelImport}
                   </button>
                   <button
                     className="secondary-button"
                     disabled={busy || !detail.previewAvailable}
                     onClick={() => void transition('revalidate')}
                   >
-                    Kiểm tra lại
+                    {t.revalidate}
                   </button>
                   <button
                     className="primary-button"
                     disabled={busy || uncertain || !detail.previewAvailable || !detail.validRows}
                     onClick={() => void transition('confirm')}
                   >
-                    {busy ? 'Đang xử lý…' : 'Nhập các dòng hợp lệ'}
+                    {busy ? t.processing : t.importValidRows}
                   </button>
                 </>
               )}
@@ -707,7 +696,7 @@ export function ImportsPage() {
                   disabled={busy}
                   onClick={() => void dismiss(detail)}
                 >
-                  Xóa khỏi danh sách
+                  {t.removeFromList}
                 </button>
               )}
               {uncertain && (
@@ -716,7 +705,7 @@ export function ImportsPage() {
                   disabled={busy}
                   onClick={() => void open(detail.id)}
                 >
-                  Làm mới kết quả
+                  {t.refreshResults}
                 </button>
               )}
             </div>
@@ -725,4 +714,29 @@ export function ImportsPage() {
       )}
     </div>
   );
+}
+
+function usePageCopy() {
+  const { vi, importCopy: c } = useMessages();
+  const t = useScreen('imports_page');
+  const statusText = (job: Job) =>
+    job.status === 'FAILED' &&
+    job.errorReport?.some((e) => e.error === 'Cancelled before importing.')
+      ? t.cancelled
+      : ({
+          PENDING: t.pendingImport,
+          PROCESSING: t.importing,
+          COMPLETED: t.imported,
+          PARTIAL: t.partiallyImported,
+          FAILED: t.failed,
+        }[job.status] ?? job.status);
+  const errorText = (message: string) => translateMessage(message);
+  const help: Record<ImportType, string> = {
+    PRODUCT: t.categoriesAndUnitsMustExistFirstOnly,
+    SALE: t.storesAndProductsMustExistFirstCost,
+    INVENTORY: t.activeStoresAndProductsMustExistOnly,
+    PURCHASE: t.locationsAndProductsMustExistFirstOnly,
+    EXPENSE: t.theLocationCodeMustExistLeaveBlank,
+  };
+  return { t, errorText, vi, c, statusText, help };
 }

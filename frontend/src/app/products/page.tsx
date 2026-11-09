@@ -1,6 +1,9 @@
 import { ProductsPage } from '@/components/products-page';
-import { vi } from '@/i18n/vi';
-export const metadata = { title: vi.catalog.products };
+import { getServerMessages } from '@/i18n/server';
+export async function generateMetadata() {
+  const { vi } = await getServerMessages();
+  return { title: vi.catalog.products };
+}
 export default function Page() {
   return <ProductsPage />;
 }

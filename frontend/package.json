@@ -10,7 +10,9 @@
     "build": "next build",
     "start": "next start --hostname 127.0.0.1 --port 3000",
     "lint": "eslint . --max-warnings=0",
-    "typecheck": "next typegen && tsc --noEmit"
+    "typecheck": "next typegen && tsc --noEmit",
+    "test": "node --test tests/*.test.cjs",
+    "test:browser": "playwright test"
   },
   "dependencies": {
     "lucide-react": "1.47.0",
@@ -19,6 +21,7 @@
     "react-dom": "19.3.0"
   },
   "devDependencies": {
+    "@playwright/test": "1.65.0",
     "@tailwindcss/postcss": "4.3.3",
     "@types/node": "22.20.4",
     "@types/react": "19.3.0",

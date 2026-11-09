@@ -1,19 +1,22 @@
 'use client';
-import { statusCopy } from '@/i18n/status';
+import { useFormatters } from '@/i18n/formatters';
+import { Feedback } from '@/i18n/feedback';
+import { useMessages } from '@/i18n/provider';
 import { useState } from 'react';
 import { OperationList } from '@/components/operation-list';
 import { AdminDialog } from '@/components/admin-dialog';
 import { PurchaseForm } from '@/components/purchase-form';
 import { apiRequest } from '@/lib/api';
 import { catalogError, saveRecord } from '@/lib/catalog';
-import { displayDate, type Purchase, type PurchaseDetail } from '@/lib/operations';
-import { vi, importCopy, decisionCopy } from '@/i18n/vi';
+import { type Purchase, type PurchaseDetail } from '@/lib/operations';
+
 import { StatusBadge } from './status-value';
 import { operationTone } from '@/lib/presentation-status';
 import { formatMoney, formatQuantity } from '@/lib/format';
-const o = vi.operations;
-const a = vi.admin;
+
 export function PurchasesPage() {
+  const { displayDate, unitLabel } = useFormatters();
+  const { statusCopy, vi, importCopy, decisionCopy, o, a } = usePageCopy();
   const [revision, setRevision] = useState(0);
   const [detail, setDetail] = useState<PurchaseDetail | null>(null);
   const [editing, setEditing] = useState<PurchaseDetail | 'new' | null>(null);
@@ -57,7 +60,7 @@ export function PurchasesPage() {
     <div className="page-content">
       {!detail && error && (
         <p className="form-error" role="alert">
-          {error}
+          {<Feedback text={error} />}
         </p>
       )}
       {success && (
@@ -135,10 +138,10 @@ export function PurchasesPage() {
             {detail.replenishmentRecommendationId && <p>{decisionCopy.linkedDraft}</p>}
             {error && (
               <p className="form-error" role="alert">
-                {error}
+                {<Feedback text={error} />}
               </p>
             )}
-            <p className="table-scroll-hint">{statusCopy.vi.tableHint}</p>
+            <p className="table-scroll-hint">{statusCopy.tableHint}</p>
             <div className="admin-table-scroll" tabIndex={0} role="region" aria-label={o.items}>
               <table className="admin-table">
                 <thead>
@@ -164,10 +167,10 @@ export function PurchasesPage() {
                         <span className="admin-cell-note">{i.product?.sku}</span>
                       </th>
                       <td className="numeric-cell">
-                        {formatQuantity(i.purchaseQuantity)} {i.product?.purchaseUnit?.code}
+                        {formatQuantity(i.purchaseQuantity)} {unitLabel(i.product?.purchaseUnit)}
                       </td>
                       <td className="numeric-cell">
-                        {formatQuantity(i.baseQuantity)} {i.product?.baseUnit?.code}
+                        {formatQuantity(i.baseQuantity)} {unitLabel(i.product?.baseUnit)}
                       </td>
                       <td className="numeric-cell">{formatMoney(i.unitCost)}</td>
                       <td>{i.lotNumber ?? a.noValue}</td>
@@ -241,4 +244,11 @@ export function PurchasesPage() {
       )}
     </div>
   );
+}
+
+function usePageCopy() {
+  const { statusCopy, vi, importCopy, decisionCopy } = useMessages();
+  const o = vi.operations;
+  const a = vi.admin;
+  return { statusCopy, vi, importCopy, decisionCopy, o, a };
 }

@@ -1,8 +1,9 @@
+'use client';
+import { useMessages } from '@/i18n/provider';
 import Link from 'next/link';
 
-import { vi } from '@/i18n/vi';
-
 export default function NotFound() {
+  const { vi } = usePageCopy();
   return (
     <div className="not-found">
       <p className="eyebrow">404</p>
@@ -13,4 +14,10 @@ export default function NotFound() {
       </Link>
     </div>
   );
+}
+
+function usePageCopy() {
+  const { vi } = useMessages();
+
+  return { vi };
 }

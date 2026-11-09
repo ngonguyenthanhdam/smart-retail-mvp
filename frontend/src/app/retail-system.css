@@ -1170,3 +1170,60 @@
     min-height: 44px;
   }
 }
+.language-switcher {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+  color: #183d30;
+}
+.dialog-language {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 8px;
+}
+.language-switcher button {
+  min-width: 40px;
+  min-height: 40px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 650;
+  cursor: pointer;
+}
+.language-switcher button[aria-pressed='true'] {
+  background: #e0f0e6;
+  border-color: #37825c;
+  color: #155b39;
+}
+.language-switcher button:hover {
+  background: #ecf5ef;
+}
+.language-switcher button:focus-visible {
+  outline: 3px solid #2b7854;
+  outline-offset: 2px;
+}
+.language-switcher-standalone {
+  position: absolute;
+  top: 16px;
+  right: 20px;
+  z-index: 10;
+  padding: 4px;
+  border-radius: 10px;
+  background: #fff;
+}
+@media (max-width: 480px) {
+  .topbar {
+    gap: 8px;
+  }
+  .breadcrumb {
+    min-width: 0;
+  }
+  .language-switcher {
+    gap: 2px;
+  }
+  .language-switcher-standalone {
+    top: 8px;
+    right: 8px;
+  }
+}

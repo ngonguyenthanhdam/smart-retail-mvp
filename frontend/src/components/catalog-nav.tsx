@@ -1,10 +1,11 @@
 'use client';
+import { useMessages } from '@/i18n/provider';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/components/auth-provider';
-import { vi } from '@/i18n/vi';
 
 export function CatalogNav() {
+  const { vi } = usePageCopy();
   const { user } = useAuth();
   const path = usePathname();
   const links = [
@@ -31,4 +32,10 @@ export function CatalogNav() {
       ))}
     </nav>
   );
+}
+
+function usePageCopy() {
+  const { vi } = useMessages();
+
+  return { vi };
 }

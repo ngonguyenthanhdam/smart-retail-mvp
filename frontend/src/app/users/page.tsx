@@ -1,8 +1,10 @@
-import type { Metadata } from 'next';
 import { UsersPage } from '@/components/users-page';
-import { vi } from '@/i18n/vi';
+import { getServerMessages } from '@/i18n/server';
 
-export const metadata: Metadata = { title: vi.users.title };
+export async function generateMetadata() {
+  const { vi } = await getServerMessages();
+  return { title: vi.users.title };
+}
 export default function Page() {
   return <UsersPage />;
 }

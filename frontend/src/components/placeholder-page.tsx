@@ -1,15 +1,15 @@
 'use client';
-
+import { useMessages } from '@/i18n/provider';
 import { ArrowUpRight, Info } from 'lucide-react';
 import Link from 'next/link';
 
-import { vi } from '@/i18n/vi';
 import { canAccessSection, findSection, type SectionId } from '@/lib/navigation';
 import { useAuth } from '@/components/auth-provider';
 
 const exploreSections = ['stores', 'products', 'inventory'] as const;
 
 export function PlaceholderPage({ sectionId }: { sectionId: SectionId }) {
+  const { vi } = usePageCopy();
   const { user } = useAuth();
   const section = findSection(sectionId)!;
   const copy = vi.sections[sectionId];
@@ -72,4 +72,10 @@ export function PlaceholderPage({ sectionId }: { sectionId: SectionId }) {
       </p>
     </div>
   );
+}
+
+function usePageCopy() {
+  const { vi } = useMessages();
+
+  return { vi };
 }

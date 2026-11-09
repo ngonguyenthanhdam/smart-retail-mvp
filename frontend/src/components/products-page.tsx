@@ -1,5 +1,8 @@
 'use client';
-import { statusCopy } from '@/i18n/status';
+import { useFormatters } from '@/i18n/formatters';
+import { Feedback } from '@/i18n/feedback';
+
+import { useMessages, useScreen } from '@/i18n/provider';
 import { FilterPanel } from './filter-panel';
 import { useEffect, useState } from 'react';
 import { CatalogNav } from '@/components/catalog-nav';
@@ -7,15 +10,15 @@ import { ProductForm } from '@/components/product-form';
 import { useAuth } from '@/components/auth-provider';
 import { apiRequest } from '@/lib/api';
 import { allOptions, catalogError, type Category, type Page, type Product } from '@/lib/catalog';
-import { vi } from '@/i18n/vi';
+
 import { StoreProductsPage } from '@/components/store-products-page';
 import { CatalogCard, CatalogViewToggle } from './catalog-cards';
 import { Plus } from 'lucide-react';
 import { formatMoney } from '@/lib/format';
-const c = vi.catalog;
-const a = vi.admin;
 
 export function ProductsPage() {
+  const { unitLabel } = useFormatters();
+  const { statusCopy, t, c, a } = usePageCopy();
   const { user } = useAuth();
   const [view, setView] = useState<'grid' | 'table'>('table');
   const [query, setQuery] = useState({ search: '', status: 'all', categoryId: '', page: 1 });
@@ -57,7 +60,7 @@ export function ProductsPage() {
     <div className="page-content catalog-page">
       <div className="page-heading">
         <div>
-          <p className="eyebrow">HÀNG HÓA CỦA BẠN</p>
+          <p className="eyebrow">{t.yourProducts}</p>
           <h1>{c.products}</h1>
           <p className="page-description">{c.productsDescription}</p>
         </div>
@@ -80,7 +83,7 @@ export function ProductsPage() {
       )}
       {error && (
         <div className="form-error admin-notice" role="alert">
-          {error}{' '}
+          {<Feedback text={error} />}{' '}
           <button className="text-button" onClick={reload}>
             {a.retry}
           </button>
@@ -150,7 +153,7 @@ export function ProductsPage() {
           <>
             <div className="catalog-results-heading">
               <p>
-                <strong>{data.total}</strong> sản phẩm trong danh mục
+                <strong>{data.total}</strong> {t.productsInTheCatalog}
               </p>
               <CatalogViewToggle view={view} onChange={setView} />
             </div>
@@ -169,7 +172,7 @@ export function ProductsPage() {
               </div>
             ) : (
               <>
-                <p className="table-scroll-hint">{statusCopy.vi.tableHint}</p>
+                <p className="table-scroll-hint">{statusCopy.tableHint}</p>
                 <div
                   className="admin-table-scroll"
                   tabIndex={0}
@@ -199,7 +202,7 @@ export function ProductsPage() {
                             </span>
                           </th>
                           <td>{row.category?.name ?? a.noValue}</td>
-                          <td>{row.baseUnit?.symbol ?? row.baseUnit?.code ?? a.noValue}</td>
+                          <td>{unitLabel(row.baseUnit)}</td>
                           <td className="numeric-cell">
                             {row.defaultCost == null ? a.noValue : formatMoney(row.defaultCost)}
                           </td>
@@ -273,4 +276,12 @@ export function ProductsPage() {
       )}
     </div>
   );
+}
+
+function usePageCopy() {
+  const { statusCopy, vi } = useMessages();
+  const t = useScreen('products_page');
+  const c = vi.catalog;
+  const a = vi.admin;
+  return { statusCopy, t, c, a };
 }

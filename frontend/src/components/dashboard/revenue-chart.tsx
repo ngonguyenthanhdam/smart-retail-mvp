@@ -1,20 +1,14 @@
 'use client';
-
+import { useMessages } from '@/i18n/provider';
 import { useEffect, useId, useRef, useState } from 'react';
 import { ChevronDown } from 'lucide-react';
-import { reportCopy as c } from '@/i18n/vi';
-import { dashboardCopy } from '@/i18n/dashboard';
+
 import { formatMoney } from '@/lib/format';
 import { displayReportDate, type Dashboard } from './types';
 import styles from './dashboard.module.css';
 
-const d = dashboardCopy.vi;
-const compactMoney = new Intl.NumberFormat('vi-VN', {
-  notation: 'compact',
-  maximumFractionDigits: 1,
-});
-
 export function RevenueChart({ trend }: { trend: Dashboard['trend'] }) {
+  const { c, d } = usePageCopy();
   const container = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(600);
   const [selected, setSelected] = useState<number | null>(null);
@@ -35,7 +29,7 @@ export function RevenueChart({ trend }: { trend: Dashboard['trend'] }) {
     ([1, 2, 2.5, 5, 10].find((value) => value * magnitude >= peak / 5) ?? 10) * magnitude;
   const divisions = Math.ceil(peak / step);
   const maximum = divisions * step;
-  const left = 46;
+  const left = Math.min(150, Math.max(92, formatMoney(maximum).length * 6));
   const right = width - 16;
   const bottom = 202;
   const top = 22;
@@ -102,7 +96,7 @@ export function RevenueChart({ trend }: { trend: Dashboard['trend'] }) {
                 className={styles.chartGrid}
               />
               <text x={left - 9} y={bottom - ratio * (bottom - top) + 4} textAnchor="end">
-                {compactMoney.format(maximum * ratio)}
+                {formatMoney(maximum * ratio)}
               </text>
             </g>
           ))}
@@ -200,4 +194,10 @@ export function RevenueChart({ trend }: { trend: Dashboard['trend'] }) {
       </details>
     </div>
   );
+}
+
+function usePageCopy() {
+  const { reportCopy: c, dashboardCopy } = useMessages();
+  const d = dashboardCopy;
+  return { c, d };
 }

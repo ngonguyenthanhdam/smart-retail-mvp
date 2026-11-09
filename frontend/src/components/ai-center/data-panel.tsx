@@ -1,4 +1,6 @@
 'use client';
+import { useDynamic } from '@/i18n/dynamic';
+import { useScreen } from '@/i18n/provider';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Upload, Database, FileCheck2, FileSpreadsheet, Plus, ArrowRight } from 'lucide-react';
 import { apiRequest } from '@/lib/api';
@@ -13,15 +15,11 @@ import {
   messageOf,
   numberText,
   Section,
+  useAiStatus,
 } from './shared';
 
 import { StatusValue } from '../status-value';
 
-const kindNames: Record<Kind, string> = {
-  SALES: 'Lịch sử bán hàng',
-  PRODUCTS: 'Danh mục sản phẩm',
-  INVENTORY: 'Tồn kho đầu kỳ',
-};
 function MappingEditor({
   file,
   config,
@@ -33,6 +31,7 @@ function MappingEditor({
   busy: boolean;
   save: (kind: Kind, mapping: Record<string, string>) => void;
 }) {
+  const { t, kindNames } = usePageCopy();
   const [kind, setKind] = useState<Kind>(file.kind ?? 'SALES');
   const [mapping, setMapping] = useState(file.mapping);
   const [confirmed, setConfirmed] = useState(false);
@@ -40,9 +39,9 @@ function MappingEditor({
   const ignored = file.profile.columns.filter((c) => !Object.values(mapping).includes(c));
   return (
     <details className="ai-details">
-      <summary>Ánh xạ cột và xem trước</summary>
+      <summary>{t.columnMappingAndPreview}</summary>
       <label className="form-field">
-        Nhóm dữ liệu
+        {t.dataType}
         <select
           value={kind}
           onChange={(e) => {
@@ -70,7 +69,7 @@ function MappingEditor({
                 setConfirmed(false);
               }}
             >
-              <option value="">Không sử dụng</option>
+              <option value="">{t.doNotUse}</option>
               {file.profile.columns.map((c) => (
                 <option key={c}>{c}</option>
               ))}
@@ -79,8 +78,8 @@ function MappingEditor({
         ))}
       </div>
       <p className="field-hint">
-        Cột không đưa vào snapshot: {ignored.join(', ') || 'Không có'}. Chỉ quantity là số lượng
-        theo đơn vị cơ sở; không ánh xạ doanh thu hoặc sale_amount đã chuẩn hóa thành số lượng.
+        {t.columnsExcludedFromTheSnapshot} {ignored.join(', ') || t.none}
+        {t.onlyQuantityRepresentsTheQuantityInBase}
       </p>
       <label className="ai-check">
         <input
@@ -88,7 +87,7 @@ function MappingEditor({
           checked={confirmed}
           onChange={(e) => setConfirmed(e.target.checked)}
         />
-        Tôi đã kiểm tra đơn vị, ánh xạ và các cột không sử dụng.
+        {t.iHaveCheckedTheUnitsMappingAnd}
       </label>
       <button
         type="button"
@@ -96,10 +95,10 @@ function MappingEditor({
         disabled={busy || !confirmed}
         onClick={() => save(kind, Object.fromEntries(Object.entries(mapping).filter(([, v]) => v)))}
       >
-        Xác nhận ánh xạ
+        {t.confirmMapping}
       </button>
-      <h4>Xem trước nội dung nguồn</h4>
-      <DataTable rows={file.profile.sample.map((r) => ({ Dòng: r.row, ...r.values }))} />
+      <h4>{t.previewSourceContent}</h4>
+      <DataTable rows={file.profile.sample.map((r) => ({ [t.row]: r.row, ...r.values }))} />
     </details>
   );
 }
@@ -135,6 +134,9 @@ export function DataPanel({
   onDataset: (dataset: Dataset | null) => void;
   onReady: () => void;
 }) {
+  const dynamic = useDynamic();
+  const { t, kindNames } = usePageCopy();
+  const statusLabel = useAiStatus();
   const [items, setItems] = useState<Dataset[]>([]);
   const [selected, setSelected] = useState<Dataset | null>(null);
   const [error, setError] = useState('');
@@ -198,7 +200,7 @@ export function DataPanel({
         active.reduce((s, f) => s + f.bytes, 0),
       ) > 104857600
     ) {
-      setError('Tối đa 20 file, 10 MB/file và 100 MB cho toàn batch.');
+      setError(t.upTo20Files10MbPer);
       return;
     }
     lock.current = true;
@@ -206,7 +208,7 @@ export function DataPanel({
     setError('');
     try {
       for (const [index, file] of list.entries()) {
-        setUploading(`Đang tải ${index + 1}/${list.length}: ${file.name}`);
+        setUploading(dynamic.uploading(index + 1, list.length, file.name));
         const body = new FormData();
         body.append('files', file);
         receive(
@@ -217,7 +219,7 @@ export function DataPanel({
           ),
         );
       }
-      setUploading('Đã tải file. Đang kiểm tra dữ liệu và đối chiếu toàn bộ…');
+      setUploading(t.filesUploadedCheckingAndReconcilingTheComplete);
       receive(await aiPost<Dataset>(`/datasets/${selected.id}/validate`));
       await refreshList();
     } catch (e) {
@@ -244,12 +246,12 @@ export function DataPanel({
     );
   const chooseScope = user.role === 'ADMIN' && source === 'CSV';
   return (
-    <Section title="Dữ liệu huấn luyện">
+    <Section title={t.trainingData}>
       <div className="ai-dataset-toolbar">
         <label className="form-field">
           Dataset
           <select
-            aria-label="Dataset gần đây"
+            aria-label={t.recentDatasets}
             value={selected?.id ?? ''}
             disabled={busy}
             onChange={(e) => {
@@ -260,22 +262,22 @@ export function DataPanel({
               }
             }}
           >
-            <option value="">Chọn dataset hoặc tạo mới</option>
+            <option value="">{t.selectADatasetOrCreateOne}</option>
             {items.map((d) => (
               <option key={d.id} value={d.id}>
                 {d.name} ·{' '}
                 {d.status === 'PUBLISHED'
-                  ? 'Đã xác nhận'
+                  ? t.confirmed
                   : d.status === 'STAGING'
-                    ? 'Đang chuẩn bị'
-                    : d.status}
+                    ? t.preparing
+                    : statusLabel(d.status)}
               </option>
             ))}
           </select>
         </label>
         <button
           type="button"
-          aria-label="Dataset mới"
+          aria-label={t.newDataset}
           className="secondary-button"
           disabled={busy}
           onClick={() => {
@@ -285,15 +287,15 @@ export function DataPanel({
           }}
         >
           {selected ? <Plus size={16} /> : <Upload size={16} />}
-          {selected ? 'Dataset mới' : 'Nhập CSV'}
+          {selected ? t.newDataset : t.importCsv}
         </button>
       </div>
       {!selected && !expanded && (
         <div className="ai-data-empty">
           <Database size={26} />
           <div>
-            <strong>Chuẩn bị dữ liệu cho dự báo</strong>
-            <p>Chọn nhiều CSV để kiểm tra và chốt dataset.</p>
+            <strong>{t.prepareDataForForecasting}</strong>
+            <p>{t.selectMultipleCsvFilesToValidateAnd}</p>
           </div>
         </div>
       )}
@@ -314,19 +316,19 @@ export function DataPanel({
               {selected.synthetic && (
                 <span
                   className="ai-demo-badge"
-                  title="Dữ liệu mô phỏng chỉ kiểm tra kỹ thuật, không chứng minh độ chính xác tại cửa hàng thực tế."
+                  title={t.syntheticDataOnlyVerifiesTechnicalOperationIt}
                 >
-                  Dữ liệu demo
+                  {t.demoData}
                 </span>
               )}
             </div>
           </div>
           <div className="ai-stats">
             {[
-              ['Dòng bán hàng', summary?.salesRows],
-              ['Sản phẩm', summary?.products],
-              ['Cửa hàng', summary?.stores],
-              ['File CSV', selected.files?.length ?? 0],
+              [t.salesRows, summary?.salesRows],
+              [t.products, summary?.products],
+              [t.store, summary?.stores],
+              [t.csvFiles, selected.files?.length ?? 0],
             ].map(([label, value]) => (
               <div key={label}>
                 <span>{label}</span>
@@ -338,7 +340,7 @@ export function DataPanel({
             <span className="field-hint">
               {summary?.start && summary.end
                 ? `${summary.start} → ${summary.end}`
-                : 'Chưa có khoảng ngày hợp lệ'}
+                : t.noValidDateRangeYet}
             </span>
             {editable ? (
               <button
@@ -357,13 +359,13 @@ export function DataPanel({
                   )
                 }
               >
-                Xác nhận sử dụng dữ liệu
+                {t.confirmDataUse}
                 <ArrowRight size={16} />
               </button>
             ) : (
               selected.status === 'PUBLISHED' && (
                 <button type="button" className="secondary-button" onClick={onReady}>
-                  Tiếp tục: Huấn luyện
+                  {t.continueTraining}
                   <ArrowRight size={16} />
                 </button>
               )
@@ -373,31 +375,33 @@ export function DataPanel({
             <p className="ai-upload-receipt" role="status">
               {uploading ||
                 (busy
-                  ? 'Đang xử lý dữ liệu…'
+                  ? t.processingData
                   : summary?.valid
-                    ? `Đã tải lên ${selected.files?.length ?? 0} file · Kiểm tra đạt. Xác nhận để chuyển sang huấn luyện.`
+                    ? dynamic.uploadValidated(selected.files?.length ?? 0)
                     : selected.files?.length
-                      ? `Đã tải lên ${selected.files.length} file · ${summary ? `${numberText(summary.issueCount)} lỗi cần xử lý` : 'Cần kiểm tra dữ liệu'}. Mở quản lý file bên dưới.`
-                      : 'Chưa tải file. Mở quản lý file để thêm CSV.')}
+                      ? dynamic.uploadReview(
+                          selected.files.length,
+                          summary
+                            ? `${numberText(summary.issueCount)} ${t.issuesToResolve}`
+                            : t.dataReviewRequired,
+                        )
+                      : t.noFilesUploadedOpenFileManagementTo)}
             </p>
           )}
         </div>
       )}
       {selected && summary && (
-        <div className="ai-quality-grid" aria-label="Chất lượng dữ liệu">
+        <div className="ai-quality-grid" aria-label={t.dataQuality}>
           <StatusValue
             tone={summary.issueCount > 0 ? 'danger' : summary.valid ? 'success' : 'neutral'}
-            label="Lỗi cần xử lý"
+            label={t.issuesToResolve}
           >
             {numberText(summary.issueCount)}
           </StatusValue>
-          <StatusValue
-            tone={summary.missingDays > 0 ? 'warning' : 'success'}
-            label="Ngày chưa biết"
-          >
+          <StatusValue tone={summary.missingDays > 0 ? 'warning' : 'success'} label={t.unknownDays}>
             {numberText(summary.missingDays)}
           </StatusValue>
-          <StatusValue tone="neutral" label="Ngày bán bằng 0 (đã ghi nhận)">
+          <StatusValue tone="neutral" label={t.recordedZeroSalesDays}>
             {numberText(summary.zeroDays)}
           </StatusValue>
         </div>
@@ -409,15 +413,9 @@ export function DataPanel({
         onToggle={(e) => setExpanded(e.currentTarget.open)}
       >
         <summary>
-          {selected
-            ? `Quản lý ${selected.files?.length ?? 0} file & kiểm tra dữ liệu`
-            : 'Thiết lập dataset'}
+          {selected ? dynamic.manageFiles(selected.files?.length ?? 0) : t.datasetSettings}
           <span>
-            {selected
-              ? selected.external
-                ? 'Ngoài hệ thống'
-                : 'Nội bộ'
-              : 'CSV hoặc dữ liệu đã có'}
+            {selected ? (selected.external ? t.external : t.internal) : t.csvOrExistingData}
           </span>
         </summary>
         {!selected && (
@@ -438,17 +436,17 @@ export function DataPanel({
           >
             <div className="ai-fields">
               <label className="form-field">
-                Tên dataset
+                {t.datasetName}
                 <input
                   required
                   maxLength={150}
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="Lịch sử bán hàng quý gần nhất"
+                  placeholder={t.salesHistoryForTheLatestQuarter}
                 />
               </label>
               <label className="form-field">
-                Nguồn
+                {t.source}
                 <select
                   value={source}
                   onChange={(e) => {
@@ -457,18 +455,18 @@ export function DataPanel({
                     if (e.target.value === 'DATABASE') setExternal(false);
                   }}
                 >
-                  <option value="CSV">Upload nhiều CSV</option>
-                  <option value="DATABASE">Snapshot từ database</option>
+                  <option value="CSV">{t.uploadMultipleCsvFiles}</option>
+                  <option value="DATABASE">{t.databaseSnapshot}</option>
                 </select>
               </label>
               <label className="form-field">
-                Phạm vi cửa hàng
+                {t.storeScope}
                 <select
                   value={location}
                   disabled={external || user.role !== 'ADMIN'}
                   onChange={(e) => setLocation(e.target.value)}
                 >
-                  {user.role === 'ADMIN' && <option value="">Tất cả cửa hàng được phép</option>}
+                  {user.role === 'ADMIN' && <option value="">{t.allPermittedStores}</option>}
                   {config.stores.map((s) => (
                     <option key={s.id} value={s.id}>
                       {s.code} · {s.name}
@@ -480,7 +478,7 @@ export function DataPanel({
             <div className="ai-row">
               {chooseScope && (
                 <fieldset className="ai-source-choice">
-                  <legend>Mã cửa hàng / sản phẩm trong CSV thuộc loại nào? *</legend>
+                  <legend>{t.whatTypeOfStoreProductIdsDoes}</legend>
                   <label className={scopeChosen && external ? 'selected' : ''}>
                     <input
                       type="radio"
@@ -493,11 +491,8 @@ export function DataPanel({
                       }}
                     />
                     <span>
-                      <strong>Dữ liệu ngoài hệ thống / CSV mẫu</strong>
-                      <small>
-                        Chọn cho bộ datasets/ai-center hoặc mã chưa có trong website. Giữ nguyên mã
-                        CSV.
-                      </small>
+                      <strong>{t.externalDataSampleCsv}</strong>
+                      <small>{t.chooseForDatasetsAiCenterOrIds}</small>
                     </span>
                   </label>
                   <label className={scopeChosen && !external ? 'selected' : ''}>
@@ -512,8 +507,8 @@ export function DataPanel({
                       }}
                     />
                     <span>
-                      <strong>Dữ liệu trong hệ thống</strong>
-                      <small>Mã cửa hàng, sản phẩm và đơn vị phải khớp danh mục đang có.</small>
+                      <strong>{t.internalData}</strong>
+                      <small>{t.storeProductAndUnitCodesMustMatch}</small>
                     </span>
                   </label>
                 </fieldset>
@@ -524,20 +519,16 @@ export function DataPanel({
                   checked={synthetic}
                   onChange={(e) => setSynthetic(e.target.checked)}
                 />
-                Dữ liệu demo / mô phỏng — chỉ kiểm tra kỹ thuật
+                {t.demoSyntheticDataTechnicalTestingOnly}
               </label>
             </div>
             <details>
-              <summary>Quy tắc nguồn dữ liệu</summary>
-              <p className="field-hint">
-                Snapshot database chỉ lấy ngày đã có xác nhận độ đầy đủ; bỏ qua dữ liệu demo mặc
-                định. File CSV phải khai báo ngày bán bằng 0; ngày thiếu vẫn được xem là chưa biết.
-                Dữ liệu ở đây không ghi vào bán hàng hay tồn kho.
-              </p>
+              <summary>{t.dataSourceRules}</summary>
+              <p className="field-hint">{t.databaseSnapshotsIncludeOnlyDaysWithConfirmed}</p>
             </details>
             <button className="primary-button" disabled={busy || (chooseScope && !scopeChosen)}>
               {source === 'CSV' ? <Upload size={16} /> : <Database size={16} />}
-              {busy ? 'Đang chuẩn bị…' : 'Tạo dataset'}
+              {busy ? t.preparing2 : t.createDataset}
             </button>
           </form>
         )}
@@ -551,15 +542,15 @@ export function DataPanel({
                 <strong>
                   {uploading ||
                     (busy
-                      ? 'Đang xử lý…'
+                      ? t.processing
                       : selected.files?.length
-                        ? 'Thêm file CSV'
-                        : 'Chọn một hoặc nhiều file CSV')}
+                        ? t.addCsvFiles
+                        : t.selectOneOrMoreCsvFiles)}
                 </strong>
-                <span>UTF-8 · 20 file · 10 MB/file · 100 MB/batch · 400.000 dòng</span>
+                <span>{t.utf820Files10MbFile}</span>
                 <input
                   className="ai-file-input"
-                  aria-label="Chọn file CSV huấn luyện"
+                  aria-label={t.selectTrainingCsvFiles}
                   type="file"
                   accept=".csv,text/csv"
                   multiple
@@ -573,19 +564,11 @@ export function DataPanel({
             )}
             {editable && internalMismatch && (
               <div className="ai-source-mismatch" role="alert">
-                <h3>Mã CSV chưa khớp chế độ dữ liệu nội bộ</h3>
-                <p>
-                  Dataset đang đối chiếu với cửa hàng và sản phẩm trong website. Nếu đây là bộ CSV
-                  mẫu hoặc dữ liệu ngoài hệ thống, hãy đổi nguồn để giữ mã CSV; không cần tải lại
-                  file.
-                </p>
+                <h3>{t.csvIdsDoNotMatchInternalData}</h3>
+                <p>{t.theDatasetIsBeingMatchedAgainstStores}</p>
                 {user.role === 'ADMIN' ? (
                   <>
-                    <p className="field-hint">
-                      Thao tác sẽ bỏ liên kết cửa hàng nội bộ, giữ file và kiểm tra lại toàn bộ.
-                      Nhãn mô phỏng được giữ theo dữ liệu nguồn. Dataset vẫn chờ bạn xác nhận; không
-                      ghi dữ liệu bán hàng/tồn kho.
-                    </p>
+                    <p className="field-hint">{t.thisRemovesTheInternalStoreLinkKeeps}</p>
                     <button
                       type="button"
                       className="secondary-button"
@@ -599,27 +582,22 @@ export function DataPanel({
                         )
                       }
                     >
-                      Chuyển sang dữ liệu ngoài hệ thống và kiểm tra lại
+                      {t.switchToExternalDataAndRevalidate}
                     </button>
                   </>
                 ) : (
-                  <p>
-                    Hãy dùng dữ liệu của cửa hàng được giao và mã sản phẩm đã cấu hình; chỉ ADMIN
-                    được sử dụng dataset ngoài hệ thống.
-                  </p>
+                  <p>{t.useDataFromYourAssignedStoreAnd}</p>
                 )}
               </div>
             )}
             {summary && (
               <div className="ai-summary ai-summary-compact">
-                <h3>
-                  {summary.valid ? 'Đã vượt qua kiểm tra batch' : 'Cần xử lý trước khi xác nhận'}
-                </h3>
+                <h3>{summary.valid ? t.batchValidationPassed : t.resolveIssuesBeforeConfirming}</h3>
                 <p>
-                  {summary.start} → {summary.end} · Đơn vị: {summary.units.join(', ') || '—'}
+                  {summary.start} → {summary.end} {t.unit} {summary.units.join(', ') || '—'}
                 </p>
                 <details>
-                  <summary>Cách xử lý dữ liệu và đơn vị</summary>
+                  <summary>{t.dataAndUnitHandling}</summary>
                   <ul>
                     {summary.transformations.map((t) => (
                       <li key={t}>{t}</li>
@@ -628,20 +606,22 @@ export function DataPanel({
                 </details>
                 {summary.issueCount > 0 && (
                   <details>
-                    <summary>Xem {summary.issueCount} lỗi cần xử lý</summary>
+                    <summary>
+                      {t.view} {summary.issueCount} {t.issuesToResolve2}
+                    </summary>
                     <DataTable
                       rows={summary.issues.map((i) => ({
                         File: i.file,
-                        Dòng: i.row,
-                        Cột: i.column,
-                        Lỗi: i.reason,
-                        'Cách sửa': i.fix,
+                        [t.row]: i.row,
+                        [t.column]: i.column,
+                        [t.error]: i.reason,
+                        [t.howToFix]: i.fix,
                       }))}
                     />
                   </details>
                 )}
                 <details>
-                  <summary>Xem lịch sử theo cửa hàng / sản phẩm</summary>
+                  <summary>{t.viewHistoryByStoreProduct}</summary>
                   <DataTable rows={summary.pairs} />
                 </details>
               </div>
@@ -656,20 +636,20 @@ export function DataPanel({
                     onClick={() => void act(() => aiPost(`/datasets/${selected.id}/validate`))}
                   >
                     <FileCheck2 size={16} />
-                    Kiểm tra toàn bộ batch
+                    {t.validateTheEntireBatch}
                   </button>
                   <button
                     type="button"
                     className="ai-link ai-danger"
                     disabled={busy}
                     onClick={() => {
-                      if (window.confirm('Hủy staging và xóa các file tạm của dataset này?'))
+                      if (window.confirm(t.cancelStagingAndDeleteThisDatasetS))
                         void act(() =>
                           apiRequest(`/ai-center/datasets/${selected.id}`, { method: 'DELETE' }),
                         );
                     }}
                   >
-                    Hủy dataset
+                    {t.cancelDataset}
                   </button>
                 </div>
               </>
@@ -682,8 +662,8 @@ export function DataPanel({
                     <div>
                       <h4>{file.name}</h4>
                       <p className="field-hint">
-                        {file.kind ? kindNames[file.kind] : 'Chưa nhận diện'} ·{' '}
-                        {numberText(file.rows)} dòng ·{' '}
+                        {file.kind ? kindNames[file.kind] : t.notIdentified} ·{' '}
+                        {numberText(file.rows)} {t.rows}{' '}
                         {numberText(Math.round((file.bytes / 1024) * 10) / 10)} KB
                       </p>
                     </div>
@@ -693,22 +673,22 @@ export function DataPanel({
                 {file.issues.length > 0 && (
                   <details>
                     <summary>
-                      {numberText(file.profile.issueCount)} lỗi — hiển thị tối đa 100
+                      {numberText(file.profile.issueCount)} {t.issuesShowingUpTo100}
                     </summary>
                     <DataTable
                       rows={file.issues.map((i) => ({
                         File: i.file,
-                        Dòng: i.row,
-                        Cột: i.column,
-                        Mã: i.code,
-                        'Nguyên nhân': i.reason,
-                        'Cách sửa': i.fix,
+                        [t.row]: i.row,
+                        [t.column]: i.column,
+                        [t.code]: i.code,
+                        [t.cause]: i.reason,
+                        [t.howToFix]: i.fix,
                       }))}
                     />
                   </details>
                 )}
                 <details className="ai-file-options">
-                  <summary>Chi tiết file / thay thế</summary>
+                  <summary>{t.fileDetailsReplacement}</summary>
                   {editable && file.profile.columns.length > 0 ? (
                     <MappingEditor
                       config={config}
@@ -725,18 +705,18 @@ export function DataPanel({
                     />
                   ) : (
                     <details>
-                      <summary>Xem trước</summary>
+                      <summary>{t.preview}</summary>
                       <DataTable
-                        rows={file.profile.sample.map((r) => ({ Dòng: r.row, ...r.values }))}
+                        rows={file.profile.sample.map((r) => ({ [t.row]: r.row, ...r.values }))}
                       />
                     </details>
                   )}
                   {editable && (
                     <div className="ai-row">
                       <label className="ai-file-replace">
-                        Thay thế file
+                        {t.replaceFile}
                         <input
-                          aria-label={`Thay thế ${file.name}`}
+                          aria-label={dynamic.replaceFile(file.name)}
                           type="file"
                           accept=".csv"
                           disabled={busy}
@@ -758,7 +738,7 @@ export function DataPanel({
                           )
                         }
                       >
-                        Loại bỏ
+                        {t.remove}
                       </button>
                     </div>
                   )}
@@ -768,7 +748,7 @@ export function DataPanel({
           </div>
         )}
         <details className="ai-templates">
-          <summary>Tải CSV mẫu · dữ liệu mô phỏng</summary>
+          <summary>{t.downloadCsvTemplatesSyntheticData}</summary>
           <div className="ai-template-links">
             {Object.entries(kindNames).map(([k, v]) => (
               <button type="button" className="ai-link" key={k} onClick={() => template(k as Kind)}>
@@ -781,4 +761,14 @@ export function DataPanel({
       <ErrorBox error={error} />
     </Section>
   );
+}
+
+function usePageCopy() {
+  const t = useScreen('data_panel');
+  const kindNames: Record<Kind, string> = {
+    SALES: t.salesHistory,
+    PRODUCTS: t.productCatalog,
+    INVENTORY: t.openingInventory,
+  };
+  return { t, kindNames };
 }

@@ -1,9 +1,10 @@
-import type { Metadata } from 'next';
-
 import { ResetPasswordForm } from '@/components/reset-password-form';
-import { vi } from '@/i18n/vi';
+import { getServerMessages } from '@/i18n/server';
 
-export const metadata: Metadata = { title: vi.auth.resetTitle, referrer: 'no-referrer' };
+export async function generateMetadata() {
+  const { vi } = await getServerMessages();
+  return { title: vi.auth.resetTitle, referrer: 'no-referrer' };
+}
 
 export default function ResetPasswordPage() {
   return <ResetPasswordForm />;

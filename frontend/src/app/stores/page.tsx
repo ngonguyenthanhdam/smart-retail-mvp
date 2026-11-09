@@ -1,9 +1,10 @@
-import type { Metadata } from 'next';
-
 import { LocationsPage } from '@/components/locations-page';
-import { vi } from '@/i18n/vi';
+import { getServerMessages } from '@/i18n/server';
 
-export const metadata: Metadata = { title: vi.sections.stores.label };
+export async function generateMetadata() {
+  const { vi } = await getServerMessages();
+  return { title: vi.sections.stores.label };
+}
 
 export default function StoresPage() {
   return <LocationsPage />;

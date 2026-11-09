@@ -1,4 +1,7 @@
 'use client';
+import { useFormatters } from '@/i18n/formatters';
+import { useDynamic } from '@/i18n/dynamic';
+import { useScreen } from '@/i18n/provider';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Play, RefreshCw } from 'lucide-react';
 import { AdminDialog } from '@/components/admin-dialog';
@@ -9,26 +12,21 @@ import {
   aiPost,
   Badge,
   DataTable,
-  dateText,
   ErrorBox,
   messageOf,
   numberText,
   Section,
+  useAiStatus,
 } from './shared';
 
 import { ResultDashboard } from './result-dashboard';
 import { WorkflowStepper } from './workflow-stepper';
 
-const stages = [
-  ['DATA_COLLECTION', 'Thu thập dữ liệu'],
-  ['EDA', 'Khám phá & kiểm tra'],
-  ['FEATURES', 'Tạo đặc trưng'],
-  ['SPLITTING', 'Chia theo thời gian'],
-  ['TRAINING', 'Huấn luyện'],
-  ['EVALUATION', 'Đánh giá'],
-  ['COMPLETED', 'Lưu ứng viên'],
-];
 export function TrainingPanel({ user, dataset }: { user: CurrentUser; dataset: Dataset | null }) {
+  const statusLabel = useAiStatus();
+  const { dateText } = useFormatters();
+  const dynamic = useDynamic();
+  const { t, stages } = usePageCopy();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [job, setJob] = useState<Job | null>(null);
   const [models, setModels] = useState<Models | null>(null);
@@ -117,15 +115,21 @@ export function TrainingPanel({ user, dataset }: { user: CurrentUser; dataset: D
       leaves >= 4 &&
       leaves <= 63);
   const blocked = !dataset
-    ? 'Chọn dataset ở khu vực Dữ liệu huấn luyện trước.'
+    ? t.selectADatasetInTrainingDataFirst
     : dataset.status !== 'PUBLISHED'
-      ? 'Dataset chưa được công bố. Quay lại Dữ liệu huấn luyện, bấm Xác nhận sử dụng dữ liệu.'
+      ? t.theDatasetIsNotPublishedYetReturn
       : dataset.summary?.missingDays
-        ? 'Dữ liệu còn ngày chưa biết. Bổ sung lịch sử và công bố dataset mới trước khi chạy.'
+        ? t.theDataStillHasUnknownDaysComplete
         : availableDays < 60 + 2 * days
-          ? `Dataset có ${availableDays} ngày cho chuỗi ngắn nhất; chế độ này cần ${60 + 2 * days} ngày. ${availableDays >= 120 ? 'Chọn chế độ 30 ngày để thử với bộ dữ liệu này.' : 'Bổ sung ít nhất 120 ngày liên tục để chạy chế độ 30 ngày.'}`
+          ? dynamic.requiredHistory(
+              availableDays,
+              60 + 2 * days,
+              availableDays >= 120
+                ? t.choose30DayModeToTestThis
+                : t.provideAtLeast120ConsecutiveDaysFor,
+            )
           : !validParameters
-            ? 'Kiểm tra lại tham số trong Tùy chọn nâng cao.'
+            ? t.checkTheParametersInAdvancedOptions
             : '';
   const versions = [
     ...new Set([
@@ -136,7 +140,7 @@ export function TrainingPanel({ user, dataset }: { user: CurrentUser; dataset: D
     ]),
   ].filter((v) => v !== models?.active.model_version);
   return (
-    <Section title="Huấn luyện & kết quả">
+    <Section title={t.trainingResults}>
       <WorkflowStepper
         dataset={dataset}
         job={job}
@@ -150,70 +154,61 @@ export function TrainingPanel({ user, dataset }: { user: CurrentUser; dataset: D
       {models && (
         <div className="ai-active-summary">
           <span className="ai-dot ready" />
-          <span>Đang vận hành</span>
+          <span>{t.inProduction}</span>
           <strong>{models.active.algorithm}</strong>
           <code>{models.active.model_version}</code>
         </div>
       )}
       <details className="ai-run-config" open={!result}>
         <summary>
-          Cấu hình lần huấn luyện <span>{dataset?.name ?? 'Chưa chọn dataset'}</span>
+          {t.trainingConfiguration} <span>{dataset?.name ?? t.noDatasetSelected}</span>
         </summary>
         <div className="ai-training-start">
           <div className="ai-dataset-label">
-            <span>Dataset đang chọn</span>
-            <h3>{dataset?.name ?? 'Chưa chọn dataset'}</h3>
+            <span>{t.selectedDataset}</span>
+            <h3>{dataset?.name ?? t.noDatasetSelected}</h3>
             {dataset && (
               <p>
-                <Badge status={dataset.status} /> · {numberText(dataset.summary?.salesRows)} dòng ·{' '}
-                {numberText(dataset.summary?.series)} chuỗi · {availableDays} ngày/chuỗi
+                <Badge status={dataset.status} /> · {numberText(dataset.summary?.salesRows)}{' '}
+                {t.rows} {numberText(dataset.summary?.series)} {t.series} {availableDays}{' '}
+                {t.daysSeries}
               </p>
             )}
           </div>
           <div className="ai-fields">
             <label className="form-field">
-              Cách đánh giá
+              {t.evaluationMethod}
               <select
-                aria-label="Cách đánh giá"
+                aria-label={t.evaluationMethod}
                 value={days}
                 disabled={busy || running}
                 onChange={(e) => setDays(Number(e.target.value))}
               >
-                <option value={30}>Thử nghiệm · 30 ngày (khuyên dùng cho dữ liệu mẫu)</option>
-                <option value={124}>
-                  Đánh giá dài hạn · 124 ngày (cần ít nhất 308 ngày dữ liệu)
-                </option>
+                <option value={30}>{t.experiment30DaysRecommendedForSampleData}</option>
+                <option value={124}>{t.longTermEvaluation124DaysRequiresAt}</option>
               </select>
-              <span className="field-hint">
-                Số ngày của mỗi giai đoạn kiểm tra độ chính xác; không phải thời gian chờ huấn
-                luyện.
-              </span>
+              <span className="field-hint">{t.numberOfDaysInEachAccuracyEvaluation}</span>
             </label>
             <label className="form-field">
-              Mô hình so sánh
+              {t.modelsToCompare}
               <select
-                aria-label="Mô hình so sánh"
+                aria-label={t.modelsToCompare}
                 value={lightgbm ? 'lightgbm' : 'baselines'}
                 disabled={busy || running}
                 onChange={(e) => setLightgbm(e.target.value === 'lightgbm')}
               >
-                <option value="lightgbm">LightGBM + hai phương pháp cơ sở</option>
-                <option value="baselines">Chỉ hai phương pháp cơ sở (chạy nhanh)</option>
+                <option value="lightgbm">{t.lightgbmTwoBaselines}</option>
+                <option value="baselines">{t.twoBaselinesOnlyFast}</option>
               </select>
-              <span className="field-hint">
-                So sánh với cùng ngày tuần trước và trung bình 28 ngày gần nhất.
-              </span>
+              <span className="field-hint">{t.compareAgainstTheSameWeekdayLastWeek}</span>
             </label>
           </div>
           <details className="ai-advanced">
-            <summary>Tùy chọn nâng cao — có thể giữ nguyên mặc định</summary>
-            <p>
-              LightGBM học từ lịch sử bán để dự báo. Các tham số dưới đây điều khiển cách học; không
-              cần chỉnh để chạy thử.
-            </p>
+            <summary>{t.advancedOptionsDefaultsCanBeRetained}</summary>
+            <p>{t.lightgbmLearnsFromSalesHistoryToForecast}</p>
             <div className="ai-fields">
               <label className="form-field">
-                Số cây
+                {t.numberOfTrees}
                 <input
                   type="number"
                   min={20}
@@ -222,12 +217,10 @@ export function TrainingPanel({ user, dataset }: { user: CurrentUser; dataset: D
                   value={trees}
                   onChange={(e) => setTrees(Number(e.target.value))}
                 />
-                <span className="field-hint">
-                  Số bước xây mô hình. Nhiều cây thường chạy lâu hơn; mặc định 200.
-                </span>
+                <span className="field-hint">{t.numberOfModelBuildingStepsMoreTrees}</span>
               </label>
               <label className="form-field">
-                Tốc độ học (learning rate)
+                {t.learningRate}
                 <input
                   type="number"
                   min={0.01}
@@ -237,10 +230,10 @@ export function TrainingPanel({ user, dataset }: { user: CurrentUser; dataset: D
                   value={rate}
                   onChange={(e) => setRate(Number(e.target.value))}
                 />
-                <span className="field-hint">Mức điều chỉnh ở mỗi bước học. Mặc định 0,05.</span>
+                <span className="field-hint">{t.adjustmentSizeAtEachLearningStepDefault}</span>
               </label>
               <label className="form-field">
-                Số lá tối đa
+                {t.maximumLeaves}
                 <input
                   type="number"
                   min={4}
@@ -249,9 +242,7 @@ export function TrainingPanel({ user, dataset }: { user: CurrentUser; dataset: D
                   value={leaves}
                   onChange={(e) => setLeaves(Number(e.target.value))}
                 />
-                <span className="field-hint">
-                  Độ phức tạp mỗi cây. Mặc định 31; quá lớn dễ học theo nhiễu.
-                </span>
+                <span className="field-hint">{t.complexityOfEachTreeDefault31Very}</span>
               </label>
             </div>
           </details>
@@ -260,7 +251,7 @@ export function TrainingPanel({ user, dataset }: { user: CurrentUser; dataset: D
               {blocked}
               {days === 124 && availableDays >= 120 && availableDays < 308 && (
                 <button className="ai-link" type="button" onClick={() => setDays(30)}>
-                  Dùng chế độ 30 ngày
+                  {t.use30DayMode}
                 </button>
               )}
             </div>
@@ -290,24 +281,22 @@ export function TrainingPanel({ user, dataset }: { user: CurrentUser; dataset: D
               }
             >
               <Play size={17} />
-              {running ? 'Đang huấn luyện…' : 'Bắt đầu huấn luyện'}
+              {running ? t.training : t.startTraining}
             </button>
-            <p className="field-hint">
-              Kết quả được lưu thành phiên bản để xem xét; model đang vận hành giữ nguyên.
-            </p>
+            <p className="field-hint">{t.resultsAreSavedAsAVersionFor}</p>
             {running && (
               <button
                 className="secondary-button"
                 type="button"
                 disabled={busy}
                 onClick={() => {
-                  if (window.confirm('Dừng lần huấn luyện này? Dataset vẫn được giữ lại.'))
+                  if (window.confirm(t.stopThisTrainingRunTheDatasetWill))
                     void action(async () =>
                       setJob(await aiPost<Job>(`/training/${job!.id}/cancel`)),
                     );
                 }}
               >
-                Hủy lần chạy
+                {t.cancelRun}
               </button>
             )}
           </div>
@@ -316,9 +305,9 @@ export function TrainingPanel({ user, dataset }: { user: CurrentUser; dataset: D
       <ErrorBox error={error} />
       <div className="ai-fields">
         <label className="form-field">
-          Xem lần huấn luyện
+          {t.viewTrainingRun}
           <select
-            aria-label="Lần huấn luyện"
+            aria-label={t.trainingRun}
             value={job?.id ?? ''}
             disabled={busy}
             onChange={(e) => {
@@ -327,10 +316,10 @@ export function TrainingPanel({ user, dataset }: { user: CurrentUser; dataset: D
               else setJob(null);
             }}
           >
-            <option value="">Chưa chọn kết quả</option>
+            <option value="">{t.noResultSelected}</option>
             {jobs.map((j) => (
               <option key={j.id} value={j.id}>
-                {dateText(j.createdAt)} · {j.status} · {j.modelVersion.slice(0, 11)}
+                {dateText(j.createdAt)} · {statusLabel(j.status)} · {j.modelVersion.slice(0, 11)}
               </option>
             ))}
           </select>
@@ -342,16 +331,16 @@ export function TrainingPanel({ user, dataset }: { user: CurrentUser; dataset: D
           onClick={() => void action(refresh)}
         >
           <RefreshCw size={16} />
-          Làm mới kết quả
+          {t.refreshResults}
         </button>
       </div>
       {job && (
         <div className="ai-job" aria-live="polite">
           <Badge status={job.status} />
-          <strong>{stages.find(([s]) => s === job.progress?.stage)?.[1] ?? 'Chuẩn bị'}</strong>
+          <strong>{stages.find(([s]) => s === job.progress?.stage)?.[1] ?? t.prepare}</strong>
           {job.error && <ErrorBox error={job.error} />}
           <details>
-            <summary>Xem tiến trình chi tiết</summary>
+            <summary>{t.viewDetailedProgress}</summary>
             <code>{job.modelVersion}</code>
             {job.progress?.events.map((event, i) => (
               <p key={i}>
@@ -365,50 +354,43 @@ export function TrainingPanel({ user, dataset }: { user: CurrentUser; dataset: D
         <ResultDashboard key={job!.id} result={result} />
       ) : (
         <div className="ai-results-empty">
-          <h3>{running ? 'Đang tạo kết quả từ dataset của bạn' : 'Chưa có kết quả được chọn'}</h3>
-          <p>
-            {running
-              ? 'Có thể tiếp tục trò chuyện trong khi chờ.'
-              : 'Bắt đầu huấn luyện hoặc chọn một lần chạy đã lưu.'}
-          </p>
+          <h3>{running ? t.generatingResultsFromYourDataset : t.noResultSelectedYet}</h3>
+          <p>{running ? t.youCanContinueChattingWhileYouWait : t.startTrainingOrSelectASavedRun}</p>
         </div>
       )}
       {models && (
         <details className="ai-registry">
-          <summary>Model đang sử dụng & quản lý phiên bản</summary>
+          <summary>{t.productionModelVersionManagement}</summary>
           <div className="ai-active">
             <Badge status="ACTIVE" />
             <strong>{models.active.model_version}</strong>
             <span>{models.active.algorithm}</span>
           </div>
-          <p className="field-hint">
-            Chỉ phiên bản đủ điều kiện mới được kích hoạt. Dữ liệu mô phỏng không chứng minh độ
-            chính xác tại cửa hàng thực tế.
-          </p>
+          <p className="field-hint">{t.onlyEligibleVersionsCanBeActivatedSynthetic}</p>
           <DataTable
             rows={models.candidates.map((c) => ({
-              'Phiên bản': c.version,
-              Model: c.metadata?.algorithm,
-              'Trạng thái': c.state,
-              'Có thể kích hoạt':
-                c.metadata?.activation_eligible && !c.metadata.contains_synthetic ? 'Có' : 'Không',
-              'Tạo lúc': dateText(c.createdAt),
+              [t.version]: c.version,
+              [t.model]: c.metadata?.algorithm,
+              [t.status]: statusLabel(c.state),
+              [t.eligibleForActivation]:
+                c.metadata?.activation_eligible && !c.metadata.contains_synthetic ? t.yes : t.no,
+              [t.createdAt]: dateText(c.createdAt),
             }))}
           />
           {user.role === 'ADMIN' ? (
             <div className="ai-confirm">
               <div className="ai-fields">
                 <label className="form-field">
-                  Chuyển sang phiên bản
+                  {t.switchToVersion}
                   <select value={version} onChange={(e) => setVersion(e.target.value)}>
-                    <option value="">Chọn phiên bản đã đủ điều kiện</option>
+                    <option value="">{t.selectAnEligibleVersion}</option>
                     {versions.map((v) => (
                       <option key={v}>{v}</option>
                     ))}
                   </select>
                 </label>
                 <label className="form-field">
-                  Lý do chuyển đổi
+                  {t.reasonForSwitching}
                   <input
                     maxLength={500}
                     value={reason}
@@ -422,34 +404,38 @@ export function TrainingPanel({ user, dataset }: { user: CurrentUser; dataset: D
                 disabled={busy || !version || !reason.trim()}
                 onClick={() => setDeploying(true)}
               >
-                Kích hoạt phiên bản
+                {t.activateVersion}
               </button>
               <details>
-                <summary>Lịch sử chuyển đổi</summary>
+                <summary>{t.switchHistory}</summary>
                 <DataTable
                   rows={models.deployments.map((d) => ({
-                    Từ: d.previousVersion,
-                    Sang: d.modelVersion,
-                    'Trạng thái': d.status,
-                    'Lý do': d.reason,
-                    'Thời điểm': dateText(d.createdAt),
+                    [t.fromVersion]: d.previousVersion,
+                    [t.toVersion]: d.modelVersion,
+                    [t.status]: statusLabel(d.status),
+                    [t.reason]: d.reason,
+                    [t.time]: dateText(d.createdAt),
                   }))}
                 />
               </details>
             </div>
           ) : (
-            <p className="field-hint">Chỉ ADMIN được thay đổi model vận hành.</p>
+            <p className="field-hint">{t.onlyAdministratorsCanChangeTheProductionModel}</p>
           )}
         </details>
       )}
       {deploying && models && (
         <AdminDialog titleId="activate-model-title" busy={busy} onClose={() => setDeploying(false)}>
-          <h2 id="activate-model-title">Kích hoạt phiên bản {version}?</h2>
+          <h2 id="activate-model-title">
+            {t.activateVersion} {version}?
+          </h2>
           <p>
-            Thay {models.active.model_version} bằng {version} cho những lần dự báo tiếp theo trên
-            toàn hệ thống. Các dự báo đã lưu giữ nguyên.
+            {t.replace} {models.active.model_version} {t.with} {version}{' '}
+            {t.forSubsequentForecastsAcrossTheSystemSaved}
           </p>
-          <p>Lý do: {reason}</p>
+          <p>
+            {t.reason2} {reason}
+          </p>
           <ErrorBox error={error} />
           <div className="admin-form-actions">
             <button
@@ -458,7 +444,7 @@ export function TrainingPanel({ user, dataset }: { user: CurrentUser; dataset: D
               disabled={busy}
               onClick={() => setDeploying(false)}
             >
-              Quay lại
+              {t.back}
             </button>
             <button
               type="button"
@@ -480,11 +466,25 @@ export function TrainingPanel({ user, dataset }: { user: CurrentUser; dataset: D
                 })
               }
             >
-              Xác nhận kích hoạt
+              {t.confirmActivation}
             </button>
           </div>
         </AdminDialog>
       )}
     </Section>
   );
+}
+
+function usePageCopy() {
+  const t = useScreen('training_panel');
+  const stages = [
+    ['DATA_COLLECTION', t.collectData],
+    ['EDA', t.exploreValidate],
+    ['FEATURES', t.createFeatures],
+    ['SPLITTING', t.splitByTime],
+    ['TRAINING', t.train],
+    ['EVALUATION', t.evaluate],
+    ['COMPLETED', t.saveCandidate],
+  ];
+  return { t, stages };
 }

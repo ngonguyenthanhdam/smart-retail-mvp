@@ -1,10 +1,11 @@
 'use client';
-
+import { Feedback } from '@/i18n/feedback';
+import { useMessages } from '@/i18n/provider';
 import { LoaderCircle, Plus, Users } from 'lucide-react';
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { AdminDialog } from '@/components/admin-dialog';
 import { useAuth } from '@/components/auth-provider';
-import { vi } from '@/i18n/vi';
+
 import { ApiRequestError } from '@/lib/api';
 import type { UserRole } from '@/lib/auth';
 import type { Location, RecordStatus } from '@/lib/locations';
@@ -19,8 +20,6 @@ import {
   type UserValues,
 } from '@/lib/users';
 
-const copy = vi.users;
-const common = vi.admin;
 const roles: UserRole[] = ['ADMIN', 'STORE_MANAGER', 'STAFF'];
 type FailureMessage = (error: unknown) => string;
 type DialogState = { kind: 'create' } | { kind: 'edit' | 'deactivate'; user: ManagedUser };
@@ -38,6 +37,7 @@ function UserForm({
   onSaved: (message: string) => void;
   failureMessage: FailureMessage;
 }) {
+  const { copy, common } = usePageCopy();
   const [role, setRole] = useState<UserRole>(user?.role ?? 'STAFF');
   const [storeId, setStoreId] = useState(user?.locationId ?? '');
   const [stores, setStores] = useState<Location[] | null>(null);
@@ -238,7 +238,7 @@ function UserForm({
           )}
           {storeError && (
             <div className="form-error" role="alert">
-              {storeError}
+              {<Feedback text={storeError} />}
               <button
                 className="text-button"
                 type="button"
@@ -260,7 +260,7 @@ function UserForm({
         )}
         {error && (
           <p className="form-error" role="alert">
-            {error}
+            {<Feedback text={error} />}
           </p>
         )}
         <div className="admin-form-actions">
@@ -319,6 +319,7 @@ function DeactivateUser({
   onSaved: (message: string) => void;
   failureMessage: FailureMessage;
 }) {
+  const { copy, common } = usePageCopy();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   async function deactivate() {
@@ -338,7 +339,7 @@ function DeactivateUser({
       <p className="admin-dialog-description">{copy.deactivateDescription(user.fullName)}</p>
       {error && (
         <p className="form-error" role="alert">
-          {error}
+          {<Feedback text={error} />}
         </p>
       )}
       <div className="admin-form-actions">
@@ -367,6 +368,7 @@ function DeactivateUser({
 }
 
 export function UsersPage() {
+  const { vi, copy, common } = usePageCopy();
   const { user: currentUser, retry, refresh: refreshAccount } = useAuth();
   const [query, setQuery] = useState<UserQuery>({
     search: '',
@@ -392,7 +394,7 @@ export function UsersPage() {
       }
       return common.requestFailed;
     },
-    [retry],
+    [retry, common.requestFailed, common.sessionExpired],
   );
 
   useEffect(() => {
@@ -486,12 +488,12 @@ export function UsersPage() {
       </div>
       {success && (
         <p className="form-success admin-notice" role="status">
-          {success}
+          {<Feedback text={success} />}
         </p>
       )}
       {error && (
         <div className="form-error admin-notice" role="alert">
-          <p>{error}</p>
+          <p>{<Feedback text={error} />}</p>
           <button className="text-button" type="button" onClick={refresh}>
             {common.retry}
           </button>
@@ -667,4 +669,11 @@ export function UsersPage() {
       )}
     </div>
   );
+}
+
+function usePageCopy() {
+  const { vi } = useMessages();
+  const copy = vi.users;
+  const common = vi.admin;
+  return { copy, common, vi };
 }

@@ -1,9 +1,10 @@
-import type { Metadata } from 'next';
-
 import { ForgotPasswordForm } from '@/components/forgot-password-form';
-import { vi } from '@/i18n/vi';
+import { getServerMessages } from '@/i18n/server';
 
-export const metadata: Metadata = { title: vi.auth.forgotTitle };
+export async function generateMetadata() {
+  const { vi } = await getServerMessages();
+  return { title: vi.auth.forgotTitle };
+}
 
 export default function ForgotPasswordPage() {
   return <ForgotPasswordForm />;

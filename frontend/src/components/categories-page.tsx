@@ -1,15 +1,13 @@
 'use client';
+import { Feedback } from '@/i18n/feedback';
+import { catalogError as message } from '@/lib/catalog';
+import { useMessages } from '@/i18n/provider';
 import { FilterPanel } from './filter-panel';
 import { useEffect, useState, type FormEvent } from 'react';
 import { AdminDialog } from '@/components/admin-dialog';
 import { CatalogNav } from '@/components/catalog-nav';
-import { apiRequest, ApiRequestError } from '@/lib/api';
+import { apiRequest } from '@/lib/api';
 import { allOptions, saveRecord, type Category, type Page } from '@/lib/catalog';
-import { vi } from '@/i18n/vi';
-const c = vi.catalog;
-const a = vi.admin;
-const message = (error: unknown) =>
-  error instanceof ApiRequestError && error.message ? error.message : a.requestFailed;
 
 function CategoryForm({
   record,
@@ -20,6 +18,7 @@ function CategoryForm({
   onClose: () => void;
   onSaved: () => void;
 }) {
+  const { c, a } = usePageCopy();
   const [parents, setParents] = useState<Category[] | null>(null);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
@@ -64,7 +63,7 @@ function CategoryForm({
       </h2>
       {error && (
         <p className="form-error" role="alert">
-          {error}
+          {<Feedback text={error} />}
         </p>
       )}
       {!parents && (
@@ -160,6 +159,7 @@ function CategoryForm({
 }
 
 export function CategoriesPage() {
+  const { c, a } = usePageCopy();
   const [query, setQuery] = useState({ search: '', status: 'all', page: 1 });
   const [revision, setRevision] = useState(0);
   const [data, setData] = useState<Page<Category> | null>(null);
@@ -222,7 +222,7 @@ export function CategoriesPage() {
       )}
       {error && (
         <div role="alert" className="form-error admin-notice">
-          {error}{' '}
+          {<Feedback text={error} />}{' '}
           <button className="text-button" onClick={reload}>
             {a.retry}
           </button>
@@ -347,4 +347,11 @@ export function CategoriesPage() {
       )}
     </div>
   );
+}
+
+function usePageCopy() {
+  const { vi } = useMessages();
+  const c = vi.catalog;
+  const a = vi.admin;
+  return { c, a };
 }

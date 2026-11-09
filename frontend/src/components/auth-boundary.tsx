@@ -1,15 +1,17 @@
 'use client';
-
+import { useMessages } from '@/i18n/provider';
 import { CircleAlert, LoaderCircle } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, type ReactNode } from 'react';
 
 import { AppShell } from '@/components/app-shell';
+import { LanguageSwitcher } from './language-switcher';
 import { useAuth } from '@/components/auth-provider';
-import { vi } from '@/i18n/vi';
+
 import { canAccessSection, defaultRoute, findSection } from '@/lib/navigation';
 
 export function AuthBoundary({ children }: { children: ReactNode }) {
+  const { vi } = usePageCopy();
   const { status, user, retry } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
@@ -28,11 +30,18 @@ export function AuthBoundary({ children }: { children: ReactNode }) {
     if (user && (isLogin || denied)) router.replace(defaultRoute(user.role));
   }, [status, user, isLogin, isRecovery, denied, router]);
 
-  if (isRecovery) return children;
+  if (isRecovery)
+    return (
+      <>
+        <LanguageSwitcher standalone />
+        {children}
+      </>
+    );
 
   if (status === 'error') {
     return (
       <main className="auth-screen">
+        <LanguageSwitcher standalone />
         <div className="auth-status" role="alert">
           <CircleAlert size={30} aria-hidden="true" />
           <h1>{vi.auth.unavailableTitle}</h1>
@@ -48,6 +57,7 @@ export function AuthBoundary({ children }: { children: ReactNode }) {
   if (status === 'loading' || denied || (user && isLogin) || (!user && !isLogin)) {
     return (
       <main className="auth-screen">
+        <LanguageSwitcher standalone />
         <div className="auth-status" role="status">
           <LoaderCircle className="loading-icon" size={26} aria-hidden="true" />
           <p>{vi.auth.loading}</p>
@@ -56,5 +66,18 @@ export function AuthBoundary({ children }: { children: ReactNode }) {
     );
   }
 
-  return user ? <AppShell>{children}</AppShell> : children;
+  return user ? (
+    <AppShell>{children}</AppShell>
+  ) : (
+    <>
+      <LanguageSwitcher standalone />
+      {children}
+    </>
+  );
+}
+
+function usePageCopy() {
+  const { vi } = useMessages();
+
+  return { vi };
 }

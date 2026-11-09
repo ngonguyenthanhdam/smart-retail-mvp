@@ -1,4 +1,8 @@
 'use client';
+import { useFormatters } from '@/i18n/formatters';
+import { Feedback } from '@/i18n/feedback';
+import { useMessages } from '@/i18n/provider';
+
 import { useEffect, useState, type FormEvent } from 'react';
 import { AdminDialog } from '@/components/admin-dialog';
 import {
@@ -8,9 +12,7 @@ import {
   type Product,
   type StoreProduct,
 } from '@/lib/catalog';
-import { vi } from '@/i18n/vi';
-const c = vi.catalog;
-const a = vi.admin;
+
 export function StoreProductForm({
   record,
   locationId,
@@ -22,11 +24,15 @@ export function StoreProductForm({
   onClose: () => void;
   onSaved: () => void;
 }) {
+  const { unitLabel } = useFormatters();
+  const { c, a } = usePageCopy();
   const [products, setProducts] = useState<Product[] | null>(record ? [record.product] : null);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [pending, setPending] = useState<object | null>(null);
   const [revision, setRevision] = useState(0);
+  const [selectedProduct, setSelectedProduct] = useState(record?.productId ?? '');
+  const productUnit = products?.find((product) => product.id === selectedProduct)?.baseUnit;
   useEffect(() => {
     if (record) return;
     const abort = new AbortController();
@@ -71,7 +77,7 @@ export function StoreProductForm({
       </h2>
       {error && (
         <p role="alert" className="form-error">
-          {error}
+          {<Feedback text={error} />}
         </p>
       )}
       {!products && (
@@ -102,6 +108,7 @@ export function StoreProductForm({
                 required
                 disabled={!!record}
                 defaultValue={record?.productId ?? ''}
+                onChange={(event) => setSelectedProduct(event.target.value)}
               >
                 <option value="">{c.choose}</option>
                 {products?.map((p) => (
@@ -119,7 +126,9 @@ export function StoreProductForm({
               ] as const
             ).map(([field, label, step]) => (
               <div className="form-field" key={field}>
-                <label htmlFor={`store-${field}`}>{label}</label>
+                <label htmlFor={`store-${field}`}>
+                  {label} ({field === 'sellingPrice' ? 'VND' : unitLabel(productUnit)})
+                </label>
                 <input
                   id={`store-${field}`}
                   name={field}
@@ -173,4 +182,11 @@ export function StoreProductForm({
       </form>
     </AdminDialog>
   );
+}
+
+function usePageCopy() {
+  const { vi } = useMessages();
+  const c = vi.catalog;
+  const a = vi.admin;
+  return { c, a };
 }

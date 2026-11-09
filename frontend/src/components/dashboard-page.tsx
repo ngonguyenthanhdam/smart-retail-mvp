@@ -1,5 +1,7 @@
 'use client';
-
+import { useFormatters } from '@/i18n/formatters';
+import { Feedback } from '@/i18n/feedback';
+import { useMessages } from '@/i18n/provider';
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import {
@@ -29,15 +31,13 @@ import { catalogError, allOptions } from '@/lib/catalog';
 import type { Location } from '@/lib/locations';
 import { localDate } from '@/lib/operations';
 import { canAccessSection } from '@/lib/navigation';
-import { vi, reportCopy as c } from '@/i18n/vi';
-import { dashboardCopy } from '@/i18n/dashboard';
+
 import { formatMoney, formatQuantity } from '@/lib/format';
 import { profitTone } from '@/lib/presentation-status';
-import { statusCopy } from '@/i18n/status';
+
 import { StatusBadge, StatusValue } from './status-value';
 import styles from './dashboard/dashboard.module.css';
 
-const d = dashboardCopy.vi;
 function shiftDate(date: string, days: number) {
   const result = new Date(`${date}T00:00:00Z`);
   result.setUTCDate(result.getUTCDate() + days);
@@ -45,6 +45,7 @@ function shiftDate(date: string, days: number) {
 }
 
 function DashboardLoading() {
+  const { c } = usePageCopy();
   return (
     <div role="status" aria-label={c.loading} className={styles.loading}>
       <span className={styles.srOnly}>{c.loading}</span>
@@ -63,6 +64,8 @@ function DashboardLoading() {
 }
 
 export function DashboardPage() {
+  const { unitLabel } = useFormatters();
+  const { vi, c, statusCopy, d } = usePageCopy();
   const { user } = useAuth();
   const admin = user?.role === 'ADMIN';
   const [initial] = useState(() => {
@@ -296,7 +299,7 @@ export function DashboardPage() {
         </div>
         {storeError && (
           <p className={styles.inlineError} role="alert">
-            {d.storeError} {storeError}{' '}
+            {d.storeError} {<Feedback text={storeError} />}{' '}
             <button type="button" onClick={refresh}>
               {d.retry}
             </button>
@@ -318,7 +321,7 @@ export function DashboardPage() {
           <TriangleAlert size={21} aria-hidden="true" />
           <div>
             <strong>{d.reportError}</strong>
-            <p>{error}</p>
+            <p>{<Feedback text={error} />}</p>
           </div>
           <button type="button" className={styles.secondaryButton} onClick={refresh}>
             {d.retry}
@@ -350,10 +353,10 @@ export function DashboardPage() {
                 {isProfit && (
                   <StatusBadge tone={profitTone(value)}>
                     {Number(value) < 0
-                      ? statusCopy.vi.negativeProfit
+                      ? statusCopy.negativeProfit
                       : Number(value) > 0
-                        ? statusCopy.vi.positiveProfit
-                        : statusCopy.vi.zeroProfit}
+                        ? statusCopy.positiveProfit
+                        : statusCopy.zeroProfit}
                   </StatusBadge>
                 )}
                 <span>{hint}</span>
@@ -458,7 +461,9 @@ export function DashboardPage() {
                 </div>
                 <div>
                   <dt>{c.stockQuantity}</dt>
-                  <dd>{formatQuantity(data.inventory.quantity)}</dd>
+                  <dd>
+                    {formatQuantity(data.inventory.quantity)} <small>{d.mixedUnits}</small>
+                  </dd>
                 </div>
               </dl>
               <div className={styles.inventoryFooter}>
@@ -503,7 +508,7 @@ export function DashboardPage() {
                       </div>
                       <div className={styles.productQuantity}>
                         <strong>{formatQuantity(product.quantity)}</strong>
-                        <span>{product.unit ?? d.unit}</span>
+                        <span>{unitLabel(product.unit)}</span>
                       </div>
                     </li>
                   ))}
@@ -554,16 +559,18 @@ export function DashboardPage() {
                                 <span>{store.code}</span>
                               </th>
                               <td>{formatMoney(store.revenue)}</td>
-                              <td>{formatQuantity(store.quantity)}</td>
+                              <td>
+                                {formatQuantity(store.quantity)} <small>{d.mixedUnits}</small>
+                              </td>
                               <td>
                                 <StatusValue
                                   tone={profitTone(store.grossProfit)}
                                   label={
                                     Number(store.grossProfit) < 0
-                                      ? statusCopy.vi.negativeProfit
+                                      ? statusCopy.negativeProfit
                                       : Number(store.grossProfit) > 0
-                                        ? statusCopy.vi.positiveProfit
-                                        : statusCopy.vi.zeroProfit
+                                        ? statusCopy.positiveProfit
+                                        : statusCopy.zeroProfit
                                   }
                                 >
                                   {formatMoney(store.grossProfit)}
@@ -602,4 +609,10 @@ export function DashboardPage() {
       </nav>
     </div>
   );
+}
+
+function usePageCopy() {
+  const { vi, reportCopy: c, dashboardCopy, statusCopy } = useMessages();
+  const d = dashboardCopy;
+  return { c, vi, statusCopy, d };
 }

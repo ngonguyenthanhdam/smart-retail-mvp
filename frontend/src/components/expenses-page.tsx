@@ -1,13 +1,16 @@
 'use client';
+import { useFormatters } from '@/i18n/formatters';
+import { useMessages } from '@/i18n/provider';
 import { useState } from 'react';
 import { OperationList } from '@/components/operation-list';
 import { ExpenseForm } from '@/components/expense-form';
-import { displayDate, type Expense } from '@/lib/operations';
-import { vi } from '@/i18n/vi';
+import { type Expense } from '@/lib/operations';
+
 import { formatMoney } from '@/lib/format';
-const o = vi.operations;
-const a = vi.admin;
+
 export function ExpensesPage() {
+  const { displayDate } = useFormatters();
+  const { o, a } = usePageCopy();
   const [editing, setEditing] = useState<Expense | 'new' | null>(null);
   const [revision, setRevision] = useState(0);
   const [success, setSuccess] = useState(false);
@@ -63,4 +66,11 @@ export function ExpensesPage() {
       )}
     </div>
   );
+}
+
+function usePageCopy() {
+  const { vi } = useMessages();
+  const o = vi.operations;
+  const a = vi.admin;
+  return { o, a };
 }

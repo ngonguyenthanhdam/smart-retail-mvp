@@ -1,15 +1,13 @@
 'use client';
+import { Feedback } from '@/i18n/feedback';
+import { catalogError as message } from '@/lib/catalog';
+import { useMessages, useScreen } from '@/i18n/provider';
 import { FilterPanel } from './filter-panel';
 import { useEffect, useState, type FormEvent } from 'react';
 import { AdminDialog } from '@/components/admin-dialog';
 import { CatalogNav } from '@/components/catalog-nav';
-import { apiRequest, ApiRequestError } from '@/lib/api';
+import { apiRequest } from '@/lib/api';
 import { saveRecord, type Unit, type Page } from '@/lib/catalog';
-import { vi } from '@/i18n/vi';
-const c = vi.catalog;
-const a = vi.admin;
-const message = (e: unknown) =>
-  e instanceof ApiRequestError && e.message ? e.message : a.requestFailed;
 
 function UnitForm({
   record,
@@ -20,6 +18,7 @@ function UnitForm({
   onClose: () => void;
   onSaved: () => void;
 }) {
+  const { t, c, a } = usePageCopy();
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -89,15 +88,15 @@ function UnitForm({
                   name="allowFraction"
                   defaultChecked={record?.allowFraction ?? false}
                 />
-                Cho phép số lượng lẻ (ví dụ 0,5 kg)
+                {t.allowFractionalQuantitiesForExample05}
               </label>
-              <p className="field-hint">Bỏ chọn cho đơn vị đếm như cái, lon, bó hoặc bịch.</p>
+              <p className="field-hint">{t.clearForCountUnitsSuchAsPieces}</p>
             </div>
           </div>
         </fieldset>
         {error && (
           <p className="form-error" role="alert">
-            {error}
+            {<Feedback text={error} />}
           </p>
         )}
         <div className="admin-form-actions">
@@ -114,6 +113,7 @@ function UnitForm({
 }
 
 export function UnitsPage() {
+  const { c, a } = usePageCopy();
   const [query, setQuery] = useState({ search: '', page: 1 });
   const [revision, setRevision] = useState(0);
   const [data, setData] = useState<Page<Unit> | null>(null);
@@ -165,7 +165,7 @@ export function UnitsPage() {
       )}
       {error && (
         <div role="alert" className="form-error admin-notice">
-          {error}{' '}
+          {<Feedback text={error} />}{' '}
           <button className="text-button" onClick={reload}>
             {a.retry}
           </button>
@@ -283,4 +283,12 @@ export function UnitsPage() {
       )}
     </div>
   );
+}
+
+function usePageCopy() {
+  const { vi } = useMessages();
+  const t = useScreen('units_page');
+  const c = vi.catalog;
+  const a = vi.admin;
+  return { t, c, a };
 }

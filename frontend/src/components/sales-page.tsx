@@ -1,4 +1,7 @@
 'use client';
+import { useFormatters } from '@/i18n/formatters';
+import { Feedback } from '@/i18n/feedback';
+import { useMessages, useScreen } from '@/i18n/provider';
 import { catalogError } from '@/lib/catalog';
 import { useState } from 'react';
 import { History, ShoppingBasket, CheckCircle2 } from 'lucide-react';
@@ -6,14 +9,15 @@ import { OperationList } from './operation-list';
 import { SaleDetail } from './sale-detail';
 import { SaleForm } from './sale-form';
 import { apiRequest } from '@/lib/api';
-import { displayDate, type Sale, type SaleDetail as Detail } from '@/lib/operations';
+import { type Sale, type SaleDetail as Detail } from '@/lib/operations';
 import { formatMoney } from '@/lib/format';
-import { vi } from '@/i18n/vi';
+
 import { StatusBadge } from './status-value';
 import { operationTone } from '@/lib/presentation-status';
-const o = vi.operations;
-const a = vi.admin;
+
 export function SalesPage() {
+  const { displayDate } = useFormatters();
+  const { t, o, a } = usePageCopy();
   const [mode, setMode] = useState<'pos' | 'history'>('pos');
   const [revision, setRevision] = useState(0);
   const [success, setSuccess] = useState(false);
@@ -35,11 +39,11 @@ export function SalesPage() {
     <div className="page-content sales-workspace">
       <div className="page-heading">
         <div>
-          <p className="eyebrow">GIAO DỊCH TẠI CỬA HÀNG</p>
-          <h1>Bán hàng</h1>
-          <p className="page-description">Chọn hàng, kiểm tra giỏ và hoàn tất giao dịch.</p>
+          <p className="eyebrow">{t.storeTransactions}</p>
+          <h1>{t.sales}</h1>
+          <p className="page-description">{t.selectProductsReviewTheCartAndComplete}</p>
         </div>
-        <div className="segmented-control" aria-label="Chế độ bán hàng">
+        <div className="segmented-control" aria-label={t.salesMode}>
           <button
             aria-pressed={mode === 'pos'}
             onClick={() => {
@@ -47,7 +51,7 @@ export function SalesPage() {
               setError('');
             }}
           >
-            <ShoppingBasket size={17} /> Quầy bán hàng
+            <ShoppingBasket size={17} /> {t.pointOfSale}
           </button>
           <button
             aria-pressed={mode === 'history'}
@@ -56,13 +60,13 @@ export function SalesPage() {
               setError('');
             }}
           >
-            <History size={17} /> Lịch sử
+            <History size={17} /> {t.history}
           </button>
         </div>
       </div>
       {error && (
         <p className="form-error" role="alert">
-          {error}
+          {<Feedback text={error} />}
         </p>
       )}
       {success && (
@@ -70,7 +74,7 @@ export function SalesPage() {
           <CheckCircle2 size={18} />
           {o.saleSaved}
           <button className="text-button" onClick={() => setSuccess(false)}>
-            Đóng
+            {t.close}
           </button>
         </p>
       )}
@@ -89,8 +93,8 @@ export function SalesPage() {
         <OperationList<Sale>
           embedded
           path="/sales"
-          title="Lịch sử bán hàng"
-          description="Tra cứu hóa đơn đã ghi nhận tại cửa hàng."
+          title={t.salesHistory}
+          description={t.lookUpRecordedStoreInvoices}
           revision={revision}
           createLabel={o.newSale}
           onCreate={() => setMode('pos')}
@@ -119,4 +123,12 @@ export function SalesPage() {
       {detail && <SaleDetail record={detail} onClose={() => setDetail(null)} />}
     </div>
   );
+}
+
+function usePageCopy() {
+  const { vi } = useMessages();
+  const t = useScreen('sales_page');
+  const o = vi.operations;
+  const a = vi.admin;
+  return { t, o, a };
 }

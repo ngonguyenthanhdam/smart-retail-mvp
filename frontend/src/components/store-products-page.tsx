@@ -1,6 +1,9 @@
 'use client';
+import { useFormatters } from '@/i18n/formatters';
+import { Feedback } from '@/i18n/feedback';
+import { useMessages, useScreen } from '@/i18n/provider';
 import { catalogError } from '@/lib/catalog';
-import { statusCopy } from '@/i18n/status';
+
 import { FilterPanel } from './filter-panel';
 import { useEffect, useState } from 'react';
 import { CatalogNav } from '@/components/catalog-nav';
@@ -10,13 +13,13 @@ import { apiRequest } from '@/lib/api';
 import { fetchStoreOptions } from '@/lib/users';
 import type { Location } from '@/lib/locations';
 import type { Page, StoreProduct } from '@/lib/catalog';
-import { vi } from '@/i18n/vi';
+
 import { CatalogCard, CatalogViewToggle } from './catalog-cards';
-import { formatMoney, formatQuantity } from '@/lib/format';
-const c = vi.catalog;
-const a = vi.admin;
+import { formatMoney } from '@/lib/format';
 
 export function StoreProductsPage() {
+  const { formatQuantityWithUnit } = useFormatters();
+  const { statusCopy, t, c, a } = usePageCopy();
   const { user } = useAuth();
   const admin = user?.role === 'ADMIN';
   const canEdit = user?.role !== 'STAFF';
@@ -94,7 +97,7 @@ export function StoreProductsPage() {
       )}
       {error && (
         <div className="form-error admin-notice" role="alert">
-          {error}{' '}
+          {<Feedback text={error} />}{' '}
           <button className="text-button" onClick={reload}>
             {a.retry}
           </button>
@@ -184,7 +187,7 @@ export function StoreProductsPage() {
           <>
             <div className="catalog-results-heading">
               <p>
-                <strong>{data.total}</strong> sản phẩm tại cửa hàng
+                <strong>{data.total}</strong> {t.productsAtThisStore}
               </p>
               <CatalogViewToggle view={view} onChange={setView} />
             </div>
@@ -209,7 +212,7 @@ export function StoreProductsPage() {
               </div>
             ) : (
               <>
-                <p className="table-scroll-hint">{statusCopy.vi.tableHint}</p>
+                <p className="table-scroll-hint">{statusCopy.tableHint}</p>
                 <div
                   className="admin-table-scroll"
                   tabIndex={0}
@@ -241,9 +244,11 @@ export function StoreProductsPage() {
                           </th>
                           <td>{row.product.category?.name ?? a.noValue}</td>
                           <td className="numeric-cell">{formatMoney(row.sellingPrice)}</td>
-                          <td className="numeric-cell">{formatQuantity(row.safetyStock ?? '0')}</td>
                           <td className="numeric-cell">
-                            {formatQuantity(row.minStockLevel ?? '0')}
+                            {formatQuantityWithUnit(row.safetyStock, row.product.baseUnit)}
+                          </td>
+                          <td className="numeric-cell">
+                            {formatQuantityWithUnit(row.minStockLevel, row.product.baseUnit)}
                           </td>
                           {canEdit && (
                             <td className="numeric-cell">
@@ -328,4 +333,12 @@ export function StoreProductsPage() {
       )}
     </div>
   );
+}
+
+function usePageCopy() {
+  const { statusCopy, vi } = useMessages();
+  const t = useScreen('store_products_page');
+  const c = vi.catalog;
+  const a = vi.admin;
+  return { statusCopy, t, c, a };
 }

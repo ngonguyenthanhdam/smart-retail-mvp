@@ -1,4 +1,10 @@
 'use client';
+import { useFormatters } from '@/i18n/formatters';
+import { formatMoney } from '@/lib/format';
+import { sourceColumns, sourceTitles } from '@/i18n/source-columns';
+import { useLocale } from '@/i18n/provider';
+import { useDynamic } from '@/i18n/dynamic';
+import { useScreen } from '@/i18n/provider';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   MessageSquarePlus,
@@ -17,7 +23,7 @@ import {
 import Link from 'next/link';
 import type { CurrentUser } from '@/lib/auth';
 import type { ChatSession, Config, Source } from './types';
-import { aiGet, aiPost, DataTable, dateText, ErrorBox, messageOf } from './shared';
+import { aiGet, aiPost, DataTable, ErrorBox, messageOf } from './shared';
 type Status = { available: boolean; model: string; state: string; help: string };
 
 function SafeText({ text }: { text: string }) {
@@ -41,7 +47,7 @@ function SafeText({ text }: { text: string }) {
     </div>
   );
 }
-function availability(source: Source) {
+function availability(dynamic: ReturnType<typeof useDynamic>, source: Source) {
   if (source.availability) return source.availability;
 
   if (source.tool === 'getSalesSummary' && Number(source.rows[0]?.['Hóa đơn']) === 0)
@@ -50,12 +56,17 @@ function availability(source: Source) {
       records: 0,
       firstDate: null,
       lastDate: null,
-      message: `Không tìm thấy hóa đơn hoàn tất từ ${source.from} đến ${source.to} trong phạm vi ${source.scope}. Chưa đủ căn cứ kết luận doanh thu thực tế bằng 0. CSV huấn luyện không được dùng làm dữ liệu bán hàng.`,
+      message: dynamic.noInvoices(source.from, source.to, source.scope),
     };
   return undefined;
 }
 function SourceCard({ source }: { source: Source }) {
-  const state = availability(source);
+  const { locale } = useLocale();
+  const columns = sourceColumns(source.tool, locale);
+  const { dateText } = useFormatters();
+  const dynamic = useDynamic();
+  const { t } = usePageCopy();
+  const state = availability(dynamic, source);
   const empty = state?.state === 'NO_RECORDS';
   const key =
     source.tool === 'getSalesSummary'
@@ -69,8 +80,8 @@ function SourceCard({ source }: { source: Source }) {
     <details className={`ai-source ${empty ? 'is-empty' : ''}`}>
       <summary>
         <Database size={13} />
-        {source.label}
-        <span>{empty ? 'Chưa có bản ghi trong kỳ' : 'Xem nguồn'}</span>
+        {sourceTitles[source.tool]?.[locale] ?? source.label}
+        <span>{empty ? t.noRecordsInThisPeriod : t.viewSource}</span>
       </summary>
       <div className="ai-source-content">
         <p className="field-hint">
@@ -79,19 +90,19 @@ function SourceCard({ source }: { source: Source }) {
         </p>
         {!empty && Number.isFinite(monetary) && (
           <p>
-            <strong>{monetary.toLocaleString('vi-VN', { maximumFractionDigits: 2 })} ₫</strong> ·{' '}
-            {key}
+            <strong>{formatMoney(amount as string | number)}</strong> ·{' '}
+            {key ? (columns[key]?.label ?? key) : null}
           </p>
         )}
         {empty ? (
           <p>
             {state?.lastDate
-              ? `Bản ghi gần nhất: ${state.lastDate}. Hãy đổi khoảng ngày hoặc kiểm tra dữ liệu đã nhập.`
-              : 'Chưa có bản ghi phù hợp. Kiểm tra ngày, cửa hàng và dữ liệu tại trang Nhập dữ liệu.'}{' '}
-            Không đủ căn cứ kết luận doanh thu thực tế bằng 0.
+              ? dynamic.latestRecord(state.lastDate)
+              : t.noMatchingRecordsCheckTheDatesStore}{' '}
+            {t.thereIsNotEnoughEvidenceToConclude}
           </p>
         ) : (
-          <DataTable rows={source.rows} />
+          <DataTable rows={source.rows} columns={columns} />
         )}
         <p className="field-hint">
           {source.kind} · {source.tool}
@@ -101,15 +112,21 @@ function SourceCard({ source }: { source: Source }) {
     </details>
   );
 }
-function replyText(message: NonNullable<ChatSession['messages']>[number]) {
+function replyText(
+  dynamic: ReturnType<typeof useDynamic>,
+  message: NonNullable<ChatSession['messages']>[number],
+) {
   const sources = message.sources ?? [];
   return message.role !== 'USER' &&
     sources.length &&
-    sources.every((s) => availability(s)?.state === 'NO_RECORDS')
-    ? [...new Set(sources.map((s) => availability(s)!.message))].join('\n')
+    sources.every((s) => availability(dynamic, s)?.state === 'NO_RECORDS')
+    ? [...new Set(sources.map((s) => availability(dynamic, s)!.message))].join('\n')
     : message.content;
 }
 export function ChatPanel({ user, config }: { user: CurrentUser; config: Config }) {
+  const { dateText } = useFormatters();
+  const dynamic = useDynamic();
+  const { t } = usePageCopy();
   const [status, setStatus] = useState<Status | null>(null);
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [session, setSession] = useState<ChatSession | null>(null);
@@ -179,14 +196,12 @@ export function ChatPanel({ user, config }: { user: CurrentUser; config: Config 
     user.role === 'ADMIN' ? config.stores : config.stores.filter((s) => s.id === user.locationId);
   const scope =
     stores.find((s) => s.id === location)?.name ??
-    (user.role === 'ADMIN' && !location
-      ? 'Toàn hệ thống'
-      : (user.location?.name ?? 'Cửa hàng được phân quyền'));
+    (user.role === 'ADMIN' && !location ? t.allStores : (user.location?.name ?? t.assignedStore));
   const suggestions = [
-    ['Doanh thu 7 ngày', 'Doanh thu 7 ngày gần nhất là bao nhiêu?'],
-    ['Sản phẩm bán chạy', 'Top 5 sản phẩm bán chạy tháng này?'],
-    ['Cảnh báo tồn kho', 'Những sản phẩm nào đang có cảnh báo sắp hết hàng?'],
-    ['Dự báo tuần tới', 'Cho tôi dự báo đã lưu cho 7 ngày tới.'],
+    [t.label7DayRevenue, t.whatWasRevenueOverTheLast7],
+    [t.bestSellingProducts, t.whatAreTheTop5BestSelling],
+    [t.inventoryAlerts, t.whichProductsHaveLowStockAlerts],
+    [t.nextWeekSForecast, t.showMeTheSavedForecastForThe],
   ];
   function suggest(value: string) {
     setInput(value);
@@ -255,11 +270,11 @@ export function ChatPanel({ user, config }: { user: CurrentUser; config: Config 
             <Bot size={23} />
           </span>
           <div>
-            <h2 id="ai-chat-title">Trợ lý kinh doanh</h2>
+            <h2 id="ai-chat-title">{t.businessAssistant}</h2>
             <div className="ai-model-status">
               <span className={`ai-dot ${status?.available ? 'ready' : ''}`} />
               <span title={status?.model}>
-                {status ? (status.available ? 'Sẵn sàng' : 'Chưa kết nối') : 'Đang kết nối…'}
+                {status ? (status.available ? t.ready : t.disconnected) : t.connecting}
               </span>
               <span>· {scope}</span>
             </div>
@@ -269,8 +284,8 @@ export function ChatPanel({ user, config }: { user: CurrentUser; config: Config 
           <button
             className="ai-icon-button"
             type="button"
-            title="Kiểm tra kết nối"
-            aria-label="Kiểm tra kết nối"
+            title={t.checkConnection}
+            aria-label={t.checkConnection}
             disabled={busy}
             onClick={() => {
               setError('');
@@ -282,8 +297,8 @@ export function ChatPanel({ user, config }: { user: CurrentUser; config: Config 
           <button
             className="ai-icon-button"
             type="button"
-            title="Lịch sử hội thoại"
-            aria-label="Lịch sử hội thoại"
+            title={t.conversationHistory}
+            aria-label={t.conversationHistory}
             aria-expanded={panel === 'history'}
             disabled={busy}
             onClick={() => setPanel(panel === 'history' ? null : 'history')}
@@ -293,8 +308,8 @@ export function ChatPanel({ user, config }: { user: CurrentUser; config: Config 
           <button
             className="ai-icon-button"
             type="button"
-            title="Hội thoại mới"
-            aria-label="Hội thoại mới"
+            title={t.newConversation}
+            aria-label={t.newConversation}
             disabled={busy}
             onClick={newChat}
           >
@@ -308,22 +323,22 @@ export function ChatPanel({ user, config }: { user: CurrentUser; config: Config 
         </p>
       )}
       {panel && (
-        <div className="ai-chat-tool-panel" role="region" aria-label="Tùy chọn hội thoại">
+        <div className="ai-chat-tool-panel" role="region" aria-label={t.conversationOptions}>
           <div className="ai-row ai-between">
             <strong>
               {
                 {
-                  suggestions: 'Câu hỏi gợi ý',
-                  history: 'Lịch sử hội thoại',
-                  scope: 'Phạm vi dữ liệu',
-                  source: 'Nguồn dữ liệu',
+                  suggestions: t.suggestedQuestions,
+                  history: t.conversationHistory,
+                  scope: t.dataScope,
+                  source: t.dataSources,
                 }[panel]
               }
             </strong>
             <button
               type="button"
               className="ai-icon-button"
-              aria-label="Đóng tùy chọn"
+              aria-label={t.closeOptions}
               onClick={() => {
                 setPanel(null);
                 toolsButton.current?.focus();
@@ -343,9 +358,9 @@ export function ChatPanel({ user, config }: { user: CurrentUser; config: Config 
           )}
           {panel === 'history' && (
             <label className="form-field">
-              Hội thoại của tôi
+              {t.myConversations}
               <select
-                aria-label="Hội thoại của tôi"
+                aria-label={t.myConversations}
                 value={session?.id ?? ''}
                 disabled={busy}
                 onChange={(e) => {
@@ -355,26 +370,26 @@ export function ChatPanel({ user, config }: { user: CurrentUser; config: Config 
                   } else newChat();
                 }}
               >
-                <option value="">Hội thoại mới</option>
+                <option value="">{t.newConversation}</option>
                 {sessions.map((s) => (
                   <option key={s.id} value={s.id}>
                     {s.title}
                   </option>
                 ))}
               </select>
-              {!sessions.length && <span className="field-hint">Chưa có hội thoại đã lưu.</span>}
+              {!sessions.length && <span className="field-hint">{t.noSavedConversationsYet}</span>}
             </label>
           )}
           {panel === 'scope' && (
             <label className="form-field">
-              Phạm vi hội thoại
+              {t.conversationScope}
               <select
-                aria-label="Phạm vi hội thoại"
+                aria-label={t.conversationScope}
                 disabled={busy || !!session || user.role !== 'ADMIN'}
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
               >
-                {user.role === 'ADMIN' && <option value="">Toàn hệ thống</option>}
+                {user.role === 'ADMIN' && <option value="">{t.allStores}</option>}
                 {stores.map((s) => (
                   <option key={s.id} value={s.id}>
                     {s.code} · {s.name}
@@ -383,28 +398,26 @@ export function ChatPanel({ user, config }: { user: CurrentUser; config: Config 
               </select>
               <span className="field-hint">
                 {session
-                  ? 'Phạm vi của hội thoại đã được cố định. Tạo hội thoại mới để chọn cửa hàng khác.'
+                  ? t.theScopeOfThisConversationIsFixed
                   : user.role === 'ADMIN'
-                    ? 'Câu trả lời chỉ dùng dữ liệu thuộc phạm vi này.'
-                    : 'Chỉ sử dụng dữ liệu cửa hàng được phân quyền.'}
+                    ? t.answersOnlyUseDataWithinThisScope
+                    : t.onlyDataFromYourAssignedStoreIs}
               </span>
             </label>
           )}
           {panel === 'source' && (
             <div className="ai-chat-data-note">
+              <p>{t.theAssistantReadsBusinessRecordsAndSaved}</p>
               <p>
-                Trợ lý đọc dữ liệu nghiệp vụ và dự báo đã lưu. CSV huấn luyện không tự trở thành dữ
-                liệu bán hàng.
-              </p>
-              <p>
-                Để hỏi số liệu mẫu, nhập bộ <code>datasets/chatbot-business</code> tại{' '}
+                {t.toAskAboutSampleFiguresImportThe} <code>datasets/chatbot-business</code> {t.at}{' '}
                 <Link className="ai-link" href="/imports">
-                  Nhập dữ liệu
+                  {t.importData}
                 </Link>
-                , rồi hỏi kỳ 05/10–18/10/2026.
+                {t.thenAskAbout518October2026}
               </p>
               <p className="field-hint">
-                {status?.model} · {scope}. Nguồn đối chiếu nằm dưới từng câu trả lời.
+                {status?.model} · {scope}
+                {t.supportingSourcesAppearBelowEachAnswer}
               </p>
             </div>
           )}
@@ -413,7 +426,7 @@ export function ChatPanel({ user, config }: { user: CurrentUser; config: Config 
       <div
         className="ai-chat-log"
         role="log"
-        aria-label="Nội dung hội thoại"
+        aria-label={t.conversationContent}
         aria-live="polite"
         ref={scroll}
         onScroll={() => {
@@ -424,8 +437,8 @@ export function ChatPanel({ user, config }: { user: CurrentUser; config: Config 
         {!session?.messages?.length && !pending && (
           <div className="ai-chat-empty">
             <Sparkles size={26} />
-            <h3>Hôm nay bạn muốn phân tích gì?</h3>
-            <p>Hỏi về doanh thu, sản phẩm, tồn kho hoặc dự báo.</p>
+            <h3>{t.whatWouldYouLikeToAnalyzeToday}</h3>
+            <p>{t.askAboutRevenueProductsInventoryOrForecasts}</p>
             <div className="ai-suggestions">
               {suggestions.map(([label, q]) => (
                 <button type="button" key={label} disabled={busy} onClick={() => suggest(q)}>
@@ -440,10 +453,10 @@ export function ChatPanel({ user, config }: { user: CurrentUser; config: Config 
           <article key={m.id} className={`ai-message ${m.role === 'USER' ? 'user' : 'assistant'}`}>
             <div className="ai-message-meta">
               <strong title={dateText(m.createdAt)}>
-                {m.role === 'USER' ? 'Bạn' : 'Trợ lý RetailSense'}
+                {m.role === 'USER' ? t.you : t.retailsenseAssistant}
               </strong>
             </div>
-            <SafeText text={replyText(m)} />
+            <SafeText text={replyText(dynamic, m)} />
             {m.sources?.map((s, i) => (
               <SourceCard key={i} source={s} />
             ))}
@@ -452,11 +465,11 @@ export function ChatPanel({ user, config }: { user: CurrentUser; config: Config 
         {pending && (
           <>
             <article className="ai-message user">
-              <strong>Bạn</strong>
+              <strong>{t.you}</strong>
               <SafeText text={pending} />
             </article>
             <p className="ai-thinking" role="status">
-              Đang đọc nguồn dữ liệu và chuẩn bị phản hồi…
+              {t.readingDataSourcesAndPreparingAResponse}
             </p>
           </>
         )}
@@ -472,13 +485,13 @@ export function ChatPanel({ user, config }: { user: CurrentUser; config: Config 
         <textarea
           ref={composer}
           id="ai-question"
-          aria-label="Câu hỏi của bạn"
+          aria-label={t.yourQuestion}
           aria-describedby="ai-composer-help"
           value={input}
           disabled={busy}
           maxLength={2000}
           rows={1}
-          placeholder="Bạn muốn biết gì về cửa hàng?"
+          placeholder={t.whatWouldYouLikeToKnowAbout}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
@@ -528,7 +541,7 @@ export function ChatPanel({ user, config }: { user: CurrentUser; config: Config 
               }}
             >
               <SlidersHorizontal size={16} />
-              Công cụ
+              {t.tools}
               <ChevronDown size={14} />
             </button>
             {menu && (
@@ -536,16 +549,16 @@ export function ChatPanel({ user, config }: { user: CurrentUser; config: Config 
                 id="ai-tools-menu"
                 className={`ai-tools-menu ${below ? 'below' : ''}`}
                 role="menu"
-                aria-label="Công cụ hội thoại"
+                aria-label={t.conversationTools}
               >
                 {(
                   [
-                    { key: 'suggestions', label: 'Câu hỏi gợi ý', Icon: MessageCircle },
-                    { key: 'history', label: 'Lịch sử hội thoại', Icon: History },
+                    { key: 'suggestions', label: t.suggestedQuestions, Icon: MessageCircle },
+                    { key: 'history', label: t.conversationHistory, Icon: History },
                     ...(user.role === 'ADMIN'
-                      ? [{ key: 'scope', label: 'Phạm vi cửa hàng', Icon: Store }]
+                      ? [{ key: 'scope', label: t.storeScope, Icon: Store }]
                       : []),
-                    { key: 'source', label: 'Nguồn dữ liệu', Icon: Database },
+                    { key: 'source', label: t.dataSources, Icon: Database },
                   ] as const
                 ).map(({ key, label, Icon }) => (
                   <button
@@ -567,8 +580,8 @@ export function ChatPanel({ user, config }: { user: CurrentUser; config: Config 
           </div>
           <button
             className="ai-send"
-            aria-label={busy ? 'Đang trả lời' : 'Gửi câu hỏi'}
-            title={busy ? 'Đang trả lời…' : 'Gửi câu hỏi'}
+            aria-label={busy ? t.responding : t.sendQuestion}
+            title={busy ? t.responding2 : t.sendQuestion}
             disabled={busy || !input.trim() || !status?.available}
           >
             <ArrowUp size={21} />
@@ -576,9 +589,15 @@ export function ChatPanel({ user, config }: { user: CurrentUser; config: Config 
         </div>
       </form>
       <div className="ai-composer-footnote" id="ai-composer-help">
-        <span>Enter để gửi · Shift+Enter xuống dòng</span>
+        <span>{t.enterToSendShiftEnterForA}</span>
         <span>{input.length}/2.000</span>
       </div>
     </section>
   );
+}
+
+function usePageCopy() {
+  const t = useScreen('chat_panel');
+
+  return { t };
 }

@@ -1,4 +1,7 @@
 'use client';
+import { useFormatters } from '@/i18n/formatters';
+import { Feedback } from '@/i18n/feedback';
+import { useMessages } from '@/i18n/provider';
 import { useState } from 'react';
 import Link from 'next/link';
 import {
@@ -19,11 +22,12 @@ import { StatusValue } from './status-value';
 import { ProductImage } from './product-image';
 import { catalogError, saveRecord } from '@/lib/catalog';
 import type { InventoryAlert } from '@/lib/decision';
-import { displayDate } from '@/lib/operations';
-import { formatQuantity, formatTimestamp, unitLabel } from '@/lib/format';
-import { decisionCopy as c } from '@/i18n/vi';
-import { planningCopy as p } from '@/i18n/planning';
+
+import { formatQuantity } from '@/lib/format';
+
 export function AlertsPage() {
+  const { displayDate, formatTimestamp, unitLabel } = useFormatters();
+  const { c, p } = usePageCopy();
   const state = useDecisionList<InventoryAlert>('/alerts', 'OPEN');
   const [busy, setBusy] = useState(false);
   const [success, setSuccess] = useState('');
@@ -208,7 +212,7 @@ export function AlertsPage() {
       </div>
       {success && (
         <p className="form-success" role="status">
-          {success}
+          {<Feedback text={success} />}
         </p>
       )}
       <DecisionList
@@ -226,10 +230,17 @@ export function AlertsPage() {
             sku: lotAlert.product.sku,
             productName: lotAlert.product.name,
             locationName: lotAlert.location.name,
+            baseUnitCode: lotAlert.product.baseUnit?.code ?? null,
           }}
           onClose={() => setLotAlert(null)}
         />
       )}
     </div>
   );
+}
+
+function usePageCopy() {
+  const { decisionCopy: c, planningCopy: p } = useMessages();
+
+  return { c, p };
 }

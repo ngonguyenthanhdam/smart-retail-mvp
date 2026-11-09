@@ -1,4 +1,7 @@
 'use client';
+import { Feedback } from '@/i18n/feedback';
+import { useDynamic } from '@/i18n/dynamic';
+import { useScreen } from '@/i18n/provider';
 import { catalogError } from '@/lib/catalog';
 import { useState, type FormEvent } from 'react';
 import { CheckCircle2, Download, Database, Upload } from 'lucide-react';
@@ -18,6 +21,8 @@ export function ForecastDataPanel({
   locationId: string;
   onSaved: () => void;
 }) {
+  const dynamic = useDynamic();
+  const { t } = usePageCopy();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -43,7 +48,7 @@ export function ForecastDataPanel({
           note: form.get('note'),
         }),
       });
-      setSuccess('Đã ghi nhận phạm vi lịch sử đầy đủ.');
+      setSuccess(t.historyCoverageHasBeenConfirmed);
       setSelected([]);
       onSaved();
     } catch (e) {
@@ -73,19 +78,14 @@ export function ForecastDataPanel({
     <details className="admin-card forecast-data-panel">
       <summary>
         <span>
-          <Database size={18} /> Dữ liệu dùng để dự báo
+          <Database size={18} /> {t.forecastData}
         </span>
         <span>
-          {data
-            ? `${data.eligibleCount}/${data.pairs.length} mặt hàng đủ lịch sử`
-            : 'Đang kiểm tra…'}
+          {data ? dynamic.eligibleHistory(data.eligibleCount, data.pairs.length) : t.checking}
         </span>
       </summary>
       <div className="data-panel-content">
-        <p>
-          Cần ít nhất 30 ngày liên tục đã xác nhận đầy đủ. Ngày không có giao dịch chỉ được tính là
-          bán 0 khi nằm trong khoảng đã xác nhận.
-        </p>
+        <p>{t.atLeast30ConsecutiveDaysOfConfirmed}</p>
         {!!data?.pairs.length && (
           <div className="coverage-list">
             {data.pairs.map((pair) => {
@@ -102,7 +102,7 @@ export function ForecastDataPanel({
                   <span
                     className={`record-status ${needsHistoryReview ? 'is-inactive' : 'is-active'}`}
                   >
-                    {needsHistoryReview ? 'Cần kiểm tra lịch sử' : 'Đủ lịch sử'}
+                    {needsHistoryReview ? t.historyReviewRequired : t.sufficientHistory}
                   </span>
                 </div>
               );
@@ -112,18 +112,15 @@ export function ForecastDataPanel({
         {admin && (
           <>
             <Link href="/imports" className="secondary-button">
-              <Upload size={16} /> Nhập lịch sử bán hàng
+              <Upload size={16} /> {t.importSalesHistory}
             </Link>
             <details className="coverage-editor">
-              <summary>Xác nhận lịch sử đã nhập đầy đủ</summary>
+              <summary>{t.confirmCompleteImportedHistory}</summary>
               {!locationId ? (
-                <p>Chọn một cửa hàng ở phía trên để xác nhận lịch sử.</p>
+                <p>{t.selectAStoreAboveToConfirmIts}</p>
               ) : (
                 <form onSubmit={confirm}>
-                  <p>
-                    Chỉ xác nhận sau khi đối chiếu đủ giao dịch và các ngày không bán. Thao tác này
-                    không tạo thêm giao dịch bán hàng.
-                  </p>
+                  <p>{t.confirmOnlyAfterReconcilingAllTransactionsAnd}</p>
                   <div className="coverage-products">
                     {pairs.map((pair) => (
                       <label key={pair.productId}>
@@ -145,7 +142,7 @@ export function ForecastDataPanel({
                   </div>
                   <div className="admin-form-grid">
                     <div className="form-field">
-                      <label htmlFor="coverage-start">Từ ngày</label>
+                      <label htmlFor="coverage-start">{t.fromDate}</label>
                       <input
                         id="coverage-start"
                         name="periodStart"
@@ -156,7 +153,7 @@ export function ForecastDataPanel({
                       />
                     </div>
                     <div className="form-field">
-                      <label htmlFor="coverage-end">Đến ngày (trước hôm nay)</label>
+                      <label htmlFor="coverage-end">{t.toDateBeforeToday}</label>
                       <input
                         id="coverage-end"
                         name="periodEnd"
@@ -167,35 +164,32 @@ export function ForecastDataPanel({
                       />
                     </div>
                     <div className="form-field admin-span-full">
-                      <label htmlFor="coverage-note">Căn cứ xác nhận</label>
+                      <label htmlFor="coverage-note">{t.evidenceForConfirmation}</label>
                       <textarea
                         id="coverage-note"
                         name="note"
                         required
                         maxLength={500}
-                        placeholder="Ví dụ: đã đối chiếu sổ bán hàng, gồm cả ngày đóng cửa và ngày bán 0."
+                        placeholder={t.forExampleReconciledTheSalesLedgerIncluding}
                         disabled={busy}
                       />
                     </div>
                   </div>
                   <label className="inventory-checkbox">
                     <input type="checkbox" required disabled={busy} />
-                    Tôi xác nhận lịch sử của các mặt hàng đã chọn đầy đủ trong khoảng này.
+                    {t.iConfirmThatHistoryForTheSelected}
                   </label>
                   <button className="primary-button" disabled={busy || !selected.length}>
                     <CheckCircle2 size={17} />
-                    {busy ? 'Đang lưu…' : 'Lưu xác nhận'}
+                    {busy ? t.saving : t.saveConfirmation}
                   </button>
                 </form>
               )}
             </details>
             <div className="training-export">
               <div>
-                <strong>Xuất dữ liệu để huấn luyện phiên bản mới</strong>
-                <p>
-                  Dữ liệu mô phỏng được loại khỏi tập huấn luyện mặc định. Xuất tệp không tự huấn
-                  luyện hoặc thay mô hình đang dùng.
-                </p>
+                <strong>{t.exportDataToTrainANewVersion}</strong>
+                <p>{t.syntheticDataIsExcludedFromTrainingBy}</p>
                 <label className="inventory-checkbox">
                   <input
                     type="checkbox"
@@ -203,7 +197,7 @@ export function ForecastDataPanel({
                     onChange={(e) => setIncludeSynthetic(e.target.checked)}
                     disabled={busy}
                   />
-                  Bao gồm dữ liệu mô phỏng để thử luồng
+                  {t.includeSyntheticDataToTestTheWorkflow}
                 </label>
               </div>
               <button
@@ -211,22 +205,28 @@ export function ForecastDataPanel({
                 disabled={busy}
                 onClick={() => void exportData()}
               >
-                <Download size={16} /> Tải CSV
+                <Download size={16} /> {t.downloadCsv}
               </button>
             </div>
           </>
         )}
         {error && (
           <p className="form-error" role="alert">
-            {error}
+            {<Feedback text={error} />}
           </p>
         )}
         {success && (
           <p className="form-success" role="status">
-            {success}
+            {<Feedback text={success} />}
           </p>
         )}
       </div>
     </details>
   );
+}
+
+function usePageCopy() {
+  const t = useScreen('forecast_data_panel');
+
+  return { t };
 }

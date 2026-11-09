@@ -1,8 +1,10 @@
 'use client';
+import { useFormatters } from '@/i18n/formatters';
+import { useMessages, useScreen } from '@/i18n/provider';
 import { LayoutGrid, List, Pencil, Package, CalendarClock } from 'lucide-react';
 import { ProductImage } from './product-image';
 import type { Product } from '@/lib/catalog';
-import { formatMoney, unitLabel } from '@/lib/format';
+import { formatMoney } from '@/lib/format';
 
 export function CatalogViewToggle({
   view,
@@ -11,13 +13,14 @@ export function CatalogViewToggle({
   view: 'grid' | 'table';
   onChange: (view: 'grid' | 'table') => void;
 }) {
+  const { t } = usePageCopy();
   return (
-    <div className="segmented-control compact" aria-label="Cách hiển thị sản phẩm">
+    <div className="segmented-control compact" aria-label={t.productDisplay}>
       <button aria-pressed={view === 'grid'} onClick={() => onChange('grid')}>
-        <LayoutGrid size={16} /> Hình ảnh
+        <LayoutGrid size={16} /> {t.images}
       </button>
       <button aria-pressed={view === 'table'} onClick={() => onChange('table')}>
-        <List size={16} /> Danh sách
+        <List size={16} /> {t.list}
       </button>
     </div>
   );
@@ -33,6 +36,9 @@ export function CatalogCard({
   isActive?: boolean | null;
   onEdit?: () => void;
 }) {
+  const { unitLabel } = useFormatters();
+  const { t } = usePageCopy();
+  const { vi } = useMessages();
   return (
     <article className="catalog-product-card">
       <div className="catalog-product-visual">
@@ -42,12 +48,12 @@ export function CatalogCard({
           imageKey={product.imageKey}
         />
         <span className={`catalog-state ${isActive ? '' : 'is-inactive'}`}>
-          {isActive ? 'Đang kinh doanh' : 'Ngừng kinh doanh'}
+          {isActive ? t.availableForSale : t.discontinued}
         </span>
       </div>
       <div className="catalog-product-body">
         <div className="product-meta">
-          <span>{product.category?.name ?? 'Chưa phân nhóm'}</span>
+          <span>{product.category?.name ?? t.uncategorized}</span>
           <span>{product.sku}</span>
         </div>
         <h2>{product.name}</h2>
@@ -57,13 +63,13 @@ export function CatalogCard({
           </span>
           {product.trackExpiry && (
             <span>
-              <CalendarClock size={14} /> Có hạn dùng
+              <CalendarClock size={14} /> {t.expiryTracked}
             </span>
           )}
         </div>
         <div className="catalog-product-footer">
           <div>
-            <small>{sellingPrice !== undefined ? 'Giá bán' : 'Giá vốn mặc định'}</small>
+            <small>{sellingPrice !== undefined ? t.sellingPrice : t.defaultCost}</small>
             <strong>
               {sellingPrice !== undefined
                 ? formatMoney(sellingPrice)
@@ -73,7 +79,11 @@ export function CatalogCard({
             </strong>
           </div>
           {onEdit && (
-            <button className="icon-button" aria-label={`Sửa ${product.name}`} onClick={onEdit}>
+            <button
+              className="icon-button"
+              aria-label={vi.admin.editRecord(product.name)}
+              onClick={onEdit}
+            >
               <Pencil size={17} />
             </button>
           )}
@@ -81,4 +91,10 @@ export function CatalogCard({
       </div>
     </article>
   );
+}
+
+function usePageCopy() {
+  const t = useScreen('catalog_cards');
+
+  return { t };
 }

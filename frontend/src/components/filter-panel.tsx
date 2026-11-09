@@ -1,9 +1,10 @@
 'use client';
-
+import { useScreen } from '@/i18n/provider';
 import { useId, useRef, useState, type ReactNode } from 'react';
 import { ChevronDown, SlidersHorizontal } from 'lucide-react';
 
 export function FilterPanel({ children }: { children: ReactNode }) {
+  const { t } = usePageCopy();
   const id = useId();
   const [open, setOpen] = useState(false);
   const toggle = useRef<HTMLButtonElement>(null);
@@ -26,7 +27,7 @@ export function FilterPanel({ children }: { children: ReactNode }) {
         onClick={() => setOpen((value) => !value)}
       >
         <SlidersHorizontal size={17} aria-hidden="true" />
-        <span>Bộ lọc</span>
+        <span>{t.filters}</span>
         <ChevronDown size={16} aria-hidden="true" />
       </button>
       <div id={id} className="filter-disclosure-fields" data-open={open}>
@@ -34,4 +35,10 @@ export function FilterPanel({ children }: { children: ReactNode }) {
       </div>
     </div>
   );
+}
+
+function usePageCopy() {
+  const t = useScreen('filter_panel');
+
+  return { t };
 }

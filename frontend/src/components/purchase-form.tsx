@@ -1,14 +1,15 @@
 'use client';
+import { useFormatters } from '@/i18n/formatters';
+import { Feedback } from '@/i18n/feedback';
+import { useMessages } from '@/i18n/provider';
+import { formatMoney, formatQuantity } from '@/lib/format';
 import { useEffect, useState, type FormEvent } from 'react';
 import { AdminDialog } from '@/components/admin-dialog';
 import { useAuth } from '@/components/auth-provider';
 import { catalogError, allOptions, saveRecord, type Product } from '@/lib/catalog';
 import type { Location } from '@/lib/locations';
 import { localDate, type PurchaseDetail } from '@/lib/operations';
-import { vi } from '@/i18n/vi';
-const o = vi.operations;
-const c = vi.catalog;
-const a = vi.admin;
+
 type Line = {
   key: string;
   productId: string;
@@ -34,6 +35,8 @@ export function PurchaseForm({
   onClose: () => void;
   onSaved: () => void;
 }) {
+  const { unitLabel } = useFormatters();
+  const { vi, o, c, a } = usePageCopy();
   const { user } = useAuth();
   const admin = user?.role === 'ADMIN';
   const [products, setProducts] = useState<Product[] | null>(null);
@@ -115,7 +118,7 @@ export function PurchaseForm({
         <h2 id="purchase-form-title">{record ? o.editPurchase : o.newPurchase}</h2>
         {error && (
           <p className="form-error" role="alert">
-            {error}
+            {<Feedback text={error} />}
           </p>
         )}
         {!products && (
@@ -209,8 +212,7 @@ export function PurchaseForm({
                       </div>
                       <div className="form-field">
                         <label htmlFor={`purchase-quantity-${index}`}>
-                          {o.purchaseQuantity}{' '}
-                          {product?.purchaseUnit ? `(${product.purchaseUnit.code})` : ''}
+                          {o.purchaseQuantity} ({unitLabel(product?.purchaseUnit)})
                         </label>
                         <input
                           id={`purchase-quantity-${index}`}
@@ -224,7 +226,7 @@ export function PurchaseForm({
                         />
                       </div>
                       <div className="form-field">
-                        <label htmlFor={`purchase-cost-${index}`}>{o.purchaseCost}</label>
+                        <label htmlFor={`purchase-cost-${index}`}>{o.purchaseCost} (VND)</label>
                         <input
                           id={`purchase-cost-${index}`}
                           type="number"
@@ -260,11 +262,15 @@ export function PurchaseForm({
                     </div>
                     <p>
                       {o.baseQuantity}:{' '}
-                      {(
-                        Number(line.purchaseQuantity) * Number(product?.purchaseToBaseRatio ?? 0)
-                      ).toFixed(4)}{' '}
-                      {product?.baseUnit?.code} · {o.lineTotal}:{' '}
-                      {(Number(line.purchaseQuantity) * Number(line.unitCost)).toFixed(2)}
+                      {formatQuantity(
+                        (
+                          Number(line.purchaseQuantity) * Number(product?.purchaseToBaseRatio ?? 0)
+                        ).toFixed(4),
+                      )}{' '}
+                      {unitLabel(product?.baseUnit)} · {o.lineTotal}:{' '}
+                      {formatMoney(
+                        (Number(line.purchaseQuantity) * Number(line.unitCost)).toFixed(2),
+                      )}
                     </p>
                     <button
                       type="button"
@@ -300,4 +306,12 @@ export function PurchaseForm({
       </div>
     </AdminDialog>
   );
+}
+
+function usePageCopy() {
+  const { vi } = useMessages();
+  const o = vi.operations;
+  const c = vi.catalog;
+  const a = vi.admin;
+  return { vi, o, c, a };
 }

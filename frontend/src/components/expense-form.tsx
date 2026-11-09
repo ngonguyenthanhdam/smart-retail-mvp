@@ -1,13 +1,13 @@
 'use client';
+import { Feedback } from '@/i18n/feedback';
+import { useMessages } from '@/i18n/provider';
 import { useEffect, useState, type FormEvent } from 'react';
 import { AdminDialog } from '@/components/admin-dialog';
 import { useAuth } from '@/components/auth-provider';
 import { catalogError, allOptions, saveRecord } from '@/lib/catalog';
 import type { Location } from '@/lib/locations';
 import { localDate, type Expense } from '@/lib/operations';
-import { vi } from '@/i18n/vi';
-const o = vi.operations;
-const a = vi.admin;
+
 export function ExpenseForm({
   record,
   onClose,
@@ -17,6 +17,7 @@ export function ExpenseForm({
   onClose: () => void;
   onSaved: () => void;
 }) {
+  const { vi, o, a } = usePageCopy();
   const { user } = useAuth();
   const admin = user?.role === 'ADMIN';
   const [locations, setLocations] = useState<Location[] | null>(null);
@@ -64,7 +65,7 @@ export function ExpenseForm({
       <h2 id="expense-form-title">{record ? o.editExpense : o.newExpense}</h2>
       {error && (
         <p className="form-error" role="alert">
-          {error}{' '}
+          {<Feedback text={error} />}{' '}
           {admin && !locations && (
             <button
               className="text-button"
@@ -168,4 +169,11 @@ export function ExpenseForm({
       </form>
     </AdminDialog>
   );
+}
+
+function usePageCopy() {
+  const { vi } = useMessages();
+  const o = vi.operations;
+  const a = vi.admin;
+  return { vi, o, a };
 }

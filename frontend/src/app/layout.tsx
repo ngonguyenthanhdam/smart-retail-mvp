@@ -3,23 +3,30 @@ import type { ReactNode } from 'react';
 
 import { AuthBoundary } from '@/components/auth-boundary';
 import { AuthProvider } from '@/components/auth-provider';
-import { vi } from '@/i18n/vi';
+import { LocaleProvider } from '@/i18n/provider';
+import { getLocale, getServerMessages } from '@/i18n/server';
 
 import './globals.css';
 import './retail-system.css';
 
-export const metadata: Metadata = {
-  title: { default: vi.brand, template: `%s | ${vi.brand}` },
-  description: vi.description,
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { vi } = await getServerMessages();
+  return {
+    title: { default: vi.brand, template: `%s | ${vi.brand}` },
+    description: vi.description,
+  };
+}
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export default async function RootLayout({ children }: { children: ReactNode }) {
+  const locale = await getLocale();
   return (
-    <html lang={vi.locale}>
+    <html lang={locale}>
       <body className="retail-ui">
-        <AuthProvider>
-          <AuthBoundary>{children}</AuthBoundary>
-        </AuthProvider>
+        <LocaleProvider initialLocale={locale}>
+          <AuthProvider>
+            <AuthBoundary>{children}</AuthBoundary>
+          </AuthProvider>
+        </LocaleProvider>
       </body>
     </html>
   );

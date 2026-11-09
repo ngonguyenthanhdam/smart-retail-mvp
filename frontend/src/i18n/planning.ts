@@ -5,7 +5,7 @@ export const planningCopy = {
   daily: 'Trung bình khoảng',
   search: 'Tên hoặc mã sản phẩm',
   forecastRounding:
-    'Số ước tính đã làm tròn để dễ đọc; lượng bán mỗi ngày là trung bình của tháng. Doanh thu làm tròn đến nghìn đồng và vẫn tính từ số dự báo gốc. Đơn vị lấy theo cấu hình sản phẩm.',
+    'Số ước tính giữ nguyên giá trị dự báo; lượng bán mỗi ngày là trung bình của tháng. Đơn vị lấy theo cấu hình sản phẩm.',
   why: 'Vì sao có đề xuất này?',
   next: 'Nên làm gì?',
   details: 'Xem số liệu và cách tính',
@@ -18,7 +18,7 @@ export const planningCopy = {
   approvedQuantity: 'Lượng đã duyệt',
   noNeed: 'Chưa cần nhập thêm',
   originalQuantity: 'Lượng đề xuất ban đầu',
-  estimateHint: 'Lượng bán hiển thị đã làm tròn; lượng nhập tính từ dự báo gốc.',
+  estimateHint: 'Lượng bán và lượng nhập hiển thị theo số dự báo gốc.',
   available: 'Tồn còn bán được',
   demand: 'Dự kiến bán · 30 ngày',
   reserve: 'Tồn an toàn',

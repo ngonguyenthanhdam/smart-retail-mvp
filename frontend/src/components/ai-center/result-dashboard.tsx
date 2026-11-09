@@ -1,18 +1,14 @@
 'use client';
+import { useFormatters } from '@/i18n/formatters';
+import { useDynamic } from '@/i18n/dynamic';
+import { useScreen } from '@/i18n/provider';
 import { useState, type ReactNode } from 'react';
 import type { TrainingResult } from './types';
 import { Badge, ChartInteraction, DataTable, LineChart, numberText } from './shared';
 
 type Metric = { mae: number; rmse: number; wape: number | null; bias: number | null };
 const shortDate = (date: string) => date.slice(5).split('-').reverse().join('/');
-const featureName = (name: string) =>
-  name === 'quantity'
-    ? 'Lượng bán'
-    : name === 'day_of_week'
-      ? 'Thứ trong tuần'
-      : name === 'month'
-        ? 'Tháng'
-        : name.replace('rolling_mean_', 'TB ').replace('lag_', 'Trễ ') + ' ngày';
+
 const format = (value: number | null | undefined, percent = false) =>
   value == null
     ? '—'
@@ -40,6 +36,7 @@ function Heatmap({
   values: (number | null)[][];
   diverging?: boolean;
 }) {
+  const { t } = usePageCopy();
   const cellWidth = Math.min(38, 420 / Math.max(1, columns.length));
   const width = 145 + columns.length * cellWidth;
   const height = 75 + rows.length * 25;
@@ -74,12 +71,12 @@ function Heatmap({
                   height="23"
                   rx="3"
                   fill={color}
-                  aria-label={`${row}, ${column}: ${value === null ? 'Không xác định' : format(value) + (diverging ? '' : '%')}`}
+                  aria-label={`${row}, ${column}: ${value === null ? t.undefined : format(value) + (diverging ? '' : '%')}`}
                 >
                   <title>
                     {row} · {column}:{' '}
                     {value === null
-                      ? 'Không xác định (hằng số hoặc chưa đủ mẫu)'
+                      ? t.undefinedConstantOrInsufficientSamples
                       : format(value) + (diverging ? '' : '%')}
                   </title>
                 </rect>
@@ -103,20 +100,20 @@ function Heatmap({
       </svg>
       <div className="ai-chart-legend">
         {diverging
-          ? 'Cam: nghịch chiều · Trắng: gần 0 · Xanh: cùng chiều · Xám: không xác định. Các cột đánh số theo thứ tự hàng.'
-          : 'Trắng: đủ dữ liệu (0% thiếu) · Xanh đậm: thiếu nhiều (đến 100%). Di chuột hoặc Tab vào ô để xem.'}
+          ? t.orangeNegativeWhiteNearZeroGreenPositive
+          : t.whiteCompleteData0MissingDarkGreen}
       </div>
       <div className={`ai-scale ${diverging ? 'diverging' : ''}`}>
-        <span>{diverging ? '−1' : '0% thiếu'}</span>
+        <span>{diverging ? '−1' : t.label0Missing}</span>
         <i />
-        <span>{diverging ? '+1' : '100% thiếu'}</span>
+        <span>{diverging ? '+1' : t.label100Missing}</span>
       </div>
       <details>
-        <summary>Xem số liệu gốc</summary>
+        <summary>{t.viewSourceFigures}</summary>
         <DataTable
           rows={rows.map((label, y) =>
             Object.fromEntries([
-              ['Đặc trưng', label],
+              [t.feature, label],
               ...columns.map((column, x) => [column, values[y]?.[x]]),
             ]),
           )}
@@ -126,26 +123,28 @@ function Heatmap({
   );
 }
 function Calendar({ daily, unit }: { daily: { date: string; quantity: number }[]; unit: string }) {
+  const dynamic = useDynamic();
+  const { t } = usePageCopy();
   const points = daily.slice(-182);
   const start = points[0]?.date;
-  if (!start) return <p>Chưa có dữ liệu theo ngày.</p>;
+  if (!start) return <p>{t.noDailyDataYet}</p>;
   const offset = (new Date(start).getUTCDay() + 6) % 7;
   const max = Math.max(1, ...points.map((p) => p.quantity));
   const weeks = Math.ceil((points.length + offset) / 7);
   const width = Math.max(460, weeks * 19 + 55);
   return (
     <Chart
-      title="Lịch bán hàng"
-      note={`Toàn bộ dataset ${unit} (không lọc theo chuỗi/mô hình/test) · ${points[0].date} → ${points.at(-1)!.date}. Màu đậm: bán nhiều; ô nhạt: lượng bằng 0.`}
+      title={t.salesCalendar}
+      note={dynamic.calendarNote(unit, points[0].date, points.at(-1)!.date)}
     >
       <div className="ai-heatmap-scroll">
         <svg
           viewBox={`0 0 ${width} 192`}
           style={{ minWidth: 420 }}
           role="img"
-          aria-label={`Lịch bán hàng ${unit}`}
+          aria-label={dynamic.calendarLabel(unit)}
         >
-          {['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'].map((d, i) => (
+          {t.weekdays.map((d, i) => (
             <text key={d} x="3" y={41 + i * 19}>
               {d}
             </text>
@@ -194,9 +193,12 @@ function Calendar({ daily, unit }: { daily: { date: string; quantity: number }[]
         </div>
       </div>
       <details>
-        <summary>Số liệu lịch bán hàng</summary>
+        <summary>{t.salesCalendarFigures}</summary>
         <DataTable
-          rows={points.map((p) => ({ Ngày: p.date, [`Lượng bán (${unit})`]: p.quantity }))}
+          rows={points.map((p) => ({
+            [t.date]: p.date,
+            [dynamic.salesQuantity(unit)]: p.quantity,
+          }))}
         />
       </details>
     </Chart>
@@ -209,7 +211,10 @@ function Density({
   points: { actual: number; predicted: number }[];
   unit: string;
 }) {
-  if (!points.length) return <p className="field-hint">Chưa có mẫu dự báo để xem mật độ.</p>;
+  const dynamic = useDynamic();
+  const { t } = usePageCopy();
+  if (!points.length)
+    return <p className="field-hint">{t.noForecastSamplesAvailableForDensityAnalysis}</p>;
   const max = Math.max(1, ...points.flatMap((p) => [p.actual, p.predicted]));
   const bins = Array.from({ length: 10 }, () => Array<number>(10).fill(0));
   points.forEach(
@@ -220,13 +225,11 @@ function Density({
   );
   const peak = Math.max(1, ...bins.flat());
   return (
-    <Chart
-      title="Mật độ thực tế / dự báo"
-      note={`Histogram hai chiều · ${points.length} điểm test mẫu · ${unit}. Ô đậm chứa nhiều điểm; gần đường chéo là dự báo sát thực tế.`}
-    >
-      <svg viewBox="0 0 430 285" role="img" aria-label="Mật độ thực tế và dự báo">
+    <Chart title={t.actualForecastDensity} note={dynamic.densityNote(points.length, unit)}>
+      <svg viewBox="0 0 430 285" role="img" aria-label={t.actualAndForecastDensity}>
         <text x="15" y="15">
-          Dự báo ({unit})
+          {t.forecast}
+          {unit})
         </text>
         {bins.map((row, y) =>
           row.map((count, x) => (
@@ -241,8 +244,8 @@ function Density({
               fill={count ? `hsl(157 42% ${92 - (55 * count) / peak}%)` : '#f2f5f3'}
             >
               <title>
-                {count} điểm · thực tế {format((x * max) / 10)}–{format(((x + 1) * max) / 10)}; dự
-                báo {format((y * max) / 10)}–{format(((y + 1) * max) / 10)}
+                {count} {t.pointsActual} {format((x * max) / 10)}–{format(((x + 1) * max) / 10)}
+                {t.forecast2} {format((y * max) / 10)}–{format(((y + 1) * max) / 10)}
               </title>
             </rect>
           )),
@@ -258,24 +261,34 @@ function Density({
           {format(max)}
         </text>
         <text x="180" y="282">
-          Thực tế ({unit})
+          {t.actual}
+          {unit})
         </text>
       </svg>
       <div className="ai-scale">
-        <span>0 điểm</span>
+        <span>{t.label0Points}</span>
         <i />
-        <span>{peak} điểm/ô</span>
+        <span>
+          {peak} {t.pointsCell}
+        </span>
       </div>
       <details>
-        <summary>Xem các điểm mẫu</summary>
+        <summary>{t.viewSamplePoints}</summary>
         <DataTable
-          rows={points.map((p) => ({ 'Thực tế': p.actual, 'Dự báo': p.predicted, 'Đơn vị': unit }))}
+          rows={points.map((p) => ({
+            [t.actual2]: p.actual,
+            [t.forecast3]: p.predicted,
+            [t.unit]: unit,
+          }))}
         />
       </details>
     </Chart>
   );
 }
 export function ResultDashboard({ result }: { result: TrainingResult }) {
+  const { formatUnit } = useFormatters();
+  const dynamic = useDynamic();
+  const { t, featureName } = usePageCopy();
   const [advanced, setAdvanced] = useState('calendar');
   const [unitChoice, setUnit] = useState('');
   const [horizonChoice, setHorizon] = useState('7');
@@ -284,6 +297,7 @@ export function ResultDashboard({ result }: { result: TrainingResult }) {
   const { evaluation, eda } = result;
   const units = Object.keys(eda.by_unit);
   const unit = units.includes(unitChoice) ? unitChoice : units[0];
+  const displayUnit = formatUnit(unit);
   const horizon = evaluation.protocol.horizons.map(String).includes(horizonChoice)
     ? horizonChoice
     : String(evaluation.protocol.horizons[0]);
@@ -315,7 +329,7 @@ export function ResultDashboard({ result }: { result: TrainingResult }) {
     <div className="ai-dashboard">
       <div className="ai-result-heading">
         <div>
-          <span className="ai-eyebrow">MÔ HÌNH ĐƯỢC CHỌN</span>
+          <span className="ai-eyebrow">{t.selectedModel}</span>
           <h3>{result.metadata.algorithm}</h3>
           <p className="field-hint ai-version">{result.metadata.model_version}</p>
         </div>
@@ -325,44 +339,46 @@ export function ResultDashboard({ result }: { result: TrainingResult }) {
             <span
               className="ai-demo-badge"
               tabIndex={0}
-              title="Dữ liệu mô phỏng: kết quả chỉ kiểm tra kỹ thuật, chưa chứng minh độ chính xác thực tế và không đủ điều kiện triển khai."
+              title={t.syntheticDataResultsOnlyVerifyTechnicalOperation}
             >
-              Dữ liệu demo · chỉ thử nghiệm
+              {t.demoDataTestingOnly}
             </span>
           )}
         </div>
       </div>
-      <div className="ai-result-filters" role="group" aria-label="Bộ lọc kết quả">
+      <div className="ai-result-filters" role="group" aria-label={t.resultFilters}>
         <label>
-          Đơn vị
+          {t.unit}
           <select
-            aria-label="Đơn vị biểu đồ"
+            aria-label={t.chartUnit}
             value={unit ?? ''}
             onChange={(e) => setUnit(e.target.value)}
           >
             {units.map((u) => (
-              <option key={u}>{u}</option>
-            ))}
-          </select>
-        </label>
-        <label>
-          Cửa sổ test
-          <select
-            aria-label="Cửa sổ biểu đồ"
-            value={horizon}
-            onChange={(e) => setHorizon(e.target.value)}
-          >
-            {evaluation.protocol.horizons.map((h) => (
-              <option key={h} value={h}>
-                {h} ngày
+              <option key={u} value={u}>
+                {formatUnit(u)}
               </option>
             ))}
           </select>
         </label>
         <label>
-          Mô hình xem
+          {t.testWindow}
           <select
-            aria-label="Mô hình biểu đồ"
+            aria-label={t.chartWindow}
+            value={horizon}
+            onChange={(e) => setHorizon(e.target.value)}
+          >
+            {evaluation.protocol.horizons.map((h) => (
+              <option key={h} value={h}>
+                {h} {t.days}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          {t.selectedModel2}
+          <select
+            aria-label={t.chartModel}
             value={algorithm}
             onChange={(e) => setAlgorithm(e.target.value)}
           >
@@ -372,13 +388,13 @@ export function ResultDashboard({ result }: { result: TrainingResult }) {
           </select>
         </label>
         <label>
-          Chuỗi trên biểu đồ mẫu
+          {t.seriesInTheSampleChart}
           <select
-            aria-label="Chuỗi biểu đồ"
+            aria-label={t.chartSeries}
             value={selected ?? ''}
             onChange={(e) => setPair(e.target.value)}
           >
-            {!pairs.length && <option value="">Chưa có mẫu</option>}
+            {!pairs.length && <option value="">{t.noSamplesYet}</option>}
             {pairs.map((p) => (
               <option key={p} value={p}>
                 {(JSON.parse(p) as string[]).join(' / ')}
@@ -388,28 +404,20 @@ export function ResultDashboard({ result }: { result: TrainingResult }) {
         </label>
       </div>
       <p className="ai-metric-scope">
-        Chỉ số: <strong>{algorithm}</strong> · toàn bộ chuỗi {unit} · test {horizon} ngày. Lựa chọn
-        mô hình được chốt trên validation.
+        {t.metrics} <strong>{algorithm}</strong> {t.allSeries} {displayUnit} {t.test} {horizon}{' '}
+        {t.daysTheModelIsSelectedUsingValidation}
       </p>
       <div className="ai-metric-cards">
         {[
-          [
-            'WAPE',
-            format(chosen?.wape, true),
-            'Sai số tương đối. Thấp hơn tốt hơn. Không xác định khi tổng lượng bán bằng 0.',
-          ],
-          ['MAE', format(chosen?.mae), `Sai lệch trung bình, đơn vị ${unit}.`],
-          ['RMSE', format(chosen?.rmse), `Nhạy với sai lệch lớn, đơn vị ${unit}.`],
-          [
-            'Chuỗi trong dataset',
-            numberText(eda.pairs),
-            'Tổng số chuỗi của toàn bộ dataset, không phải số chuỗi trong bộ lọc.',
-          ],
+          ['WAPE', format(chosen?.wape, true), t.relativeErrorLowerIsBetterUndefinedWhen],
+          ['MAE', format(chosen?.mae), dynamic.maeHelp(displayUnit)],
+          ['RMSE', format(chosen?.rmse), dynamic.rmseHelp(displayUnit)],
+          [t.datasetSeries, numberText(eda.pairs), t.totalSeriesInTheEntireDatasetNot],
         ].map(([label, value, note]) => (
           <div key={label} tabIndex={0} title={note}>
             <span>{label}</span>
             <strong>{value}</strong>
-            {['MAE', 'RMSE'].includes(label) && <small>{unit}</small>}
+            {['MAE', 'RMSE'].includes(label) && <small>{displayUnit}</small>}
             <p className="ai-metric-note">{note}</p>
           </div>
         ))}
@@ -417,21 +425,19 @@ export function ResultDashboard({ result }: { result: TrainingResult }) {
       <div className="ai-chart-grid">
         <div className="ai-chart-cell">
           <LineChart
-            title={`Thực tế và dự báo · ${unit}`}
+            unit={displayUnit}
+            title={dynamic.actualForecast(displayUnit)}
             labels={points.map((p) => p.date)}
             series={[
-              { name: 'Thực tế', values: points.map((p) => p.actual), color: '#17604f' },
-              { name: 'Dự báo', values: points.map((p) => p.predicted), color: '#c4742a' },
+              { name: t.actual2, values: points.map((p) => p.actual), color: '#17604f' },
+              { name: t.forecast3, values: points.map((p) => p.predicted), color: '#c4742a' },
             ]}
           />
           <p className="field-hint">
-            Chuỗi đang chọn · mẫu test {horizon} ngày. KPI phía trên dùng toàn bộ chuỗi {unit}.
+            {t.selectedSeriesTestSample} {horizon} {t.daysTheKpisAboveUseAllSeries} {displayUnit}.
           </p>
         </div>
-        <Chart
-          title="So sánh mô hình"
-          note={`WAPE · test ${horizon} ngày · toàn bộ chuỗi ${unit}. Thấp hơn tốt hơn.`}
-        >
+        <Chart title={t.modelComparison} note={dynamic.wapeHelp(horizon, displayUnit)}>
           <div className="ai-bar-list">
             {ranked.map((m) => (
               <div
@@ -446,7 +452,7 @@ export function ResultDashboard({ result }: { result: TrainingResult }) {
                   <span>
                     {m.model}
                     {m.metric?.wape != null && m.metric.wape === ranked[0]?.metric?.wape && (
-                      <small>Thấp nhất kỳ test</small>
+                      <small>{t.lowestOnTheTestPeriod}</small>
                     )}
                   </span>
                   <strong>{format(m.metric?.wape, true)}</strong>
@@ -454,63 +460,66 @@ export function ResultDashboard({ result }: { result: TrainingResult }) {
                 <div
                   className="ai-bar-track"
                   tabIndex={0}
-                  title={`${m.model}: ${format(m.metric?.wape, true)} — thấp hơn tốt hơn`}
+                  title={dynamic.lowerBetter(m.model, format(m.metric?.wape, true))}
                 >
                   <span style={{ width: `${(100 * (m.metric?.wape ?? 0)) / maxWape}%` }} />
                 </div>
               </div>
             ))}
           </div>
-          <p className="field-hint">
-            Cùng cửa sổ và đơn vị. “—” là chưa xác định, không phải sai số bằng 0.
-          </p>
+          <p className="field-hint">{t.sameWindowAndUnitMeansUndefinedNot}</p>
         </Chart>
       </div>
       <details className="ai-advanced ai-analytics">
         <summary>
-          Phân tích chuyên sâu<span>Lịch bán hàng, mật độ, đặc trưng</span>
+          {t.detailedAnalysis}
+          <span>{t.salesCalendarDensityAndFeatures}</span>
         </summary>
         <label className="ai-inline-filter">
-          Biểu đồ
+          {t.chart}
           <select
-            aria-label="Phân tích chuyên sâu"
+            aria-label={t.detailedAnalysis}
             value={advanced}
             onChange={(e) => setAdvanced(e.target.value)}
           >
-            <option value="calendar">Lịch bán hàng</option>
-            <option value="density">Mật độ thực tế / dự báo</option>
-            <option value="errors">Phân phối sai số mẫu</option>
-            <option value="correlation">Tương quan đặc trưng</option>
-            <option value="missing">Mức thiếu dữ liệu</option>
+            <option value="calendar">{t.salesCalendar}</option>
+            <option value="density">{t.actualForecastDensity}</option>
+            <option value="errors">{t.sampleErrorDistribution}</option>
+            <option value="correlation">{t.featureCorrelation}</option>
+            <option value="missing">{t.missingData}</option>
             {evaluation.feature_importance && (
-              <option value="importance">Đóng góp đặc trưng LightGBM</option>
+              <option value="importance">{t.lightgbmFeatureImportance}</option>
             )}
           </select>
         </label>
         {advanced === 'calendar' &&
           (byUnit ? (
-            <Calendar daily={byUnit.daily} unit={unit} />
+            <Calendar daily={byUnit.daily} unit={displayUnit} />
           ) : (
-            <p>Chưa có dữ liệu theo ngày.</p>
+            <p>{t.noDailyDataYet}</p>
           ))}
-        {advanced === 'density' && <Density points={points} unit={unit} />}
+        {advanced === 'density' && <Density points={points} unit={displayUnit} />}
         {advanced === 'errors' && (
           <Chart
-            title="Phân phối sai số mẫu"
-            note={`${algorithm} · ${horizon} ngày · chuỗi đang chọn · sai số = dự báo − thực tế (${unit}).`}
+            title={t.sampleErrorDistribution}
+            note={dynamic.errorNote(algorithm, horizon, displayUnit)}
           >
-            <ErrorDistribution points={points} unit={unit} />
+            <ErrorDistribution points={points} unit={displayUnit} />
           </Chart>
         )}
         {['correlation', 'missing'].includes(advanced) &&
           (features ? (
             advanced === 'correlation' ? (
               <Chart
-                title="Tương quan đặc trưng"
-                note={`Pearson · toàn bộ ${features.eligible_rows} dòng train đủ lịch sử ${unit} · đến ${eda.feature_diagnostics!.train_end}. Không phụ thuộc mô hình/cửa sổ test; không chứng minh quan hệ nhân quả.`}
+                title={t.featureCorrelation}
+                note={dynamic.pearsonHelp(
+                  features.eligible_rows,
+                  displayUnit,
+                  eda.feature_diagnostics!.train_end,
+                )}
               >
                 <Heatmap
-                  title="Tương quan đặc trưng"
+                  title={t.featureCorrelation}
                   rows={features.labels.map(featureName)}
                   columns={features.labels.map(featureName)}
                   values={features.correlation}
@@ -518,12 +527,9 @@ export function ResultDashboard({ result }: { result: TrainingResult }) {
                 />
               </Chart>
             ) : (
-              <Chart
-                title="Mức thiếu dữ liệu theo thời gian"
-                note={`Toàn bộ tập train ${unit}. Lag/rolling thiếu ở đầu chuỗi do chưa đủ lịch sử, không phải lỗi CSV. Không tự điền 0; không áp dụng bộ lọc mô hình/cửa sổ test.`}
-              >
+              <Chart title={t.missingDataOverTime} note={dynamic.missingHelp(displayUnit)}>
                 <Heatmap
-                  title="Mức thiếu dữ liệu theo thời gian"
+                  title={t.missingDataOverTime}
                   rows={features.labels.map(featureName)}
                   columns={features.missing.map((b) => b.from)}
                   values={features.labels.map((_, i) => features.missing.map((b) => b.percent[i]))}
@@ -531,59 +537,57 @@ export function ResultDashboard({ result }: { result: TrainingResult }) {
               </Chart>
             )
           ) : (
-            <p className="ai-notice">
-              Lần chạy này chưa lưu dữ liệu đặc trưng cho biểu đồ. Các kết quả đã có vẫn được giữ
-              nguyên.
-            </p>
+            <p className="ai-notice">{t.thisRunHasNoSavedFeatureData}</p>
           ))}
         {advanced === 'importance' && evaluation.feature_importance && (
-          <Chart
-            title="Đóng góp đặc trưng LightGBM"
-            note="Số lần dùng để chia nhánh của LightGBM trong lần chạy này. Toàn bộ tập train; không áp dụng bộ lọc chuỗi/test."
-          >
+          <Chart title={t.lightgbmFeatureImportance} note={t.numberOfLightgbmSplitsInThisRun}>
             <DataTable
               rows={Object.entries(evaluation.feature_importance)
                 .sort((a, b) => b[1] - a[1])
-                .map(([name, value]) => ({ 'Đặc trưng': featureName(name), 'Số lần chia': value }))}
+                .map(([name, value]) => ({
+                  [t.feature]: featureName(name),
+                  [t.splitCount]: value,
+                }))}
             />
           </Chart>
         )}
       </details>
       <details className="ai-advanced">
-        <summary>Số liệu & phương pháp đánh giá</summary>
+        <summary>{t.figuresEvaluationMethod}</summary>
         <DataTable
           rows={metrics.map((m) => ({
-            Model: m.model,
-            'Đơn vị': unit,
+            [t.model]: m.model,
+            [t.unit]: displayUnit,
             MAE: m.metric?.mae,
             RMSE: m.metric?.rmse,
             'WAPE (%)': m.metric?.wape == null ? null : m.metric.wape * 100,
-            'Bias (%)': m.metric?.bias == null ? null : m.metric.bias * 100,
+            [t.biasPercent]: m.metric?.bias == null ? null : m.metric.bias * 100,
           }))}
         />
         <div className="ai-split">
-          <div>Train đến {evaluation.protocol.validation_origin}</div>
-          <div>Validation đến {evaluation.protocol.test_origin}</div>
-          <div>Test đến {evaluation.protocol.test_end}</div>
+          <div>
+            {t.trainingThrough} {evaluation.protocol.validation_origin}
+          </div>
+          <div>
+            {t.validationThrough} {evaluation.protocol.test_origin}
+          </div>
+          <div>
+            {t.testThrough} {evaluation.protocol.test_end}
+          </div>
         </div>
-        <p className="field-hint">
-          Không chia ngẫu nhiên; không dùng test để chọn mô hình. Biểu đồ dùng tối đa 3.000 điểm
-          mẫu/model; KPI dùng kết quả đánh giá đầy đủ.
-        </p>
+        <p className="field-hint">{t.noRandomSplittingTestDataIsNot}</p>
         <DataTable
           rows={[
             {
-              'Dòng toàn dataset': eda.rows,
-              'Giá trị thiếu nguồn': eda.missing_values,
-              'Dòng trùng': eda.duplicates,
-              'Ngày bán bằng 0': eda.zero_days,
+              [t.totalDatasetRows]: eda.rows,
+              [t.missingSourceValues]: eda.missing_values,
+              [t.duplicateRows]: eda.duplicates,
+              [t.zeroSalesDays]: eda.zero_days,
             },
           ]}
         />
         {result.metadata.contains_synthetic && (
-          <p className="ai-notice">
-            Synthetic/demo backtest — not evidence of real-world forecasting accuracy.
-          </p>
+          <p className="ai-notice">{t.syntheticDemoBacktestNotEvidenceOfReal}</p>
         )}
       </details>
     </div>
@@ -596,7 +600,8 @@ function ErrorDistribution({
   points: { actual: number; predicted: number }[];
   unit: string;
 }) {
-  if (!points.length) return <p>Chưa có điểm mẫu phù hợp.</p>;
+  const { t } = usePageCopy();
+  if (!points.length) return <p>{t.noMatchingSamplePointsYet}</p>;
   const values = points.map((p) => p.predicted - p.actual);
   const min = Math.min(...values);
   const max = Math.max(...values);
@@ -606,9 +611,9 @@ function ErrorDistribution({
   const peak = Math.max(1, ...counts);
   return (
     <>
-      <svg viewBox="0 0 640 220" role="img" aria-label="Phân phối sai số mẫu">
+      <svg viewBox="0 0 640 220" role="img" aria-label={t.sampleErrorDistribution}>
         <text x="12" y="16">
-          Số điểm
+          {t.pointCount}
         </text>
         <text x="12" y="40">
           {peak}
@@ -625,7 +630,7 @@ function ErrorDistribution({
             fill="#6585b4"
           >
             <title>
-              {format(min + i * width)} → {format(min + (i + 1) * width)} {unit}: {count} điểm
+              {format(min + i * width)} → {format(min + (i + 1) * width)} {unit}: {count} {t.points}
             </title>
           </rect>
         ))}
@@ -638,16 +643,30 @@ function ErrorDistribution({
         </text>
       </svg>
       <details>
-        <summary>Xem số liệu gốc</summary>
+        <summary>{t.viewSourceFigures}</summary>
         <DataTable
           rows={counts.map((count, i) => ({
-            Từ: min + i * width,
-            Đến: min + (i + 1) * width,
-            'Số điểm': count,
-            'Đơn vị': unit,
+            [t.fromValue]: min + i * width,
+            [t.toValue]: min + (i + 1) * width,
+            [t.pointCount]: count,
+            [t.unit]: unit,
           }))}
         />
       </details>
     </>
   );
+}
+
+function usePageCopy() {
+  const t = useScreen('result_dashboard');
+  const featureName = (name: string) =>
+    name === 'quantity'
+      ? t.salesQuantity
+      : name === 'day_of_week'
+        ? t.dayOfWeek
+        : name === 'month'
+          ? t.month
+          : name.replace('rolling_mean_', t.average + ' ').replace('lag_', t.lag + ' ') +
+            (' ' + t.days);
+  return { t, featureName };
 }

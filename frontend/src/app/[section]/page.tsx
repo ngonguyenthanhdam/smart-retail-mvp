@@ -2,10 +2,13 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
 import { PlaceholderPage } from '@/components/placeholder-page';
-import { vi } from '@/i18n/vi';
+import { getServerMessages } from '@/i18n/server';
 import { findSection, navigation } from '@/lib/navigation';
 
 type PageProps = { params: Promise<{ section: string }> };
+
+// Locale metadata reads the request cookie, including unknown section URLs.
+export const dynamic = 'force-dynamic';
 
 export function generateStaticParams() {
   return navigation
@@ -31,6 +34,7 @@ export function generateStaticParams() {
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { vi } = await getServerMessages();
   const section = findSection((await params).section);
 
   return { title: section ? vi.sections[section.id].label : vi.notFound.title };

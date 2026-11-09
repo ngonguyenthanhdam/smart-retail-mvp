@@ -1,12 +1,13 @@
 'use client';
+import { Feedback } from '@/i18n/feedback';
+import { useMessages } from '@/i18n/provider';
+import type { decisionCopy as c } from '@/i18n/vi';
 import { FilterPanel } from './filter-panel';
 import { useEffect, useState, type ReactNode } from 'react';
 import { useAuth } from './auth-provider';
 import { apiRequest } from '@/lib/api';
 import { catalogError, allOptions, type Page } from '@/lib/catalog';
 import type { Location } from '@/lib/locations';
-import { vi, decisionCopy as c } from '@/i18n/vi';
-import { planningCopy as p } from '@/i18n/planning';
 
 type DecisionPage<T> = Page<T> & { summary?: Record<string, number>; businessDate?: string };
 
@@ -78,6 +79,7 @@ export function DecisionList<T extends { id: string }>({
   busy: boolean;
   alertFilters?: boolean;
 }) {
+  const { vi, c, p } = usePageCopy();
   const { query, data } = state;
   const pages = Math.max(1, Math.ceil((data?.total ?? 0) / (data?.pageSize ?? 20)));
   const [storeFilter, setStoreFilter] = useState(query.locationId);
@@ -155,7 +157,7 @@ export function DecisionList<T extends { id: string }>({
       </FilterPanel>
       {state.error && (
         <p className="form-error decision-hint" role="alert">
-          {state.error}{' '}
+          <Feedback text={state.error} />{' '}
           <button className="text-button" disabled={busy} onClick={state.refresh}>
             {vi.admin.retry}
           </button>
@@ -203,4 +205,10 @@ export function DecisionList<T extends { id: string }>({
       )}
     </section>
   );
+}
+
+function usePageCopy() {
+  const { vi, decisionCopy: c, planningCopy: p } = useMessages();
+
+  return { vi, c, p };
 }

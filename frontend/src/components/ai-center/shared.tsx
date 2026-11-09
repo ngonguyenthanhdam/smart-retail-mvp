@@ -1,6 +1,12 @@
 'use client';
+import { Feedback } from '@/i18n/feedback';
+import { useLocale, useScreen } from '@/i18n/provider';
 import { useState, type ReactNode } from 'react';
 import { apiRequest } from '@/lib/api';
+import { formatMoney, formatQuantity, type NumericValue } from '@/lib/format';
+import { useFormatters } from '@/i18n/formatters';
+import type { SourceColumn } from '@/i18n/source-columns';
+import { vi as fallback } from '@/i18n/screens/shared';
 export const aiGet = <T,>(path: string) => apiRequest<T>('/ai-center' + path, undefined, 30000);
 export const aiPost = <T,>(path: string, data: unknown = {}) =>
   apiRequest<T>(
@@ -9,49 +15,33 @@ export const aiPost = <T,>(path: string, data: unknown = {}) =>
     190000,
   );
 export const messageOf = (error: unknown) =>
-  error instanceof Error ? error.message : 'Không thực hiện được yêu cầu. Hãy thử lại.';
+  error instanceof Error ? error.message : fallback.couldNotCompleteTheRequestPleaseTry;
 export const numberText = (n: unknown) =>
-  typeof n === 'number'
-    ? n.toLocaleString('vi-VN', { maximumFractionDigits: 4 })
-    : n === null || n === undefined
-      ? '—'
-      : String(n);
+  typeof n === 'number' ? formatQuantity(n) : n === null || n === undefined ? '—' : String(n);
 export const dateText = (s: string) =>
   new Date(s).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' });
-const statusNames: Record<string, string> = {
-  VALID: 'Hợp lệ',
-  STAGING: 'Đang chuẩn bị',
-  PUBLISHED: 'Đã công bố',
-  EXPIRED: 'Hết hạn',
-  INVALID_FORMAT: 'Sai định dạng',
-  MISSING_REQUIRED_FIELDS: 'Thiếu dữ liệu bắt buộc',
-  NEEDS_MAPPING: 'Cần ánh xạ cột',
-  UNSUPPORTED_DATASET: 'Dữ liệu chưa hỗ trợ',
-  DUPLICATE_DATA: 'Dữ liệu trùng',
-  ACCESS_DENIED: 'Ngoài phạm vi',
-  RUNNING: 'Đang chạy',
-  COMPLETED: 'Hoàn tất',
-  FAILED: 'Thất bại',
-  CANCELLED: 'Đã hủy',
-  CANDIDATE: 'Ứng viên',
-  ACTIVE: 'Đang hoạt động',
-  ARCHIVED: 'Đã lưu trữ',
-};
+
 export function Badge({ status }: { status: string }) {
+  const statusLabel = useAiStatus();
   return (
-    <span className={`ai-badge ai-badge-${status.toLowerCase()}`} title={status}>
-      {status === 'READY'
-        ? 'Sẵn sàng'
-        : status === 'REVIEW'
-          ? 'Cần kiểm tra'
-          : (statusNames[status] ?? status)}
+    <span className={`ai-badge ai-badge-${status.toLowerCase()}`} title={statusLabel(status)}>
+      {statusLabel(status)}
     </span>
   );
+}
+export function useAiStatus() {
+  const { t, statusNames } = usePageCopy();
+  return (status: string) =>
+    status === 'READY'
+      ? t.ready
+      : status === 'REVIEW'
+        ? t.reviewRequired
+        : (statusNames[status] ?? status);
 }
 export function ErrorBox({ error }: { error: string }) {
   return error ? (
     <p className="form-error" role="alert">
-      {error}
+      {<Feedback text={error} />}
     </p>
   ) : null;
 }
@@ -74,11 +64,19 @@ export function Section({
     </section>
   );
 }
-export function DataTable({ rows }: { rows: Record<string, unknown>[] }) {
+export function DataTable({
+  rows,
+  columns = {},
+}: {
+  rows: Record<string, unknown>[];
+  columns?: Record<string, SourceColumn>;
+}) {
+  const { formatUnit, formatQuantityWithUnit } = useFormatters();
+  const { t } = usePageCopy();
   const [page, setPage] = useState(0);
   const lastPage = Math.max(0, Math.ceil(rows.length / 8) - 1);
   const currentPage = Math.min(page, lastPage);
-  if (!rows.length) return <p className="field-hint">Chưa có bản ghi phù hợp.</p>;
+  if (!rows.length) return <p className="field-hint">{t.noMatchingRecordsYet}</p>;
   const keys = [...new Set(rows.flatMap((row) => Object.keys(row)))];
   return (
     <>
@@ -86,14 +84,14 @@ export function DataTable({ rows }: { rows: Record<string, unknown>[] }) {
         className="admin-table-scroll ai-table-scroll"
         tabIndex={0}
         role="region"
-        aria-label="Bảng dữ liệu AI"
+        aria-label={t.aiDataTable}
       >
         <table className="admin-table ai-table">
           <thead>
             <tr>
               {keys.map((key) => (
                 <th key={key} scope="col">
-                  {key}
+                  {columns[key]?.label ?? key}
                 </th>
               ))}
             </tr>
@@ -103,9 +101,18 @@ export function DataTable({ rows }: { rows: Record<string, unknown>[] }) {
               <tr key={i}>
                 {keys.map((key) => (
                   <td key={key}>
-                    {typeof row[key] === 'object' && row[key] !== null
-                      ? JSON.stringify(row[key])
-                      : numberText(row[key])}
+                    {columns[key]?.kind === 'money'
+                      ? formatMoney(row[key] as NumericValue)
+                      : columns[key]?.kind === 'quantity'
+                        ? formatQuantityWithUnit(
+                            row[key] as NumericValue,
+                            row[columns[key].unitKey ?? ''] as string | undefined,
+                          )
+                        : columns[key]?.kind === 'unit'
+                          ? formatUnit(row[key] as string | undefined)
+                          : typeof row[key] === 'object' && row[key] !== null
+                            ? JSON.stringify(row[key])
+                            : numberText(row[key])}
                   </td>
                 ))}
               </tr>
@@ -116,7 +123,7 @@ export function DataTable({ rows }: { rows: Record<string, unknown>[] }) {
       {rows.length > 8 && (
         <div className="ai-row ai-pagination">
           <span className="field-hint">
-            Dòng {currentPage * 8 + 1}–{Math.min((currentPage + 1) * 8, rows.length)} /{' '}
+            {t.row} {currentPage * 8 + 1}–{Math.min((currentPage + 1) * 8, rows.length)} /{' '}
             {numberText(rows.length)}
           </span>
           <button
@@ -125,7 +132,7 @@ export function DataTable({ rows }: { rows: Record<string, unknown>[] }) {
             disabled={currentPage === 0}
             onClick={() => setPage(currentPage - 1)}
           >
-            Trang trước
+            {t.previousPage}
           </button>
           <button
             className="ai-link"
@@ -133,7 +140,7 @@ export function DataTable({ rows }: { rows: Record<string, unknown>[] }) {
             disabled={currentPage === lastPage}
             onClick={() => setPage(currentPage + 1)}
           >
-            Trang sau
+            {t.nextPage}
           </button>
         </div>
       )}
@@ -144,16 +151,19 @@ export function LineChart({
   title,
   labels,
   series,
+  unit,
 }: {
   title: string;
   labels: string[];
   series: { name: string; values: number[]; color: string }[];
+  unit?: string;
 }) {
+  const { t } = usePageCopy();
   if (!labels.length)
     return (
       <figure className="ai-chart">
         <figcaption>{title}</figcaption>
-        <p className="field-hint">Chưa có điểm mẫu phù hợp.</p>
+        <p className="field-hint">{t.noMatchingSamplePointsYet}</p>
       </figure>
     );
   const values = series.flatMap((s) => s.values).filter(Number.isFinite);
@@ -198,7 +208,7 @@ export function LineChart({
                   fill={s.color}
                 >
                   <title>
-                    {labels[i]} · {s.name}: {numberText(n)}
+                    {labels[i]} · {s.name}: {numberText(n)} {unit}
                   </title>
                 </circle>
               ))}
@@ -220,12 +230,12 @@ export function LineChart({
         ))}
       </div>
       <details>
-        <summary>Xem số liệu biểu đồ</summary>
+        <summary>{t.viewChartFigures}</summary>
         <DataTable
           rows={labels.map((label, i) =>
             Object.fromEntries([
-              ['Ngày / khoảng', label],
-              ...series.map((s) => [s.name, s.values[i]]),
+              [t.datePeriod, label],
+              ...series.map((s) => [unit ? `${s.name} (${unit})` : s.name, s.values[i]]),
             ]),
           )}
         />
@@ -234,23 +244,53 @@ export function LineChart({
   );
 }
 export function ChartInteraction({ children }: { children: ReactNode }) {
-  const [tip, setTip] = useState('');
+  const { t } = usePageCopy();
+  const { locale } = useLocale();
+  const [tip, setTip] = useState<{ text: string; locale: string } | null>(null);
   function inspect(target: EventTarget) {
     if (target instanceof Element)
-      setTip(target.closest('[data-point]')?.querySelector('title')?.textContent ?? '');
+      setTip({
+        text: target.closest('[data-point]')?.querySelector('title')?.textContent ?? '',
+        locale,
+      });
   }
   return (
     <div
       className="ai-chart-interaction"
       onMouseOver={(e) => inspect(e.target)}
-      onMouseLeave={() => setTip('')}
+      onMouseLeave={() => setTip(null)}
       onFocus={(e) => inspect(e.target)}
-      onBlur={() => setTip('')}
+      onBlur={() => setTip(null)}
     >
       <div>{children}</div>
       <div className="ai-chart-tooltip" role="status">
-        {tip || 'Di chuột hoặc Tab vào điểm để xem số liệu'}
+        {(tip?.locale === locale && tip.text) || t.hoverOverOrTabToAPoint}
       </div>
     </div>
   );
+}
+
+function usePageCopy() {
+  const t = useScreen('shared');
+  const statusNames: Record<string, string> = {
+    PENDING: t.pending,
+    VALID: t.valid,
+    STAGING: t.preparing,
+    PUBLISHED: t.published,
+    EXPIRED: t.expired,
+    INVALID_FORMAT: t.invalidFormat,
+    MISSING_REQUIRED_FIELDS: t.requiredDataMissing,
+    NEEDS_MAPPING: t.columnMappingRequired,
+    UNSUPPORTED_DATASET: t.unsupportedDataset,
+    DUPLICATE_DATA: t.duplicateData,
+    ACCESS_DENIED: t.outsideScope,
+    RUNNING: t.running,
+    COMPLETED: t.completed,
+    FAILED: t.failed,
+    CANCELLED: t.cancelled,
+    CANDIDATE: t.candidate,
+    ACTIVE: t.active,
+    ARCHIVED: t.archived,
+  };
+  return { t, statusNames };
 }

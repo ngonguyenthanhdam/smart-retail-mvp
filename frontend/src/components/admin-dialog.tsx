@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, type ReactNode } from 'react';
+import { LanguageSwitcher } from './language-switcher';
 
 export function AdminDialog({
   titleId,
@@ -37,6 +38,9 @@ export function AdminDialog({
         if (!busy) onClose();
       }}
     >
+      <div className="dialog-language">
+        <LanguageSwitcher />
+      </div>
       {children}
     </dialog>
   );

@@ -1,4 +1,7 @@
 'use client';
+import { useFormatters } from '@/i18n/formatters';
+import { Feedback, type FeedbackText } from '@/i18n/feedback';
+import { useMessages } from '@/i18n/provider';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
@@ -19,10 +22,6 @@ import { apiRequest } from '@/lib/api';
 import { catalogError, saveRecord } from '@/lib/catalog';
 import type { ForecastRun } from '@/lib/forecasts';
 import { quantity, type Recommendation, type DecisionStatus } from '@/lib/decision';
-import { displayDate } from '@/lib/operations';
-import { vi, decisionCopy as c } from '@/i18n/vi';
-import { planningCopy as p } from '@/i18n/planning';
-import { formatTimestamp, unitLabel } from '@/lib/format';
 
 export function ReplenishmentPage() {
   const params = useSearchParams();
@@ -35,6 +34,8 @@ export function ReplenishmentPage() {
   );
 }
 function ReplenishmentContent({ location, search }: { location: string; search: string }) {
+  const { displayDate, formatTimestamp, unitLabel } = useFormatters();
+  const { vi, c, p } = usePageCopy();
   const state = useDecisionList<Recommendation>('/replenishment', 'all', {
     locationId: location,
     search,
@@ -44,7 +45,7 @@ function ReplenishmentContent({ location, search }: { location: string; search: 
   const [detail, setDetail] = useState<Recommendation | null>(null);
   const [choice, setChoice] = useState<DecisionStatus | null>(null);
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState<FeedbackText>('');
   const [success, setSuccess] = useState('');
   const [purchaseConfirm, setPurchaseConfirm] = useState(false);
   const locationId = state.query.locationId;
@@ -119,7 +120,7 @@ function ReplenishmentContent({ location, search }: { location: string; search: 
       setSuccess(c.decided);
       state.refresh();
     } catch (e) {
-      setError(`${catalogError(e)} ${c.uncertainty}`);
+      setError([catalogError(e), c.uncertainty]);
     } finally {
       setBusy(false);
     }
@@ -137,7 +138,7 @@ function ReplenishmentContent({ location, search }: { location: string; search: 
       setPurchaseConfirm(false);
       state.refresh();
     } catch (e) {
-      setError(`${catalogError(e)} ${c.uncertainty}`);
+      setError([catalogError(e), c.uncertainty]);
     } finally {
       setBusy(false);
     }
@@ -168,12 +169,12 @@ function ReplenishmentContent({ location, search }: { location: string; search: 
       <p className="decision-flow">{c.flow}</p>
       {!detail && error && (
         <p className="form-error" role="alert">
-          {error}
+          {<Feedback text={error} />}
         </p>
       )}
       {!detail && success && (
         <p className="form-success" role="status">
-          {success}
+          {<Feedback text={success} />}
         </p>
       )}
       <DecisionSummary
@@ -331,12 +332,12 @@ function ReplenishmentContent({ location, search }: { location: string; search: 
             </details>
             {error && (
               <p className="form-error" role="alert">
-                {error}
+                {<Feedback text={error} />}
               </p>
             )}
             {success && (
               <p className="form-success" role="status">
-                {success}
+                {<Feedback text={success} />}
               </p>
             )}
             {detail.decisionStatus === 'PENDING' && (
@@ -439,7 +440,7 @@ function ReplenishmentContent({ location, search }: { location: string; search: 
                     >
                       <p>{c.purchasePrompt}</p>
                       <div className="form-field">
-                        <label htmlFor="purchase-cost">{c.cost}</label>
+                        <label htmlFor="purchase-cost">{c.cost} (VND)</label>
                         <input
                           id="purchase-cost"
                           name="cost"
@@ -471,4 +472,10 @@ function ReplenishmentContent({ location, search }: { location: string; search: 
       )}
     </div>
   );
+}
+
+function usePageCopy() {
+  const { vi, decisionCopy: c, planningCopy: p } = useMessages();
+
+  return { vi, c, p };
 }

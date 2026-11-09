@@ -1,14 +1,16 @@
 'use client';
-
+import { Feedback } from '@/i18n/feedback';
+import { useMessages } from '@/i18n/provider';
 import { ArrowRight, LoaderCircle } from 'lucide-react';
 import Link from 'next/link';
 import { useState, type FormEvent } from 'react';
 
 import { useAuth } from '@/components/auth-provider';
-import { vi } from '@/i18n/vi';
+
 import { AuthRequestError } from '@/lib/auth';
 
 export function LoginForm() {
+  const { vi } = usePageCopy();
   const { signIn } = useAuth();
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
@@ -83,7 +85,7 @@ export function LoginForm() {
               />
               {errors.identifier && (
                 <p id="identifier-error" className="field-error">
-                  {errors.identifier}
+                  {<Feedback text={errors.identifier} />}
                 </p>
               )}
             </div>
@@ -106,7 +108,7 @@ export function LoginForm() {
               />
               {errors.password && (
                 <p id="password-error" className="field-error">
-                  {errors.password}
+                  {<Feedback text={errors.password} />}
                 </p>
               )}
               <Link href="/forgot-password" className="auth-link forgot-link">
@@ -116,7 +118,7 @@ export function LoginForm() {
 
             {error && (
               <p className="form-error" role="alert">
-                {error}
+                {<Feedback text={error} />}
               </p>
             )}
 
@@ -135,4 +137,10 @@ export function LoginForm() {
       </div>
     </main>
   );
+}
+
+function usePageCopy() {
+  const { vi } = useMessages();
+
+  return { vi };
 }

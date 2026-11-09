@@ -1,11 +1,12 @@
 'use client';
-
+import { Feedback } from '@/i18n/feedback';
+import { useMessages } from '@/i18n/provider';
 import { KeyRound, LoaderCircle } from 'lucide-react';
 import Link from 'next/link';
 import { useState, useSyncExternalStore, type FormEvent } from 'react';
 
 import { useAuth } from '@/components/auth-provider';
-import { vi } from '@/i18n/vi';
+
 import { AuthRequestError, resetPassword } from '@/lib/auth';
 
 function createResetTokenStore() {
@@ -36,6 +37,7 @@ function createResetTokenStore() {
 }
 
 export function ResetPasswordForm() {
+  const { vi } = usePageCopy();
   const [tokenStore] = useState(createResetTokenStore);
   const token = useSyncExternalStore(tokenStore.subscribe, tokenStore.getSnapshot, () => null);
   const { retry } = useAuth();
@@ -140,7 +142,7 @@ export function ResetPasswordForm() {
                 </p>
                 {errors.password && (
                   <p id="new-password-error" className="field-error">
-                    {errors.password}
+                    {<Feedback text={errors.password} />}
                   </p>
                 )}
               </div>
@@ -162,13 +164,13 @@ export function ResetPasswordForm() {
                 />
                 {errors.confirmation && (
                   <p id="confirm-password-error" className="field-error">
-                    {errors.confirmation}
+                    <Feedback text={errors.confirmation} />
                   </p>
                 )}
               </div>
               {error && (
                 <p className="form-error" role="alert">
-                  {error}
+                  {<Feedback text={error} />}
                 </p>
               )}
               <button type="submit" className="primary-button sign-in-button" disabled={submitting}>
@@ -189,4 +191,10 @@ export function ResetPasswordForm() {
       </div>
     </main>
   );
+}
+
+function usePageCopy() {
+  const { vi } = useMessages();
+
+  return { vi };
 }

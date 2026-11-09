@@ -1,4 +1,10 @@
 'use client';
+import { useFormatters } from '@/i18n/formatters';
+import { vi as initialCopy } from '@/i18n/vi';
+import { vi as initialSaleCopy } from '@/i18n/screens/sale_form';
+import { Feedback } from '@/i18n/feedback';
+import { useDynamic } from '@/i18n/dynamic';
+import { useMessages, useScreen } from '@/i18n/provider';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import {
   ArrowRight,
@@ -27,8 +33,7 @@ import {
 import type { Location } from '@/lib/locations';
 import type { SaleDetail } from '@/lib/operations';
 import { cents, formatCents, lineCents } from '@/lib/money';
-import { formatMoney, formatQuantity, unitLabel } from '@/lib/format';
-import { vi } from '@/i18n/vi';
+import { formatMoney, formatQuantity } from '@/lib/format';
 
 type Line = { productId: string; quantity: string };
 type Payload = {
@@ -45,6 +50,9 @@ export function SaleForm({
   onClose: () => void;
   onSaved: (sale: SaleDetail) => void;
 }) {
+  const { unitLabel } = useFormatters();
+  const dynamic = useDynamic();
+  const { vi, t } = usePageCopy();
   const { user } = useAuth();
   const admin = user?.role === 'ADMIN';
   const canDiscount = user?.role === 'ADMIN' || user?.role === 'STORE_MANAGER';
@@ -84,12 +92,10 @@ export function SaleForm({
         setLines(saved.items);
         setDiscount(saved.discountAmount);
         setUncertain(true);
-        setError(vi.operations.uncertainSale);
+        setError(initialCopy.operations.uncertainSale);
       } catch {
         setUncertain(true);
-        setError(
-          'Không đọc được giao dịch đang chờ. Kiểm tra lịch sử và liên hệ quản lý trước khi tiếp tục trên trình duyệt này.',
-        );
+        setError(initialSaleCopy.couldNotReadThePendingTransactionCheck);
       }
     };
     void restore();
@@ -229,9 +235,7 @@ export function SaleForm({
       sending.current = false;
       setBusy(false);
       setConfirm(false);
-      setError(
-        'Trình duyệt chưa cho phép lưu giao dịch tạm. Bật lưu trữ cho trang này rồi thử lại. Chưa gửi giao dịch.',
-      );
+      setError(t.theBrowserCannotSaveThePendingTransaction);
       return;
     }
     try {
@@ -263,14 +267,14 @@ export function SaleForm({
   }
   return (
     <div className="pos-workspace">
-      <section className="pos-catalog" aria-label="Chọn sản phẩm để bán">
+      <section className="pos-catalog" aria-label={t.selectProductsToSell}>
         <div className="pos-store-row">
           <span className="eyebrow">
-            <Store size={15} /> QUẦY BÁN HÀNG
+            <Store size={15} /> {t.pointOfSale}
           </span>
           {admin ? (
             <label className="pos-store-select">
-              <span className="sr-only">Cửa hàng</span>
+              <span className="sr-only">{t.store}</span>
               <select
                 disabled={locked || lines.length > 0}
                 value={store}
@@ -282,7 +286,7 @@ export function SaleForm({
                   setError('');
                 }}
               >
-                <option value="">Chọn cửa hàng</option>
+                <option value="">{t.selectAStore}</option>
                 {stores.map((row) => (
                   <option key={row.id} value={row.id}>
                     {row.name}
@@ -298,8 +302,8 @@ export function SaleForm({
           <Search size={20} aria-hidden="true" />
           <input
             type="search"
-            aria-label="Tìm sản phẩm hoặc quét mã vạch"
-            placeholder="Tìm sản phẩm, mã hàng hoặc quét mã vạch…"
+            aria-label={t.findAProductOrScanABarcode}
+            placeholder={t.searchProductsSkusOrScanABarcode}
             value={search}
             disabled={locked}
             onChange={(e) => setSearch(e.target.value)}
@@ -317,13 +321,13 @@ export function SaleForm({
           />
           <kbd>↵</kbd>
         </div>
-        <div className="category-chips" aria-label="Lọc nhóm hàng">
+        <div className="category-chips" aria-label={t.filterCategories}>
           <button
             aria-pressed={!category}
             className={!category ? 'is-active' : ''}
             onClick={() => setCategory('')}
           >
-            Tất cả <span>{products.length}</span>
+            {t.all} <span>{products.length}</span>
           </button>
           {categories.map((row) => (
             <button
@@ -338,14 +342,14 @@ export function SaleForm({
         </div>
         {!ready && !error && (
           <p className="admin-loading" role="status">
-            {locationId ? 'Đang tải sản phẩm và tồn kho…' : 'Chọn cửa hàng để bắt đầu bán hàng.'}
+            {locationId ? t.loadingProductsAndInventory : t.selectAStoreToStartSelling}
           </p>
         )}
         {ready && !visible.length && (
           <div className="retail-empty">
             <ShoppingBasket size={38} />
-            <h2>Chưa tìm thấy sản phẩm</h2>
-            <p>Thử tên hoặc mã hàng khác, hoặc đổi nhóm hàng.</p>
+            <h2>{t.noProductsFound}</h2>
+            <p>{t.tryADifferentNameSkuOrCategory}</p>
           </div>
         )}
         <div className="pos-product-grid">
@@ -360,7 +364,7 @@ export function SaleForm({
                   locked || available <= 0 || (!!selected && Number(selected.quantity) >= available)
                 }
                 onClick={() => add(row.productId)}
-                aria-label={`Thêm ${row.product.name}, ${formatMoney(row.sellingPrice)}`}
+                aria-label={dynamic.addProduct(row.product.name, formatMoney(row.sellingPrice))}
               >
                 <ProductImage
                   name={row.product.name}
@@ -383,8 +387,14 @@ export function SaleForm({
                     className={`stock-label ${available <= 0 ? 'is-empty' : available <= Number(row.minStockLevel ?? 0) ? 'is-low' : ''}`}
                   >
                     {available > 0
-                      ? `Còn ${formatQuantity(available)} ${unitLabel(row.product.baseUnit)}${available <= Number(row.minStockLevel ?? 0) ? ' · Chạm / dưới ngưỡng tối thiểu' : ''}`
-                      : 'Hết hàng còn hạn'}
+                      ? dynamic.available(
+                          formatQuantity(available),
+                          unitLabel(row.product.baseUnit),
+                          available <= Number(row.minStockLevel ?? 0)
+                            ? ' ' + t.atOrBelowMinimumStock
+                            : '',
+                        )
+                      : t.noUnexpiredStock}
                   </span>
                 </div>
                 <span className="product-add" aria-hidden="true">
@@ -394,22 +404,20 @@ export function SaleForm({
             );
           })}
         </div>
-        <p className="illustration-note">
-          Ảnh minh họa nhóm hàng. Kiểm tra tên và mã sản phẩm khi bán.
-        </p>
+        <p className="illustration-note">{t.categoryIllustrationCheckTheProductNameAnd}</p>
       </section>
       <form className="pos-cart" onSubmit={review}>
         <div className="pos-cart-heading">
           <div>
-            <span className="eyebrow">GIAO DỊCH MỚI</span>
+            <span className="eyebrow">{t.newSale}</span>
             <h2>
-              <ShoppingBasket size={22} /> Giỏ hàng <span>{lines.length}</span>
+              <ShoppingBasket size={22} /> {t.cart} <span>{lines.length}</span>
             </h2>
           </div>
           <button
             className="icon-button"
             type="button"
-            aria-label="Xóa toàn bộ giỏ hàng"
+            aria-label={t.clearTheEntireCart}
             disabled={locked || !lines.length}
             onClick={() => {
               setLines([]);
@@ -423,7 +431,7 @@ export function SaleForm({
         </div>
         {error && (
           <p className="form-error" role="alert">
-            {error}
+            {<Feedback text={error} />}
             {!uncertain && (
               <button
                 type="button"
@@ -434,7 +442,7 @@ export function SaleForm({
                   setRevision((value) => value + 1);
                 }}
               >
-                Tải lại sản phẩm
+                {t.reloadProducts}
               </button>
             )}
           </p>
@@ -442,8 +450,8 @@ export function SaleForm({
         {!lines.length && (
           <div className="cart-empty">
             <ShoppingBasket size={46} strokeWidth={1.2} />
-            <h3>Giỏ hàng đang trống</h3>
-            <p>Chọn sản phẩm ở bên cạnh để bắt đầu.</p>
+            <h3>{t.yourCartIsEmpty}</h3>
+            <p>{t.selectProductsAlongsideToBegin}</p>
           </div>
         )}
         <div className="cart-lines">
@@ -452,7 +460,7 @@ export function SaleForm({
             if (!row)
               return (
                 <p key={line.productId} className="form-error">
-                  Sản phẩm cần được kiểm tra lại.
+                  {t.thisProductNeedsToBeCheckedAgain}
                   <button
                     type="button"
                     onClick={() =>
@@ -462,7 +470,7 @@ export function SaleForm({
                     }
                     disabled={locked}
                   >
-                    Bỏ khỏi giỏ
+                    {t.removeFromCart}
                   </button>
                 </p>
               );
@@ -485,7 +493,7 @@ export function SaleForm({
                     <button
                       type="button"
                       disabled={locked || Number(line.quantity) <= 1}
-                      aria-label={`Giảm ${row.product.name}`}
+                      aria-label={dynamic.decreaseProduct(row.product.name)}
                       onClick={() =>
                         updateQuantity(
                           line.productId,
@@ -496,7 +504,7 @@ export function SaleForm({
                       <Minus size={14} />
                     </button>
                     <input
-                      aria-label={`Số lượng ${row.product.name}`}
+                      aria-label={dynamic.productQuantity(row.product.name)}
                       type="number"
                       required
                       disabled={locked}
@@ -510,7 +518,7 @@ export function SaleForm({
                     <button
                       type="button"
                       disabled={locked || Number(line.quantity) >= stock(line.productId)}
-                      aria-label={`Tăng ${row.product.name}`}
+                      aria-label={dynamic.increaseProduct(row.product.name)}
                       onClick={() => add(line.productId)}
                     >
                       <Plus size={14} />
@@ -519,8 +527,8 @@ export function SaleForm({
                   {invalid && (
                     <p className="field-error">
                       {!fractional(line.productId) && !Number.isInteger(Number(line.quantity))
-                        ? 'Đơn vị này cần số lượng nguyên.'
-                        : 'Vượt số lượng hàng còn hạn.'}
+                        ? t.thisUnitRequiresAWholeQuantity
+                        : t.exceedsAvailableUnexpiredStock}
                     </p>
                   )}
                 </div>
@@ -529,7 +537,7 @@ export function SaleForm({
                     type="button"
                     className="icon-button"
                     disabled={locked}
-                    aria-label={`Bỏ ${row.product.name}`}
+                    aria-label={dynamic.removeProduct(row.product.name)}
                     onClick={() => {
                       attempt.current = null;
                       setLines((current) =>
@@ -550,15 +558,15 @@ export function SaleForm({
         <div className="cart-checkout">
           <dl>
             <div>
-              <dt>Tạm tính</dt>
+              <dt>{t.subtotal}</dt>
               <dd>{formatMoney(formatCents(subtotal))}</dd>
             </div>
             <div>
-              <dt>Giảm giá</dt>
+              <dt>{t.discount}</dt>
               <dd>
                 {canDiscount ? (
                   <label>
-                    <span className="sr-only">Giảm giá hóa đơn (đồng)</span>
+                    <span className="sr-only">{t.invoiceDiscountVnd}</span>
                     <input
                       className="cart-discount"
                       type="number"
@@ -573,7 +581,7 @@ export function SaleForm({
                         setDiscount(e.target.value);
                       }}
                     />{' '}
-                    ₫
+                    VND
                   </label>
                 ) : (
                   formatMoney(0)
@@ -581,7 +589,7 @@ export function SaleForm({
               </dd>
             </div>
             <div className="cart-grand-total">
-              <dt>Tổng thanh toán</dt>
+              <dt>{t.totalPayment}</dt>
               <dd>{validDiscount ? formatMoney(formatCents(total)) : '—'}</dd>
             </div>
           </dl>
@@ -595,25 +603,23 @@ export function SaleForm({
                 onClick={() => void complete()}
               >
                 <RefreshCw size={18} />
-                {busy ? 'Đang kiểm tra…' : 'Kiểm tra lại giao dịch này'}
+                {busy ? t.checking : t.checkThisTransactionAgain}
               </button>
-              <p className="field-hint">
-                Gửi lại đúng giao dịch vừa thực hiện; không tạo hóa đơn trùng.
-              </p>
+              <p className="field-hint">{t.resendsTheSameTransactionWithoutCreatingA}</p>
             </>
           ) : (
             <button
               className="primary-button checkout-button"
               disabled={busy || !ready || !validLines || !validDiscount}
             >
-              Hoàn tất bán hàng <ArrowRight size={19} />
+              {t.completeSale} <ArrowRight size={19} />
             </button>
           )}
           <p className="checkout-note">
-            <ShieldCheck size={15} /> Tồn kho được kiểm tra khi xác nhận.
+            <ShieldCheck size={15} /> {t.inventoryIsCheckedWhenYouConfirm}
           </p>
           <button className="text-button" type="button" disabled={locked} onClick={onClose}>
-            <ChevronLeft size={15} /> Xem lịch sử bán hàng
+            <ChevronLeft size={15} /> {t.viewSalesHistory}
           </button>
         </div>
       </form>
@@ -622,23 +628,30 @@ export function SaleForm({
           <div className="confirm-icon">
             <ShoppingBasket size={28} />
           </div>
-          <h2 id="sale-confirm-title">Xác nhận bán hàng</h2>
+          <h2 id="sale-confirm-title">{t.confirmSale}</h2>
           <p>
-            {lines.length} sản phẩm ·{' '}
+            {lines.length} {t.products}{' '}
             {admin ? stores.find((row) => row.id === store)?.name : user?.location?.name}
           </p>
           <p className="confirm-total">{formatMoney(formatCents(total))}</p>
           <p className="page-description">{vi.operations.salePrompt}</p>
           <div className="admin-form-actions">
             <button className="secondary-button" disabled={busy} onClick={() => setConfirm(false)}>
-              Kiểm tra lại
+              {t.revalidate}
             </button>
             <button className="primary-button" disabled={busy} onClick={() => void complete()}>
-              {busy ? 'Đang lưu…' : 'Xác nhận bán hàng'}
+              {busy ? t.saving : t.confirmSale}
             </button>
           </div>
         </AdminDialog>
       )}
     </div>
   );
+}
+
+function usePageCopy() {
+  const { vi } = useMessages();
+  const t = useScreen('sale_form');
+
+  return { vi, t };
 }

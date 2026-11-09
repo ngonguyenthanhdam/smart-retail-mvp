@@ -1,5 +1,6 @@
 export const dashboardCopy = {
   vi: {
+    mixedUnits: 'tổng theo nhiều đơn vị',
     overview: 'TỔNG QUAN',
     sales: 'Tới quầy bán hàng',
     periodSummary: 'Kết quả trong kỳ',
@@ -38,6 +39,7 @@ export const dashboardCopy = {
     expandNav: 'Mở rộng điều hướng',
   },
   en: {
+    mixedUnits: 'total across different units',
     overview: 'OVERVIEW',
     sales: 'Open point of sale',
     periodSummary: 'Period performance',

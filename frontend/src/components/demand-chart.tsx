@@ -1,16 +1,24 @@
 'use client';
-
+import { useDynamic } from '@/i18n/dynamic';
+import { useScreen } from '@/i18n/provider';
 import { useEffect, useId, useRef, useState } from 'react';
 import type { ForecastDetail } from '@/lib/forecasts';
 import { formatQuantity } from '@/lib/format';
+import { useFormatters } from '@/i18n/formatters';
+import type { DisplayUnit } from '@/lib/format';
 
 export function DemandChart({
   series,
   name,
+  unit,
 }: {
   series: NonNullable<ForecastDetail['dailySeries']>[number];
   name: string;
+  unit?: DisplayUnit | null;
 }) {
+  const { unitLabel, formatQuantityWithUnit } = useFormatters();
+  const dynamic = useDynamic();
+  const { t } = usePageCopy();
   const container = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(600);
   const [selected, setSelected] = useState<number | null>(null);
@@ -37,32 +45,34 @@ export function DemandChart({
     rows.map((point, index) => `${x(index + offset)},${y(point.quantity)}`).join(' ');
   const activeIndex = Math.max(0, Math.min(selected ?? historical.length, all.length - 1));
   const active = all[activeIndex];
-  const activeKind = activeIndex < historical.length ? 'Đã bán' : 'Dự kiến';
+  const activeKind = activeIndex < historical.length ? t.sold : t.expected;
   return (
     <div className="demand-chart">
       <div className="chart-legend">
         <span>
           <i aria-hidden="true" />
-          Đã bán
+          {t.sold}
         </span>
         <span>
           <i aria-hidden="true" />
-          Dự kiến
+          {t.expected}
         </span>
-        <small>{name} · theo ngày</small>
+        <small>
+          {name} · {unitLabel(unit)} {t.daily}
+        </small>
       </div>
       <div className="demand-chart-readout">
         <output htmlFor={sliderId}>
           {active
-            ? `${active.date} · ${activeKind}: ${formatQuantity(active.quantity)}`
-            : 'Chưa có điểm dữ liệu'}
+            ? `${active.date} · ${activeKind}: ${formatQuantityWithUnit(active.quantity, unit)}`
+            : t.noDataPointsYet}
         </output>
       </div>
       <div ref={container} className="demand-chart-canvas">
         <svg
           viewBox={`0 0 ${width} 225`}
           role="img"
-          aria-label={`Lịch sử và lượng bán dự kiến mỗi ngày của ${name}`}
+          aria-label={dynamic.dailyHistory(name)}
           onPointerMove={(event) => {
             const bounds = event.currentTarget.getBoundingClientRect();
             const position = ((event.clientX - bounds.left) * width) / bounds.width;
@@ -77,8 +87,10 @@ export function DemandChart({
             );
           }}
         >
-          <title>Lượng bán của {name}</title>
-          <desc>Đường liền: đã bán. Đường đứt: dự kiến. Số liệu chi tiết ở bảng bên dưới.</desc>
+          <title>
+            {t.salesQuantityFor} {name}
+          </title>
+          <desc>{t.solidLineSoldDashedLineExpectedDetailed}</desc>
           {[0, 0.5, 1].map((ratio) => (
             <g key={ratio}>
               <line
@@ -89,10 +101,7 @@ export function DemandChart({
                 stroke="var(--ds-border)"
               />
               <text x={left - 8} y={y(max * ratio) + 4} textAnchor="end">
-                {new Intl.NumberFormat('vi-VN', {
-                  notation: 'compact',
-                  maximumFractionDigits: 1,
-                }).format(max * ratio)}
+                {formatQuantity(max * ratio)}
               </text>
             </g>
           ))}
@@ -138,7 +147,7 @@ export function DemandChart({
       {all.length > 1 && (
         <>
           <label className="sr-only" htmlFor={sliderId}>
-            Xem lượng bán theo ngày
+            {t.viewDailySalesQuantity}
           </label>
           <input
             className="demand-chart-slider"
@@ -149,7 +158,7 @@ export function DemandChart({
             value={activeIndex}
             aria-valuetext={
               active
-                ? `${active.date} · ${activeKind}: ${formatQuantity(active.quantity)}`
+                ? `${active.date} · ${activeKind}: ${formatQuantityWithUnit(active.quantity, unit)}`
                 : undefined
             }
             onChange={(event) => setSelected(Number(event.target.value))}
@@ -157,20 +166,20 @@ export function DemandChart({
         </>
       )}
       <details className="demand-chart-data">
-        <summary>Xem số liệu từng ngày</summary>
+        <summary>{t.viewDailyFigures}</summary>
         <div
           className="admin-table-scroll"
           role="region"
-          aria-label="Lượng bán và dự báo theo ngày"
+          aria-label={t.dailySalesQuantityAndForecast}
           tabIndex={0}
         >
           <table className="admin-table">
             <thead>
               <tr>
-                <th scope="col">Ngày</th>
-                <th scope="col">Loại số liệu</th>
+                <th scope="col">{t.date}</th>
+                <th scope="col">{t.dataType}</th>
                 <th scope="col" className="numeric-cell">
-                  Số lượng
+                  {t.quantity}
                 </th>
               </tr>
             </thead>
@@ -178,8 +187,8 @@ export function DemandChart({
               {all.map((point, index) => (
                 <tr key={`${point.date}-${index}`}>
                   <th scope="row">{point.date}</th>
-                  <td>{index < historical.length ? 'Đã bán' : 'Dự kiến'}</td>
-                  <td className="numeric-cell">{formatQuantity(point.quantity)}</td>
+                  <td>{index < historical.length ? t.sold : t.expected}</td>
+                  <td className="numeric-cell">{formatQuantityWithUnit(point.quantity, unit)}</td>
                 </tr>
               ))}
             </tbody>
@@ -188,4 +197,10 @@ export function DemandChart({
       </details>
     </div>
   );
+}
+
+function usePageCopy() {
+  const t = useScreen('demand_chart');
+
+  return { t };
 }

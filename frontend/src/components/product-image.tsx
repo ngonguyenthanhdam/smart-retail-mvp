@@ -1,4 +1,5 @@
 'use client';
+import { useDynamic } from '@/i18n/dynamic';
 
 import Image from 'next/image';
 import { Package } from 'lucide-react';
@@ -57,6 +58,7 @@ export function ProductImage({
   imageKey?: string | null;
   className?: string;
 }) {
+  const dynamic = useDynamic();
   const key = productImageKey(name, category, imageKey);
   const [failed, setFailed] = useState<string | null>(null);
   return (
@@ -69,7 +71,7 @@ export function ProductImage({
           src={`/assets/products/${key}.webp`}
           width={320}
           height={240}
-          alt={`Hình minh họa ${name}`}
+          alt={dynamic.illustration(name)}
           onError={() => setFailed(key)}
         />
       )}

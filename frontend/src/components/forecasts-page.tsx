@@ -1,4 +1,7 @@
 'use client';
+import { useFormatters } from '@/i18n/formatters';
+import { Feedback, type FeedbackText } from '@/i18n/feedback';
+import { useMessages, useScreen } from '@/i18n/provider';
 import { useEffect, useState } from 'react';
 import {
   ArrowRight,
@@ -19,29 +22,11 @@ import { apiRequest } from '@/lib/api';
 import { catalogError, allOptions } from '@/lib/catalog';
 import type { Location } from '@/lib/locations';
 import type { ForecastDetail, ForecastRun, ForecastReadiness } from '@/lib/forecasts';
-import {
-  formatMoney,
-  formatMonth,
-  formatTimestamp,
-  unitLabel,
-  formatEstimate,
-  formatEstimatedMoney,
-  periodDays,
-} from '@/lib/format';
-import { planningCopy as pcopy } from '@/i18n/planning';
-import { forecastCopy as c } from '@/i18n/vi';
+import { formatMoney, formatEstimate, formatEstimatedMoney, periodDays } from '@/lib/format';
 
-const errorText = (code: string) =>
-  c.errors[code as keyof typeof c.errors] ?? c.errors.PREDICTION_FAILED;
-const algorithmLabel = (algorithm?: string) =>
-  algorithm === 'RollingMean28'
-    ? 'Trung bình 28 ngày'
-    : algorithm === 'SeasonalNaive'
-      ? 'Theo chu kỳ tuần'
-      : algorithm === 'LightGBM'
-        ? 'LightGBM'
-        : 'Chưa xác định';
 export function ForecastsPage() {
+  const { formatMonth, formatTimestamp, unitLabel } = useFormatters();
+  const { pcopy, c, t, errorText, algorithmLabel } = usePageCopy();
   const { user } = useAuth();
   const admin = user?.role === 'ADMIN';
   const [stores, setStores] = useState<Location[]>([]);
@@ -59,7 +44,7 @@ export function ForecastsPage() {
   const [month, setMonth] = useState('');
   const [chartPair, setChartPair] = useState('');
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState<FeedbackText>('');
   const [retry, setRetry] = useState(0);
   const scope = admin && locationId ? `?locationId=${encodeURIComponent(locationId)}` : '';
   useEffect(() => {
@@ -147,7 +132,7 @@ export function ForecastsPage() {
       setChartPair('');
       setRetry((value) => value + 1);
     } catch (e) {
-      setError(`${catalogError(e)} ${c.uncertain}`);
+      setError([catalogError(e), c.uncertain]);
     } finally {
       setBusy(false);
     }
@@ -168,19 +153,17 @@ export function ForecastsPage() {
     );
   const source =
     detail?.dataSource === 'SYNTHETIC'
-      ? 'Dữ liệu mô phỏng'
+      ? t.syntheticData
       : detail?.dataSource === 'MIXED'
-        ? 'Lịch sử cửa hàng và dữ liệu mô phỏng'
-        : 'Lịch sử cửa hàng';
+        ? t.storeHistoryAndSyntheticData
+        : t.storeHistory;
   return (
     <div className="page-content forecast-page">
       <div className="page-heading">
         <div>
-          <p className="eyebrow">CHỦ ĐỘNG CHO NHỮNG THÁNG TỚI</p>
+          <p className="eyebrow">{t.planForTheComingMonths}</p>
           <h1>{c.title}</h1>
-          <p className="page-description">
-            Mặt hàng nào có thể bán được bao nhiêu? Chuẩn bị nhập hàng từ đây.
-          </p>
+          <p className="page-description">{t.howMuchMightEachProductSellUse}</p>
         </div>
         <button className="secondary-button" disabled={busy} onClick={refresh}>
           <RefreshCw size={16} />
@@ -192,24 +175,24 @@ export function ForecastsPage() {
           <span>
             <CalendarDays size={19} />
           </span>
-          <strong>1. Chọn thời gian</strong>
-          <small>Một hoặc ba tháng tiếp theo</small>
+          <strong>{t.label1ChooseAPeriod}</strong>
+          <small>{t.theNextOneOrThreeMonths}</small>
         </div>
         <ArrowRight size={18} />
         <div>
           <span>
             <ChartNoAxesCombined size={19} />
           </span>
-          <strong>2. Xem lượng bán dự kiến</strong>
-          <small>Riêng từng sản phẩm, từng tháng</small>
+          <strong>{t.label2ReviewExpectedSales}</strong>
+          <small>{t.forEachProductAndMonth}</small>
         </div>
         <ArrowRight size={18} />
         <div>
           <span>
             <PackageCheck size={19} />
           </span>
-          <strong>3. Quyết định nhập hàng</strong>
-          <small>Đối chiếu với tồn kho thực tế</small>
+          <strong>{t.label3DecideWhatToPurchase}</strong>
+          <small>{t.compareAgainstActualInventory}</small>
         </div>
       </div>
       <section className="admin-card forecast-controls">
@@ -272,19 +255,19 @@ export function ForecastsPage() {
         <p className="forecast-hint">
           {readiness ? (
             <>
-              <strong>{readiness.eligibleCount}</strong> mặt hàng đủ lịch sử · dữ liệu đến{' '}
-              <strong>{readiness.origin}</strong>.{' '}
+              <strong>{readiness.eligibleCount}</strong>{' '}
+              {t.productsWithSufficientHistoryDataThrough} <strong>{readiness.origin}</strong>.{' '}
             </>
           ) : (
-            'Đang kiểm tra lịch sử. '
+            t.checkingSalesHistory + ' '
           )}
           {c.horizonHint}
-          {model && !model.available && ' Dịch vụ dự báo chưa sẵn sàng.'}
+          {model && !model.available && ' ' + t.theForecastServiceIsNotReady}
         </p>
       </section>
       {error && (
         <p className="form-error" role="alert">
-          {error}
+          {<Feedback text={error} />}
         </p>
       )}
       {busy && (
@@ -294,7 +277,7 @@ export function ForecastsPage() {
       )}
       {runs && (
         <div className="forecast-run-picker">
-          <label htmlFor="forecast-run">Kết quả đang xem</label>
+          <label htmlFor="forecast-run">{t.currentResults}</label>
           <select
             id="forecast-run"
             value={selected}
@@ -306,24 +289,17 @@ export function ForecastsPage() {
             }}
             disabled={busy || !runs.length}
           >
-            <option value="">
-              {runs.length ? 'Chọn lần cập nhật' : 'Chưa có lần cập nhật nào'}
-            </option>
+            <option value="">{runs.length ? t.selectAnUpdate : t.noUpdatesYet}</option>
             {runs.map((run) => (
               <option key={run.id} value={run.id}>
-                {formatTimestamp(run.startedAt)} · {run.horizonMonths} tháng ·{' '}
+                {formatTimestamp(run.startedAt)} · {run.horizonMonths} {t.months}{' '}
                 {c.statuses[run.status]}
               </option>
             ))}
           </select>
         </div>
       )}
-      {legacy && (
-        <p className="admin-card decision-hint">
-          Kết quả này được lưu theo tổng 30 hoặc 90 ngày của phiên bản cũ. Quản trị viên cần tạo lần
-          dự báo mới để xem riêng từng tháng lịch.
-        </p>
-      )}
+      {legacy && <p className="admin-card decision-hint">{t.theseResultsWereSavedAs30Or}</p>}
       {!runs && !error && (
         <p className="admin-loading" role="status">
           {c.loading}
@@ -332,7 +308,7 @@ export function ForecastsPage() {
       {runs && !runs.length && (
         <div className="retail-empty admin-card">
           <ChartNoAxesCombined size={40} />
-          <h2>Sẵn sàng hiểu nhu cầu cửa hàng</h2>
+          <h2>{t.understandYourStoreSDemand}</h2>
           <p>{c.empty}</p>
         </div>
       )}
@@ -345,7 +321,7 @@ export function ForecastsPage() {
           )}
           {!!months.length && (
             <>
-              <div className="forecast-months" aria-label="Chọn tháng dự báo">
+              <div className="forecast-months" aria-label={t.selectAForecastMonth}>
                 {months.map((value) => {
                   const rows = detail.forecasts.filter((p) => p.periodStart.startsWith(value));
                   return (
@@ -362,7 +338,7 @@ export function ForecastsPage() {
                           {formatEstimatedMoney(
                             rows.reduce((sum, p) => sum + Number(p.predictedRevenue), 0),
                           )}{' '}
-                          dự kiến
+                          {t.expected}
                         </small>
                       </span>
                     </button>
@@ -373,29 +349,29 @@ export function ForecastsPage() {
                 <div className="report-section-heading">
                   <div>
                     <p className="eyebrow">{activeMonth && formatMonth(activeMonth)}</p>
-                    <h2>Lượng bán dự kiến theo mặt hàng</h2>
+                    <h2>{t.expectedSalesQuantityByProduct}</h2>
                     <p className="page-description">
-                      {source} · {predictions.length} mặt hàng / cửa hàng
+                      {source} · {predictions.length} {t.productsStores}
                     </p>
                   </div>
                   <Link href="/replenishment" className="primary-button">
-                    Xem đề xuất nhập <ArrowRight size={17} />
+                    {t.viewPurchaseRecommendations} <ArrowRight size={17} />
                   </Link>
                 </div>
                 <div
                   className="admin-table-scroll"
                   tabIndex={0}
                   role="region"
-                  aria-label="Dự báo theo mặt hàng"
+                  aria-label={t.forecastByProduct}
                 >
                   <table className="admin-table forecast-results-table">
                     <thead>
                       <tr>
-                        <th>Sản phẩm</th>
-                        <th>Cửa hàng</th>
-                        <th>Lượng bán dự kiến</th>
-                        <th>Giá tham chiếu</th>
-                        <th>Doanh thu dự kiến</th>
+                        <th>{t.products}</th>
+                        <th>{t.store}</th>
+                        <th>{t.expectedSalesQuantity}</th>
+                        <th>{t.referencePrice}</th>
+                        <th>{t.expectedRevenue}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -447,13 +423,11 @@ export function ForecastsPage() {
                 <section className="admin-card">
                   <div className="report-section-heading">
                     <div>
-                      <h2>Từ lịch sử đến dự kiến</h2>
-                      <p className="page-description">
-                        Đường liền là lịch sử đã bán, đường nét đứt là dự báo.
-                      </p>
+                      <h2>{t.fromHistoryToForecast}</h2>
+                      <p className="page-description">{t.theSolidLineShowsSalesHistoryThe}</p>
                     </div>
                     <label className="chart-product-picker">
-                      <span className="sr-only">Sản phẩm trên biểu đồ</span>
+                      <span className="sr-only">{t.productOnTheChart}</span>
                       <select
                         value={`${chart.locationId}/${chart.productId}`}
                         onChange={(e) => setChartPair(e.target.value)}
@@ -474,14 +448,20 @@ export function ForecastsPage() {
                       </select>
                     </label>
                   </div>
-                  <DemandChart series={chart} name={chartProduct.product.name} />
+                  <DemandChart
+                    series={chart}
+                    name={chartProduct.product.name}
+                    unit={chartProduct.product.baseUnit}
+                  />
                 </section>
               )}
             </>
           )}
           {!!detail.skipped.length && (
             <details className="admin-card skipped-panel">
-              <summary>{detail.skipped.length} mặt hàng chưa có dự báo</summary>
+              <summary>
+                {detail.skipped.length} {t.productsWithoutAForecast}
+              </summary>
               <ul>
                 {detail.skipped.map((pair) => (
                   <li key={`${pair.locationId}/${pair.productId}`}>
@@ -499,26 +479,19 @@ export function ForecastsPage() {
       <aside className="model-explanation">
         <CircleHelp size={21} />
         <div>
-          <strong>Hiểu kết quả trước khi quyết định</strong>
+          <strong>{t.understandResultsBeforeDeciding}</strong>
           <p>
-            Phương pháp đang dùng: {algorithmLabel(detail?.algorithm ?? model?.algorithm)}. Phương
-            pháp được chọn qua so sánh trên tập kiểm chứng của phiên bản mô hình. Chưa kiểm chứng độ
-            chính xác ở cửa hàng thực tế hoặc mặt hàng tính theo kg. Dùng kết quả để tham khảo và
-            đối chiếu trước khi nhập hàng.
+            {t.currentMethod} {algorithmLabel(detail?.algorithm ?? model?.algorithm)}
+            {t.theMethodWasSelectedByComparingModels}
           </p>
           <details>
-            <summary>Thông tin cho quản trị viên</summary>
+            <summary>{t.administratorInformation}</summary>
             <p>
-              Phiên bản: {detail?.modelVersion ?? model?.model_version ?? 'chưa sẵn sàng'}. Nút cập
-              nhật chỉ tính dự báo với phiên bản đang lưu. Huấn luyện, kiểm định và kích hoạt phiên
-              bản mới là một quy trình riêng. Dự báo ba tháng có sai số riêng, không suy ra từ độ
-              chính xác một tháng.
+              {t.version} {detail?.modelVersion ?? model?.model_version ?? t.notReady}
+              {t.updateOnlyCalculatesForecastsWithTheSaved}
             </p>
             {detail?.periodKind === 'LEGACY_ROLLING_DAYS' && (
-              <p>
-                Kết quả lưu cũ là tổng nhiều ngày. Hãy tạo lần dự báo mới để xem từng tháng dương
-                lịch.
-              </p>
+              <p>{t.olderSavedResultsCombineMultipleDaysCreate}</p>
             )}
           </details>
         </div>
@@ -532,4 +505,20 @@ export function ForecastsPage() {
       />
     </div>
   );
+}
+
+function usePageCopy() {
+  const { planningCopy: pcopy, forecastCopy: c } = useMessages();
+  const t = useScreen('forecasts_page');
+  const errorText = (code: string) =>
+    c.errors[code as keyof typeof c.errors] ?? c.errors.PREDICTION_FAILED;
+  const algorithmLabel = (algorithm?: string) =>
+    algorithm === 'RollingMean28'
+      ? t.label28DayAverage
+      : algorithm === 'SeasonalNaive'
+        ? t.weeklySeasonalBaseline
+        : algorithm === 'LightGBM'
+          ? 'LightGBM'
+          : t.notDetermined;
+  return { pcopy, c, t, errorText, algorithmLabel };
 }

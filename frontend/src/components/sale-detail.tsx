@@ -1,14 +1,17 @@
 'use client';
-import { statusCopy } from '@/i18n/status';
+import { useFormatters } from '@/i18n/formatters';
+import { useMessages } from '@/i18n/provider';
 import { AdminDialog } from '@/components/admin-dialog';
 import { useAuth } from '@/components/auth-provider';
-import { displayDate, type SaleDetail as Detail } from '@/lib/operations';
-import { vi, importCopy } from '@/i18n/vi';
-import { formatMoney, formatQuantity, unitLabel } from '@/lib/format';
+import { type SaleDetail as Detail } from '@/lib/operations';
+
+import { formatMoney, formatQuantity } from '@/lib/format';
 import { StatusBadge } from './status-value';
 import { operationTone } from '@/lib/presentation-status';
-const o = vi.operations;
+
 export function SaleDetail({ record, onClose }: { record: Detail; onClose: () => void }) {
+  const { displayDate, unitLabel } = useFormatters();
+  const { statusCopy, vi, importCopy, o } = usePageCopy();
   const { user } = useAuth();
   const costs = user?.role !== 'STAFF';
   return (
@@ -25,7 +28,7 @@ export function SaleDetail({ record, onClose }: { record: Detail; onClose: () =>
           {o.createdBy}: {record.creator?.fullName ?? vi.admin.noValue}
         </p>
         <p>{record.importJobId ? importCopy.origin.historical : importCopy.origin.live}</p>
-        <p className="table-scroll-hint">{statusCopy.vi.tableHint}</p>
+        <p className="table-scroll-hint">{statusCopy.tableHint}</p>
         <div className="admin-table-scroll" tabIndex={0} role="region" aria-label={o.items}>
           <table className="admin-table">
             <thead>
@@ -83,4 +86,10 @@ export function SaleDetail({ record, onClose }: { record: Detail; onClose: () =>
       </div>
     </AdminDialog>
   );
+}
+
+function usePageCopy() {
+  const { statusCopy, vi, importCopy } = useMessages();
+  const o = vi.operations;
+  return { statusCopy, vi, importCopy, o };
 }

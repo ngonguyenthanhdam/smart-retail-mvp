@@ -1,4 +1,5 @@
 'use client';
+import { useScreen } from '@/i18n/provider';
 import { useEffect, useState } from 'react';
 import { BrainCircuit, Database, ChartNoAxesCombined, MessagesSquare } from 'lucide-react';
 import { useAuth } from '@/components/auth-provider';
@@ -10,6 +11,7 @@ import { ChatPanel } from './chat-panel';
 import './ai-center.css';
 
 function Workspace({ user }: { user: NonNullable<ReturnType<typeof useAuth>['user']> }) {
+  const { t } = usePageCopy();
   const [config, setConfig] = useState<Config | null>(null);
   const [error, setError] = useState('');
   const [showTraining, setShowTraining] = useState(false);
@@ -56,38 +58,35 @@ function Workspace({ user }: { user: NonNullable<ReturnType<typeof useAuth>['use
           </span>
           <div>
             <h1>AI Center</h1>
-            <p>Dữ liệu, dự báo và câu trả lời cho cửa hàng.</p>
+            <p>{t.dataForecastsAndAnswersForYourStore}</p>
           </div>
         </div>
-        <label
-          className="ai-toggle"
-          title="Chỉ ẩn/hiện giao diện. Tác vụ và hội thoại vẫn được giữ nguyên."
-        >
+        <label className="ai-toggle" title={t.onlyChangesVisibilityTasksAndConversationsAre}>
           <input
             role="switch"
-            aria-label="Hiển thị quy trình huấn luyện"
+            aria-label={t.showTheTrainingWorkflow}
             aria-controls="ai-training"
             type="checkbox"
             checked={showTraining}
             onChange={(e) => setTrainingVisible(e.target.checked)}
           />
-          <span>Hiển thị quy trình huấn luyện</span>
+          <span>{t.showTheTrainingWorkflow}</span>
         </label>
       </header>
-      <nav className="ai-workspace-nav" aria-label="Khu vực AI Center">
+      <nav className="ai-workspace-nav" aria-label={t.aiCenterSections}>
         <a href="#ai-data">
           <Database size={15} />
-          Dữ liệu huấn luyện
+          {t.trainingData}
         </a>
         {showTraining && (
           <a href="#ai-training">
             <ChartNoAxesCombined size={15} />
-            Huấn luyện & kết quả
+            {t.trainingResults}
           </a>
         )}
         <a href="#ai-chat">
           <MessagesSquare size={15} />
-          Trợ lý kinh doanh
+          {t.businessAssistant}
         </a>
       </nav>
       <ErrorBox error={error} />
@@ -104,7 +103,7 @@ function Workspace({ user }: { user: NonNullable<ReturnType<typeof useAuth>['use
           </div>
         </>
       ) : (
-        !error && <p role="status">Đang tải AI Center…</p>
+        !error && <p role="status">{t.loadingAiCenter}</p>
       )}
     </div>
   );
@@ -113,4 +112,10 @@ export function AiCenterPage() {
   const { user } = useAuth();
   if (!user || !['ADMIN', 'STORE_MANAGER'].includes(user.role)) return null;
   return <Workspace key={`${user.id}-${user.role}-${user.locationId}`} user={user} />;
+}
+
+function usePageCopy() {
+  const t = useScreen('ai_center_page');
+
+  return { t };
 }

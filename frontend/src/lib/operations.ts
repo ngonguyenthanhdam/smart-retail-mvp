@@ -68,9 +68,9 @@ export type Expense = {
   location: { id: string; code: string; name: string } | null;
   creator: { fullName: string } | null;
 };
-export function displayDate(value: string | null) {
+export function displayDate(value: string | null, locale: 'vi' | 'en' = 'vi') {
   return value
-    ? new Intl.DateTimeFormat('vi-VN', {
+    ? new Intl.DateTimeFormat(locale === 'en' ? 'en-GB' : 'vi-VN', {
         dateStyle: 'medium',
         timeZone: 'Asia/Ho_Chi_Minh',
       }).format(new Date(value))

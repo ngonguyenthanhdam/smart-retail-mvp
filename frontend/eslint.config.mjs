@@ -6,5 +6,6 @@ export default defineConfig([
   ...nextVitals,
   ...nextTypescript,
   { rules: { 'no-empty': ['error', { allowEmptyCatch: true }] } },
+  { files: ['tests/**/*.cjs'], rules: { '@typescript-eslint/no-require-imports': 'off' } },
   globalIgnores(['.next/**', 'out/**', 'next-env.d.ts']),
 ]);

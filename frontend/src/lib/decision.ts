@@ -53,7 +53,4 @@ export type InventoryAlert = {
   product: { name: string; sku: string; imageKey?: string | null; baseUnit: DisplayUnit | null };
   lot: { lotNumber: string | null; expiryDate: string | null; quantityOnHand: string } | null;
 };
-export const quantity = (value: string | null) =>
-  value === null
-    ? '—'
-    : new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 4 }).format(Number(value));
+export { formatQuantity as quantity } from './format';

@@ -1,6 +1,9 @@
 import { PurchasesPage } from '@/components/purchases-page';
-import { vi } from '@/i18n/vi';
-export const metadata = { title: vi.operations.purchases };
+import { getServerMessages } from '@/i18n/server';
+export async function generateMetadata() {
+  const { vi } = await getServerMessages();
+  return { title: vi.operations.purchases };
+}
 export default function Page() {
   return <PurchasesPage />;
 }

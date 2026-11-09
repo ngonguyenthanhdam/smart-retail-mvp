@@ -1,4 +1,7 @@
 'use client';
+import { useFormatters } from '@/i18n/formatters';
+import { Feedback } from '@/i18n/feedback';
+import { useMessages } from '@/i18n/provider';
 import { FilterPanel } from './filter-panel';
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/components/auth-provider';
@@ -12,16 +15,14 @@ import {
   type Product,
 } from '@/lib/catalog';
 import type { Location } from '@/lib/locations';
-import { vi } from '@/i18n/vi';
+
 import { StatusBadge, StatusValue } from './status-value';
 import { expiryTone, stockTone } from '@/lib/presentation-status';
 import { formatMoney, formatQuantity } from '@/lib/format';
-import { statusCopy } from '@/i18n/status';
-const c = vi.catalog;
-const a = vi.admin;
-const i = vi.inventory;
-const s = statusCopy.vi;
+
 function StockQuantity({ row }: { row: InventoryRow }) {
+  const { formatQuantityWithUnit } = useFormatters();
+  const { s } = usePageCopy();
   const tone = stockTone(row.currentQuantity, row.lowStock, row.minStockLevel !== null);
   const amount = Number(row.currentQuantity);
   const label =
@@ -36,11 +37,13 @@ function StockQuantity({ row }: { row: InventoryRow }) {
             : s.stockPhysical;
   return (
     <StatusValue tone={tone} label={label}>
-      {formatQuantity(row.currentQuantity)} {row.baseUnitCode}
+      {formatQuantityWithUnit(row.currentQuantity, row.baseUnitCode)}
     </StatusValue>
   );
 }
 export function InventoryPage() {
+  const { formatQuantityWithUnit } = useFormatters();
+  const { c, a, i, s } = usePageCopy();
   const { user } = useAuth();
   const admin = user?.role === 'ADMIN';
   const [query, setQuery] = useState({
@@ -101,7 +104,7 @@ export function InventoryPage() {
       </div>
       {error && (
         <div role="alert" className="form-error admin-notice">
-          {error}{' '}
+          {<Feedback text={error} />}{' '}
           <button
             className="text-button"
             onClick={() => {
@@ -254,10 +257,14 @@ export function InventoryPage() {
                         {row.sellingPrice === null ? a.noValue : formatMoney(row.sellingPrice)}
                       </td>
                       <td className="numeric-cell">
-                        {row.safetyStock === null ? a.noValue : formatQuantity(row.safetyStock)}
+                        {row.safetyStock === null
+                          ? a.noValue
+                          : formatQuantityWithUnit(row.safetyStock, row.baseUnitCode)}
                       </td>
                       <td className="numeric-cell">
-                        {row.minStockLevel === null ? a.noValue : formatQuantity(row.minStockLevel)}
+                        {row.minStockLevel === null
+                          ? a.noValue
+                          : formatQuantityWithUnit(row.minStockLevel, row.baseUnitCode)}
                       </td>
                       <td>{row.trackExpiry ? (row.earliestExpiry ?? a.noValue) : a.noValue}</td>
                       <td>
@@ -318,4 +325,13 @@ export function InventoryPage() {
       {selected && <InventoryLotsDialog row={selected} onClose={() => setSelected(null)} />}
     </div>
   );
+}
+
+function usePageCopy() {
+  const { vi, statusCopy } = useMessages();
+  const c = vi.catalog;
+  const a = vi.admin;
+  const i = vi.inventory;
+  const s = statusCopy;
+  return { s, c, a, i };
 }

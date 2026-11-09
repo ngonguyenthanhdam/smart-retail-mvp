@@ -1,4 +1,5 @@
 'use client';
+import { useScreen } from '@/i18n/provider';
 import {
   Database,
   ScanSearch,
@@ -12,15 +13,6 @@ import {
 } from 'lucide-react';
 import type { Dataset, Job, Models } from './types';
 
-const steps = [
-  { key: 'DATA_COLLECTION', label: 'Thu thập', Icon: Database },
-  { key: 'EDA', label: 'Khám phá dữ liệu', Icon: ScanSearch },
-  { key: 'FEATURES', label: 'Đặc trưng', Icon: Layers },
-  { key: 'SPLITTING', label: 'Chia dữ liệu', Icon: Split },
-  { key: 'TRAINING', label: 'Huấn luyện', Icon: BrainCircuit },
-  { key: 'EVALUATION', label: 'Đánh giá', Icon: ChartNoAxesCombined },
-  { key: 'DEPLOYMENT', label: 'Triển khai', Icon: Rocket },
-];
 export function WorkflowStepper({
   dataset,
   job,
@@ -32,6 +24,7 @@ export function WorkflowStepper({
   models: Models | null;
   insufficient: boolean;
 }) {
+  const { t, steps } = usePageCopy();
   const events = job?.progress?.events ?? [];
   const latest = steps.findIndex((s) => s.key === job?.progress?.stage);
   const lastRecorded = Math.max(
@@ -40,10 +33,10 @@ export function WorkflowStepper({
   );
   const active = Math.max(latest, lastRecorded);
   return (
-    <ol className="ai-stepper" aria-label="Quy trình huấn luyện">
+    <ol className="ai-stepper" aria-label={t.trainingWorkflow}>
       {steps.map(({ key, label, Icon }, index) => {
         let state = 'waiting';
-        let text = 'Chưa bắt đầu';
+        let text = t.notStarted;
         if (key === 'DEPLOYMENT') {
           if (
             job &&
@@ -53,38 +46,38 @@ export function WorkflowStepper({
               ))
           ) {
             state = 'done';
-            text = 'Đã triển khai';
+            text = t.deployed;
           } else if (job?.result)
             text =
               job.result.metadata.contains_synthetic || !job.result.metadata.activation_eligible
-                ? 'Chưa đủ điều kiện'
-                : 'Chờ kích hoạt';
+                ? t.notEligible
+                : t.awaitingActivation;
         } else if (job) {
           if ((job.status === 'COMPLETED' && job.result) || index < active) {
             state = 'done';
-            text = 'Hoàn tất';
+            text = t.completed;
           } else if (index === active) {
             state =
               job.status === 'FAILED' ? 'failed' : job.status === 'RUNNING' ? 'running' : 'waiting';
             text =
               job.status === 'FAILED'
-                ? 'Thất bại'
+                ? t.failed
                 : job.status === 'CANCELLED'
-                  ? 'Đã dừng'
+                  ? t.stopped
                   : job.status === 'RUNNING'
-                    ? 'Đang chạy'
-                    : 'Chưa có xác nhận';
+                    ? t.running
+                    : t.notConfirmed;
           }
         } else if (index === 0 && dataset?.status === 'PUBLISHED') {
           state = 'done';
-          text = 'Đã chốt dữ liệu';
+          text = t.dataFinalized;
         } else if (index === 0 && dataset?.summary && !dataset.summary.valid) {
           state = 'failed';
-          text = 'Cần sửa dữ liệu';
+          text = t.dataCorrectionsRequired;
         }
         if (!job && index === 1 && insufficient) {
           state = 'warning';
-          text = 'Thiếu lịch sử';
+          text = t.insufficientHistory;
         }
         return (
           <li
@@ -108,4 +101,18 @@ export function WorkflowStepper({
       })}
     </ol>
   );
+}
+
+function usePageCopy() {
+  const t = useScreen('workflow_stepper');
+  const steps = [
+    { key: 'DATA_COLLECTION', label: t.collect, Icon: Database },
+    { key: 'EDA', label: t.exploreData, Icon: ScanSearch },
+    { key: 'FEATURES', label: t.feature, Icon: Layers },
+    { key: 'SPLITTING', label: t.splitData, Icon: Split },
+    { key: 'TRAINING', label: t.train, Icon: BrainCircuit },
+    { key: 'EVALUATION', label: t.evaluate, Icon: ChartNoAxesCombined },
+    { key: 'DEPLOYMENT', label: t.deploy, Icon: Rocket },
+  ];
+  return { t, steps };
 }

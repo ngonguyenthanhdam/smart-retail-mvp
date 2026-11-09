@@ -1,25 +1,31 @@
 'use client';
+import { useFormatters } from '@/i18n/formatters';
+import { Feedback } from '@/i18n/feedback';
+import { useMessages } from '@/i18n/provider';
 import { catalogError } from '@/lib/catalog';
-import { statusCopy } from '@/i18n/status';
+
 import { useEffect, useState } from 'react';
 import { AdminDialog } from '@/components/admin-dialog';
 import { useAuth } from '@/components/auth-provider';
 import { apiRequest } from '@/lib/api';
 import type { InventoryRow, LotPage } from '@/lib/catalog';
-import { vi } from '@/i18n/vi';
+
 import { StatusBadge, StatusValue } from './status-value';
 import { expiryTone } from '@/lib/presentation-status';
-import { formatMoney, formatQuantity } from '@/lib/format';
-const c = vi.catalog;
-const a = vi.admin;
-const i = vi.inventory;
+import { formatMoney } from '@/lib/format';
+
 export function InventoryLotsDialog({
   row,
   onClose,
 }: {
-  row: Pick<InventoryRow, 'locationId' | 'productId' | 'sku' | 'productName' | 'locationName'>;
+  row: Pick<
+    InventoryRow,
+    'locationId' | 'productId' | 'sku' | 'productName' | 'locationName' | 'baseUnitCode'
+  >;
   onClose: () => void;
 }) {
+  const { formatQuantityWithUnit } = useFormatters();
+  const { statusCopy, c, a, i } = usePageCopy();
   const { user } = useAuth();
   const costs = user?.role !== 'STAFF';
   const [data, setData] = useState<LotPage | null>(null);
@@ -46,7 +52,7 @@ export function InventoryLotsDialog({
       </p>
       {error && (
         <div role="alert" className="form-error">
-          {error}{' '}
+          {<Feedback text={error} />}{' '}
           <button
             className="text-button"
             onClick={() => {
@@ -66,7 +72,7 @@ export function InventoryLotsDialog({
             <p>{i.noLots}</p>
           ) : (
             <>
-              <p className="table-scroll-hint">{statusCopy.vi.tableHint}</p>
+              <p className="table-scroll-hint">{statusCopy.tableHint}</p>
               <div
                 className="admin-table-scroll"
                 tabIndex={0}
@@ -98,7 +104,7 @@ export function InventoryLotsDialog({
                             }
                             label={i.statuses[lot.expiryStatus]}
                           >
-                            {formatQuantity(lot.quantityOnHand)}
+                            {formatQuantityWithUnit(lot.quantityOnHand, row.baseUnitCode)}
                           </StatusValue>
                         </td>
                         {costs && (
@@ -129,4 +135,12 @@ export function InventoryLotsDialog({
       </div>
     </AdminDialog>
   );
+}
+
+function usePageCopy() {
+  const { statusCopy, vi } = useMessages();
+  const c = vi.catalog;
+  const a = vi.admin;
+  const i = vi.inventory;
+  return { statusCopy, c, a, i };
 }

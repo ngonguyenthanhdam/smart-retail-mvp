@@ -1,13 +1,14 @@
 'use client';
-
+import { Feedback } from '@/i18n/feedback';
+import { useMessages } from '@/i18n/provider';
 import { LoaderCircle, Mail } from 'lucide-react';
 import Link from 'next/link';
 import { useState, type FormEvent } from 'react';
 
-import { vi } from '@/i18n/vi';
 import { AuthRequestError, requestPasswordReset } from '@/lib/auth';
 
 export function ForgotPasswordForm() {
+  const { vi } = usePageCopy();
   const [email, setEmail] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [sent, setSent] = useState(false);
@@ -90,7 +91,7 @@ export function ForgotPasswordForm() {
               </div>
               {error && (
                 <p className="form-error" role="alert">
-                  {error}
+                  {<Feedback text={error} />}
                 </p>
               )}
               <button type="submit" className="primary-button sign-in-button" disabled={submitting}>
@@ -111,4 +112,10 @@ export function ForgotPasswordForm() {
       </div>
     </main>
   );
+}
+
+function usePageCopy() {
+  const { vi } = useMessages();
+
+  return { vi };
 }
