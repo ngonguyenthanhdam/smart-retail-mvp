@@ -55,7 +55,10 @@
 }
 
 .dashboard-preview,
-.catalog-design {
+.catalog-design,
+.workspace-design,
+.auth-screen,
+.language-switcher-standalone {
   --ds-primary: var(--rs-green-700);
   --ds-primary-hover: var(--rs-green-800);
   --ds-primary-soft: var(--rs-green-100);

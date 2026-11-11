@@ -1,0 +1,161 @@
+/* Extend the approved catalog primitives to operational layouts, without touching
+   Dashboard/catalog markup, calculations, permissions or interactions. */
+.retail-ui .workspace-design { color: var(--ds-text); }
+.retail-ui .workspace-design :is(.admin-code, .page-note, .field-hint, .admin-cell-note) {
+  color: var(--ds-muted);
+  font-size: var(--rs-text-sm);
+  font-weight: 400;
+}
+.retail-ui .workspace-design .text-danger { color: var(--ds-danger); }
+.retail-ui .workspace-design .text-danger:hover { background: var(--ds-danger-soft); }
+.retail-ui .workspace-design :is(.admin-row-actions, .admin-form-actions, .import-review-actions) { gap: var(--rs-space-2); }
+.retail-ui .workspace-design :is(.admin-dialog-description, .operation-dialog > p) { font-size: var(--rs-text-control); }
+.retail-ui .workspace-design .admin-table tbody th { min-width: 140px; }
+.retail-ui .workspace-design :is(.report-section-heading, .page-stat-strip, .forecast-steps, .decision-summary-item, .planning-card) { padding: var(--ds-card-padding); }
+.retail-ui .workspace-design :is(.report-section-heading h2, .planning-product h2, .planning-product h3, .pos-cart h2, .explore-card h2) {
+  font-size: var(--rs-text-section);
+  font-weight: var(--ds-label-strong-weight);
+  color: var(--ds-text);
+}
+.retail-ui .workspace-design :is(.page-stat-strip dt, .planning-metrics dt, .planning-quantity > span, .operation-totals dt, .forecast-run-picker label, .chart-product-picker, .pos-store-select, .cart-checkout dt) {
+  color: var(--ds-label-color);
+  font-size: var(--rs-text-control);
+  font-weight: var(--ds-label-weight);
+}
+.retail-ui .workspace-design :is(.semantic-badge, .planning-badge, .status-badge) { font-size: var(--rs-text-sm); border-radius: var(--rs-radius-pill); }
+.retail-ui .workspace-design :is(.page-stat-strip, .operation-totals, .cart-checkout, .planning-quantity, .planning-purchase-preview, .forecast-steps > div > span, .empty-icon, .explore-icon) {
+  background: var(--ds-accent-surface);
+  border-color: var(--ds-border);
+}
+.retail-ui .workspace-design :is(.planning-card, .decision-summary-item, .forecast-steps, .forecast-months button, .pos-cart, .placeholder-card, .explore-card) {
+  border-radius: var(--rs-radius-lg);
+  box-shadow: var(--ds-card-shadow);
+  background: var(--ds-surface);
+  border-color: var(--ds-border);
+}
+.retail-ui .workspace-design :is(.planning-card.alert-card) { border-top-color: var(--ds-warning); }
+.retail-ui .workspace-design :is(.alert-card.alert-high, .alert-card.alert-critical) { border-top-color: var(--ds-danger); }
+.retail-ui .workspace-design .alert-card.alert-resolved { border-top-color: var(--ds-success); }
+.retail-ui .workspace-design .decision-summary-item p { color: var(--ds-label-color); font-size: var(--rs-text-control); font-weight: var(--ds-label-weight); }
+.retail-ui .workspace-design :is(.planning-card, .decision-summary-item, .decision-values > div, .operation-totals) { min-width: 0; overflow-wrap: anywhere; }
+.retail-ui .workspace-design :is(.forecast-months button[aria-pressed='true'], .forecast-data-panel > summary) { background: var(--ds-accent-surface); }
+.retail-ui .workspace-design :is(.forecast-data-panel > summary, .planning-calculation summary, .coverage-editor summary) {
+  color: var(--ds-label-color);
+  font-size: var(--rs-text-control);
+  font-weight: var(--ds-label-strong-weight);
+}
+.retail-ui .workspace-design :is(.planning-calculation, .coverage-list, .alert-next, .import-counts p) { background: var(--ds-subtle); border-color: var(--ds-border); border-radius: var(--rs-radius-md); }
+.retail-ui .workspace-design :is(.forecast-notice, .model-explanation, .import-blocked) { border-color: var(--ds-warning); border-radius: var(--rs-radius-md); }
+.retail-ui .workspace-design :is(.forecast-run-picker select, .chart-product-picker select, .pos-store-select select, .cart-discount, .pos-search) {
+  min-height: var(--rs-control-height);
+  border: 1px solid var(--ds-control-border);
+  border-radius: var(--rs-radius-sm);
+  background: var(--ds-surface);
+  color: var(--ds-text);
+  font-size: var(--rs-text-control);
+}
+.retail-ui .workspace-design .forecast-run-picker { flex-wrap: wrap; gap: var(--rs-space-3); }
+.retail-ui .workspace-design .forecast-run-picker select { max-width: 100%; min-width: 0; }
+.retail-ui .workspace-design .report-section-heading { flex-wrap: wrap; gap: var(--rs-space-3); }
+.retail-ui .workspace-design .operation-line { padding: var(--rs-space-4); background: var(--ds-bg); border-color: var(--ds-border); border-radius: var(--rs-radius-md); }
+.retail-ui .workspace-design .import-help { background: var(--ds-bg); border-color: var(--ds-border); }
+.retail-ui .workspace-design :is(.import-pick, .import-history-file) { border-color: var(--ds-border); border-radius: var(--rs-radius-md); }
+.retail-ui .workspace-design :is(.import-pick strong, .import-picked strong) { font-size: var(--rs-text-control); font-weight: var(--ds-label-strong-weight); overflow-wrap: anywhere; }
+.retail-ui .workspace-design .import-pick.is-dragging { background: var(--ds-accent-surface); border-color: var(--ds-primary); }
+.retail-ui .workspace-design .import-help h2 { font-size: var(--rs-text-section); }
+.retail-ui .workspace-design .import-help :is(p, li) { font-size: var(--rs-text-control); }
+.retail-ui .workspace-design .import-page .admin-table td { min-width: 120px; word-break: normal; }
+.retail-ui .workspace-design :is(.import-toolbar, .import-pick-actions, .import-counts, .import-review-actions) { flex-wrap: wrap; }
+.retail-ui .workspace-design .pos-workspace { gap: var(--rs-space-5); }
+.retail-ui .workspace-design .pos-product { border-radius: var(--rs-radius-lg); border-color: var(--ds-border); }
+.retail-ui .workspace-design .pos-product:hover,
+.retail-ui .workspace-design .pos-product.is-selected { border-color: var(--ds-primary); }
+.retail-ui .workspace-design .pos-product-info > strong { font-size: var(--rs-text-section); font-weight: var(--ds-label-strong-weight); }
+.retail-ui .workspace-design :is(.pos-product-info small, .product-sku, .stock-label, .cart-line-content > p, .checkout-note) { font-size: var(--rs-text-sm); }
+.retail-ui .workspace-design .category-chips button { min-height: var(--rs-control-height); border-radius: var(--rs-radius-sm); font-size: var(--rs-text-control); }
+.retail-ui .workspace-design .product-add { background: var(--ds-accent-surface); }
+.retail-ui .workspace-design .pos-cart-heading { padding: var(--ds-card-padding); }
+.retail-ui .workspace-design .cart-line h3 { font-size: var(--rs-text-control); font-weight: var(--ds-label-strong-weight); }
+.retail-ui .workspace-design .quantity-control { height: var(--rs-control-height); border-radius: var(--rs-radius-sm); }
+.retail-ui .workspace-design .quantity-control :is(input, button) { height: 38px; font-size: var(--rs-text-control); }
+.retail-ui .workspace-design .quantity-control button { width: 36px; }
+.retail-ui .workspace-design .cart-line-end .icon-button { width: var(--rs-control-height); height: var(--rs-control-height); }
+.retail-ui .workspace-design .not-found { padding: var(--rs-space-8); background: var(--ds-surface); border: 1px solid var(--ds-border); border-radius: var(--rs-radius-lg); box-shadow: var(--ds-card-shadow); }
+.retail-ui .workspace-design :is(.primary-link, .explore-link) { border-radius: var(--rs-radius-sm); }
+
+/* AI keeps its task-specific chart/chat layouts and data encodings. */
+.retail-ui .workspace-design .ai-page { --ai-soft: var(--ds-bg); gap: var(--rs-space-5); }
+.retail-ui .workspace-design .ai-section { padding: var(--ds-card-padding); border-radius: var(--rs-radius-lg); box-shadow: var(--ds-card-shadow); }
+.retail-ui .workspace-design .ai-header h1 { font-size: var(--rs-text-title); }
+.retail-ui .workspace-design .ai-title-icon { width: 40px; height: 40px; background: var(--ds-accent-surface); border-radius: var(--rs-radius-md); }
+.retail-ui .workspace-design :is(.ai-section h2, .ai-section h3) { font-size: var(--rs-text-section); font-weight: var(--ds-label-strong-weight); }
+.retail-ui .workspace-design :is(.ai-section h4, .ai-section summary, .ai-step strong, .ai-metric-cards span, .ai-stat span, .ai-inline-filter, .ai-dataset-label > span) { color: var(--ds-label-color); font-size: var(--rs-text-control); font-weight: var(--ds-label-strong-weight); }
+.retail-ui .workspace-design :is(.ai-step small, .ai-message-meta, .ai-chart-legend, .ai-composer-footnote, .ai-chat .ai-model-status, .ai-section .field-hint, .ai-eyebrow, .ai-source > summary) { color: var(--ds-muted); font-size: var(--rs-text-sm); }
+.retail-ui .workspace-design .ai-section :is(select, input:not([type='checkbox']):not([type='radio']):not([type='file']), textarea) { min-height: var(--rs-control-height); border-color: var(--ds-control-border); border-radius: var(--rs-radius-sm); }
+.retail-ui .workspace-design .ai-composer #ai-question { border: 0; min-height: var(--rs-touch-height); }
+.retail-ui .workspace-design :is(.ai-workspace-nav a, .ai-suggestions button, .ai-tools-button, .ai-tools-menu button) { min-height: var(--rs-control-height); font-size: var(--rs-text-control); border-radius: var(--rs-radius-sm); }
+.retail-ui .workspace-design .ai-workspace-nav { gap: var(--rs-space-2); }
+.retail-ui .workspace-design .ai-workspace-nav a { padding: var(--rs-space-2) var(--rs-space-3); }
+.retail-ui .workspace-design :is(.ai-workspace-nav a:hover, .ai-suggestions button:hover, .ai-tools-menu button:hover) { background: var(--ds-accent-surface); color: var(--ds-primary); }
+.retail-ui .workspace-design :is(.ai-metric-cards > div, .ai-chart-cell, .ai-chart, .ai-composer, .ai-source-choice > label, .ai-dropzone) { border-color: var(--ds-border); border-radius: var(--rs-radius-md); }
+.retail-ui .workspace-design :is(.ai-icon-button, .ai-send) { width: var(--rs-control-height); height: var(--rs-control-height); }
+.retail-ui .workspace-design :is(.ai-chat-avatar, .ai-message.user, .ai-step.done .ai-step-icon, .ai-source > summary > span, .ai-result-filters) { background: var(--ds-accent-surface); }
+.retail-ui .workspace-design .ai-message.user { color: var(--ds-text); }
+.retail-ui .workspace-design .ai-composer:focus-within { border-color: var(--ds-focus); outline: 2px solid var(--ds-focus); outline-offset: 2px; box-shadow: none; }
+.retail-ui .workspace-design :is(.ai-table th, .ai-table td) { padding: var(--rs-space-3) var(--rs-space-4); font-size: var(--rs-text-control); }
+.retail-ui .workspace-design .ai-table td { min-width: 120px; }
+.retail-ui .workspace-design .ai-table thead { background: var(--ds-accent-surface); }
+.retail-ui .workspace-design .ai-table thead th { color: var(--ds-label-color); font-weight: var(--ds-label-strong-weight); }
+.retail-ui .workspace-design :is(.ai-badge, .ai-demo-badge) { border-radius: var(--rs-radius-pill); font-size: var(--rs-text-sm); white-space: normal; }
+.retail-ui .workspace-design .ai-page :focus-visible { outline-color: var(--ds-focus); }
+.retail-ui .workspace-design :is(.ai-result-filters label, .ai-stats span, .ai-source-choice legend) { color: var(--ds-label-color); font-size: var(--rs-text-control); font-weight: var(--ds-label-strong-weight); }
+.retail-ui .workspace-design :is(.ai-stats > div, .ai-source-choice label, .ai-job, .ai-chat-tool-panel) { background: var(--ds-bg); border-color: var(--ds-border); border-radius: var(--rs-radius-md); }
+.retail-ui .workspace-design .ai-source-choice label.selected { background: var(--ds-accent-surface); border-color: var(--ds-primary); }
+.retail-ui .workspace-design :is(.ai-source-choice small, .ai-metric-cards small, .ai-chart-tooltip, .ai-bar-list small) { font-size: var(--rs-text-sm); }
+.retail-ui .workspace-design .ai-dropzone { border-color: var(--ds-control-border); background: var(--ds-bg); }
+.retail-ui .workspace-design .ai-best-model .ai-bar-track span { background: var(--ds-primary); }
+.retail-ui .workspace-design .ai-bar-track { background: var(--ds-subtle); }
+.retail-ui .workspace-design .primary-link { min-height: var(--rs-control-height); font-size: var(--rs-text-control); font-weight: var(--ds-label-weight); }
+.retail-ui .workspace-design .ai-section label.form-field { color: var(--ds-label-color); font-size: var(--rs-text-control); font-weight: var(--ds-label-strong-weight); }
+.retail-ui .workspace-design .ai-section :is(input, select, textarea) { font-weight: 400; }
+.retail-ui .workspace-design .ai-danger { color: var(--ds-danger); }
+
+/* Auth/system screens use the same primitives without the application rail. */
+.retail-ui .auth-screen {
+  background: radial-gradient(ellipse at 100% 0, var(--ds-accent-surface), transparent 50%), var(--ds-bg);
+  color: var(--ds-text);
+  padding: 88px var(--rs-space-4) var(--rs-space-8);
+}
+.retail-ui .auth-screen .login-container { width: min(440px, 100%); }
+.retail-ui .auth-screen .login-card { padding: var(--rs-space-8); border-radius: var(--rs-radius-lg); box-shadow: var(--ds-card-shadow); }
+.retail-ui .auth-screen .login-brand { margin-bottom: var(--rs-space-6); }
+.retail-ui .auth-screen .brand-name { color: var(--rs-green-900); font-size: 24px; }
+.retail-ui .auth-screen .brand-mark { background: var(--rs-green-900); border-radius: var(--rs-radius-md); }
+.retail-ui .auth-screen .login-card h1 { font-size: 28px; font-weight: 700; }
+.retail-ui .auth-screen .login-description { color: var(--ds-muted); font-size: var(--rs-text-control); line-height: 1.6; }
+.retail-ui .auth-screen .primary-button { min-height: var(--rs-touch-height); }
+.retail-ui .auth-screen .form-field:has(> input:required) > label:has(span[aria-hidden])::after { content: none; }
+.retail-ui .auth-screen .auth-status { padding: var(--rs-space-8); background: var(--ds-surface); border: 1px solid var(--ds-border); border-radius: var(--rs-radius-lg); box-shadow: var(--ds-card-shadow); }
+.retail-ui .auth-screen :is(.auth-status h1, .auth-status p) { overflow-wrap: anywhere; }
+.retail-ui .language-switcher-standalone { background: var(--ds-surface); border-radius: var(--rs-radius-md); padding: var(--rs-space-1); }
+.retail-ui .language-switcher-standalone button { min-width: var(--rs-touch-height); min-height: var(--rs-touch-height); border-radius: var(--rs-radius-sm); }
+.retail-ui .language-switcher-standalone button[aria-pressed='true'] { color: var(--ds-primary); background: var(--ds-primary-soft); border-color: var(--ds-primary); }
+@media (max-width: 1023px) {
+  .retail-ui .workspace-design .operation-line { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 639px) {
+  .retail-ui .workspace-design :is(.ai-header h1) { font-size: 28px; }
+  .retail-ui .workspace-design :is(.ai-section, .planning-card, .decision-summary-item, .report-section-heading, .page-stat-strip, .forecast-steps) { padding: var(--rs-space-4); }
+  .retail-ui .workspace-design :is(.operation-line, .ai-result-filters, .ai-fields) { grid-template-columns: minmax(0, 1fr); }
+  .retail-ui .workspace-design :is(.ai-icon-button, .ai-chat-actions .ai-icon-button, .ai-send, .cart-line-end .icon-button) { width: var(--rs-touch-height); height: var(--rs-touch-height); }
+  .retail-ui .workspace-design :is(.category-chips button, .ai-tools-button, .ai-tools-menu button, .ai-suggestions button, .ai-workspace-nav a) { min-height: var(--rs-touch-height); }
+  .retail-ui .workspace-design :is(.forecast-run-picker select, .chart-product-picker select, .pos-store-select select, .cart-discount, .pos-search input, .ai-section select, .ai-section input:not([type='checkbox']):not([type='radio']), .ai-section textarea) { min-height: var(--rs-touch-height); font-size: 16px; }
+  .retail-ui .workspace-design .quantity-control { height: var(--rs-touch-height); }
+  .retail-ui .workspace-design .quantity-control :is(input, button) { height: 42px; }
+  .retail-ui .workspace-design .quantity-control button { width: 42px; }
+  .retail-ui .workspace-design .ai-chat-header { flex-wrap: wrap; gap: var(--rs-space-3); }
+  .retail-ui .workspace-design .ai-chat-header > .ai-row { flex-wrap: wrap; }
+  .retail-ui .workspace-design .ai-toggle { align-items: flex-start; }
+  .retail-ui .workspace-design .ai-composer #ai-question { min-height: 72px; }
+  .retail-ui .auth-screen .login-card { padding: var(--rs-space-6); }
+}

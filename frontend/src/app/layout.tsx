@@ -11,6 +11,7 @@ import './retail-system.css';
 import './design-tokens.css';
 import './dashboard-shell.css';
 import './catalog-design.css';
+import './workspace-design.css';
 
 export async function generateMetadata(): Promise<Metadata> {
   const { vi } = await getServerMessages();

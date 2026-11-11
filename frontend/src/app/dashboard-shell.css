@@ -1,137 +1,137 @@
-/* Shared approved shell: only Dashboard and the current catalog migration opt in. */
-.retail-ui :is(.dashboard-preview, .catalog-design) .sidebar {
+/* Shared approved shell: all authenticated workspaces use the same approved shell. */
+.retail-ui :is(.dashboard-preview, .catalog-design, .workspace-design) .sidebar {
   background: linear-gradient(165deg, var(--rs-green-900), var(--rs-green-950));
   color: var(--rs-sidebar-text);
   border-color: var(--rs-sidebar-line);
 }
-.retail-ui :is(.dashboard-preview, .catalog-design) .brand-row {
+.retail-ui :is(.dashboard-preview, .catalog-design, .workspace-design) .brand-row {
   min-height: 84px;
   padding: var(--rs-space-4) var(--rs-space-5);
   border-bottom: 1px solid var(--rs-sidebar-line);
 }
-.retail-ui :is(.dashboard-preview, .catalog-design) .brand-name {
+.retail-ui :is(.dashboard-preview, .catalog-design, .workspace-design) .brand-name {
   color: var(--rs-white);
   font-size: 21px;
   letter-spacing: -0.6px;
 }
-.retail-ui :is(.dashboard-preview, .catalog-design) .brand-subtitle {
+.retail-ui :is(.dashboard-preview, .catalog-design, .workspace-design) .brand-subtitle {
   color: var(--rs-sidebar-text);
   font-size: var(--rs-text-xs);
 }
-.retail-ui :is(.dashboard-preview, .catalog-design) .brand-mark {
+.retail-ui :is(.dashboard-preview, .catalog-design, .workspace-design) .brand-mark {
   width: 40px;
   height: 40px;
   flex-shrink: 0;
   background: var(--rs-white);
   border-radius: var(--rs-radius-md);
 }
-.retail-ui :is(.dashboard-preview, .catalog-design) .brand-mark span {
+.retail-ui :is(.dashboard-preview, .catalog-design, .workspace-design) .brand-mark span {
   background: var(--rs-green-900);
 }
-.retail-ui :is(.dashboard-preview, .catalog-design) .nav-group {
+.retail-ui :is(.dashboard-preview, .catalog-design, .workspace-design) .nav-group {
   margin-top: var(--rs-space-6);
 }
-.retail-ui :is(.dashboard-preview, .catalog-design) .nav-group:first-child {
+.retail-ui :is(.dashboard-preview, .catalog-design, .workspace-design) .nav-group:first-child {
   margin-top: var(--rs-space-3);
 }
-.retail-ui :is(.dashboard-preview, .catalog-design) .nav-group-label {
+.retail-ui :is(.dashboard-preview, .catalog-design, .workspace-design) .nav-group-label {
   color: var(--rs-sidebar-muted);
   font-size: var(--rs-text-xs);
   letter-spacing: 0.7px;
   margin-bottom: var(--rs-space-2);
 }
-.retail-ui :is(.dashboard-preview, .catalog-design) .nav-link {
+.retail-ui :is(.dashboard-preview, .catalog-design, .workspace-design) .nav-link {
   color: var(--rs-sidebar-text);
   min-height: 40px;
   font-size: var(--rs-text-control);
   padding: 10px var(--rs-space-4);
   border-radius: var(--rs-radius-md);
 }
-.retail-ui :is(.dashboard-preview, .catalog-design) .nav-link svg {
+.retail-ui :is(.dashboard-preview, .catalog-design, .workspace-design) .nav-link svg {
   flex-shrink: 0;
 }
-.retail-ui :is(.dashboard-preview, .catalog-design) .nav-link:hover {
+.retail-ui :is(.dashboard-preview, .catalog-design, .workspace-design) .nav-link:hover {
   background: var(--rs-sidebar-hover);
   color: var(--rs-white);
 }
-.retail-ui :is(.dashboard-preview, .catalog-design) .nav-link.is-active {
+.retail-ui :is(.dashboard-preview, .catalog-design, .workspace-design) .nav-link.is-active {
   background: var(--rs-green-600);
   color: var(--rs-white);
   box-shadow: inset 0 1px 0 var(--rs-sidebar-line);
 }
-.retail-ui :is(.dashboard-preview, .catalog-design) .nav-active-dot { display: none; }
-.retail-ui :is(.dashboard-preview, .catalog-design) .sidebar :focus-visible {
+.retail-ui :is(.dashboard-preview, .catalog-design, .workspace-design) .nav-active-dot { display: none; }
+.retail-ui :is(.dashboard-preview, .catalog-design, .workspace-design) .sidebar :focus-visible {
   outline-color: var(--rs-green-200);
 }
-.retail-ui :is(.dashboard-preview, .catalog-design) .account-panel {
+.retail-ui :is(.dashboard-preview, .catalog-design, .workspace-design) .account-panel {
   border-color: var(--rs-sidebar-line);
   background: var(--rs-sidebar-hover);
   border-radius: var(--rs-radius-md);
   padding: var(--rs-space-3);
 }
-.retail-ui :is(.dashboard-preview, .catalog-design) .account-name,
-.retail-ui :is(.dashboard-preview, .catalog-design) .sign-out-button {
+.retail-ui :is(.dashboard-preview, .catalog-design, .workspace-design) .account-name,
+.retail-ui :is(.dashboard-preview, .catalog-design, .workspace-design) .sign-out-button {
   color: var(--rs-sidebar-text);
 }
-.retail-ui :is(.dashboard-preview, .catalog-design) .account-role,
-.retail-ui :is(.dashboard-preview, .catalog-design) .account-location {
+.retail-ui :is(.dashboard-preview, .catalog-design, .workspace-design) .account-role,
+.retail-ui :is(.dashboard-preview, .catalog-design, .workspace-design) .account-location {
   color: var(--rs-sidebar-muted);
 }
-.retail-ui :is(.dashboard-preview, .catalog-design) .account-panel .field-error {
+.retail-ui :is(.dashboard-preview, .catalog-design, .workspace-design) .account-panel .field-error {
   color: var(--rs-white);
 }
-.retail-ui :is(.dashboard-preview, .catalog-design) .menu-toggle {
+.retail-ui :is(.dashboard-preview, .catalog-design, .workspace-design) .menu-toggle {
   background: var(--rs-sidebar-hover);
   border-color: var(--rs-sidebar-muted);
   color: var(--rs-white);
 }
-.retail-ui :is(.dashboard-preview, .catalog-design) .topbar {
+.retail-ui :is(.dashboard-preview, .catalog-design, .workspace-design) .topbar {
   min-height: var(--rs-header-height);
   padding: var(--rs-space-1) var(--rs-space-10);
   background: var(--ds-surface);
 }
-.retail-ui :is(.dashboard-preview, .catalog-design) .breadcrumb {
+.retail-ui :is(.dashboard-preview, .catalog-design, .workspace-design) .breadcrumb {
   font-size: var(--rs-text-control);
   gap: var(--rs-space-4);
 }
-.retail-ui :is(.dashboard-preview, .catalog-design) .breadcrumb > span:last-child {
+.retail-ui :is(.dashboard-preview, .catalog-design, .workspace-design) .breadcrumb > span:last-child {
   color: var(--ds-primary);
   font-weight: 600;
 }
-.retail-ui :is(.dashboard-preview, .catalog-design) .topbar .language-switcher {
+.retail-ui :is(.dashboard-preview, .catalog-design, .workspace-design) .topbar .language-switcher {
   gap: var(--rs-space-1);
 }
-.retail-ui :is(.dashboard-preview, .catalog-design) .topbar .language-switcher > :is(svg, span) {
+.retail-ui :is(.dashboard-preview, .catalog-design, .workspace-design) .topbar .language-switcher > :is(svg, span) {
   display: none;
 }
-.retail-ui :is(.dashboard-preview, .catalog-design) .topbar .language-switcher button {
+.retail-ui :is(.dashboard-preview, .catalog-design, .workspace-design) .topbar .language-switcher button {
   color: var(--ds-text);
   min-width: 44px;
   border-radius: var(--rs-radius-md);
 }
-.retail-ui :is(.dashboard-preview, .catalog-design) .topbar .language-switcher button[aria-pressed='true'] {
+.retail-ui :is(.dashboard-preview, .catalog-design, .workspace-design) .topbar .language-switcher button[aria-pressed='true'] {
   color: var(--ds-primary);
   border-color: var(--ds-primary);
   background: var(--ds-primary-soft);
 }
-.retail-ui :is(.dashboard-preview, .catalog-design) .main-content {
+.retail-ui :is(.dashboard-preview, .catalog-design, .workspace-design) .main-content {
   padding: var(--rs-space-4) var(--rs-space-10) var(--rs-space-8);
   background: radial-gradient(ellipse at 100% 0, var(--ds-accent-surface), transparent 38%);
 }
 @media (min-width: 1024px) {
-  .retail-ui :is(.dashboard-preview, .catalog-design) { grid-template-columns: var(--rs-sidebar-width) minmax(0, 1fr); }
-  .retail-ui :is(.dashboard-preview, .catalog-design) .sidebar-content { padding: var(--rs-space-3) var(--rs-space-4) var(--rs-space-5); }
+  .retail-ui :is(.dashboard-preview, .catalog-design, .workspace-design) { grid-template-columns: var(--rs-sidebar-width) minmax(0, 1fr); }
+  .retail-ui :is(.dashboard-preview, .catalog-design, .workspace-design) .sidebar-content { padding: var(--rs-space-3) var(--rs-space-4) var(--rs-space-5); }
 }
 @media (max-width: 1439px) {
-  .retail-ui :is(.dashboard-preview, .catalog-design) .main-content,
-  .retail-ui :is(.dashboard-preview, .catalog-design) .topbar { padding-inline: var(--rs-space-6); }
+  .retail-ui :is(.dashboard-preview, .catalog-design, .workspace-design) .main-content,
+  .retail-ui :is(.dashboard-preview, .catalog-design, .workspace-design) .topbar { padding-inline: var(--rs-space-6); }
 }
 @media (max-width: 1023px) {
-  .retail-ui :is(.dashboard-preview, .catalog-design) .brand-row { min-height: 64px; }
-  .retail-ui :is(.dashboard-preview, .catalog-design) .nav-link { min-height: var(--rs-touch-height); }
+  .retail-ui :is(.dashboard-preview, .catalog-design, .workspace-design) .brand-row { min-height: 64px; }
+  .retail-ui :is(.dashboard-preview, .catalog-design, .workspace-design) .nav-link { min-height: var(--rs-touch-height); }
 }
 @media (max-width: 639px) {
-  .retail-ui :is(.dashboard-preview, .catalog-design) .main-content,
-  .retail-ui :is(.dashboard-preview, .catalog-design) .topbar { padding-inline: var(--rs-space-4); }
-  .retail-ui :is(.dashboard-preview, .catalog-design) .topbar .language-switcher button { min-height: var(--rs-touch-height); }
+  .retail-ui :is(.dashboard-preview, .catalog-design, .workspace-design) .main-content,
+  .retail-ui :is(.dashboard-preview, .catalog-design, .workspace-design) .topbar { padding-inline: var(--rs-space-4); }
+  .retail-ui :is(.dashboard-preview, .catalog-design, .workspace-design) .topbar .language-switcher button { min-height: var(--rs-touch-height); }
 }

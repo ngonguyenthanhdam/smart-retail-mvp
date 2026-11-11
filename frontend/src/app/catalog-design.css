@@ -1,175 +1,175 @@
-/* Catalog phase only. Approved Dashboard tokens are shared; other routes opt in later. */
-.retail-ui .catalog-design .page-content { max-width: 1440px; }
-.retail-ui .catalog-design .page-heading {
+/* Approved catalog primitives shared with remaining workspaces and authentication. */
+.retail-ui :is(.catalog-design, .workspace-design, .auth-screen) .page-content { max-width: 1440px; }
+.retail-ui :is(.catalog-design, .workspace-design, .auth-screen) .page-heading {
   align-items: center;
   margin-block: var(--rs-space-2) var(--rs-space-6);
   gap: var(--rs-space-4);
 }
-.retail-ui .catalog-design h1 {
+.retail-ui :is(.catalog-design, .workspace-design, .auth-screen) h1 {
   font-size: var(--rs-text-title);
   font-weight: 700;
   letter-spacing: -0.7px;
 }
-.retail-ui .catalog-design .page-description {
+.retail-ui :is(.catalog-design, .workspace-design, .auth-screen) .page-description {
   font-size: var(--rs-text-control);
   line-height: 1.6;
   max-width: 680px;
 }
-.retail-ui .catalog-design :is(.primary-button, .secondary-button, .danger-button) {
+.retail-ui :is(.catalog-design, .workspace-design, .auth-screen) :is(.primary-button, .secondary-button, .danger-button) {
   min-height: var(--rs-control-height);
   border-radius: var(--rs-radius-sm);
   padding: var(--rs-space-2) var(--rs-space-4);
   font-size: var(--rs-text-control);
   font-weight: var(--ds-label-weight);
 }
-.retail-ui .catalog-design .primary-button { box-shadow: var(--rs-shadow-control); }
-.retail-ui .catalog-design .secondary-button:hover { background: var(--ds-primary-soft); }
-.retail-ui .catalog-design .text-button {
+.retail-ui :is(.catalog-design, .workspace-design, .auth-screen) .primary-button { box-shadow: var(--rs-shadow-control); }
+.retail-ui :is(.catalog-design, .workspace-design, .auth-screen) .secondary-button:hover { background: var(--ds-primary-soft); }
+.retail-ui :is(.catalog-design, .workspace-design, .auth-screen) .text-button {
   min-height: var(--rs-control-height);
   padding: var(--rs-space-2);
   border-radius: var(--rs-radius-sm);
   font-size: var(--rs-text-control);
   font-weight: var(--ds-label-weight);
 }
-.retail-ui .catalog-design .text-button:hover { background: var(--ds-primary-soft); }
-.retail-ui .catalog-design .catalog-nav {
+.retail-ui :is(.catalog-design, .workspace-design, .auth-screen) .text-button:hover { background: var(--ds-primary-soft); }
+.retail-ui :is(.catalog-design, .workspace-design, .auth-screen) .catalog-nav {
   flex-wrap: wrap;
   gap: var(--rs-space-2);
   margin-bottom: var(--rs-space-5);
   padding-bottom: var(--rs-space-3);
 }
-.retail-ui .catalog-design .catalog-nav a { color: var(--ds-muted); }
-.retail-ui .catalog-design .catalog-nav a[aria-current='page'] {
+.retail-ui :is(.catalog-design, .workspace-design, .auth-screen) .catalog-nav a { color: var(--ds-muted); }
+.retail-ui :is(.catalog-design, .workspace-design, .auth-screen) .catalog-nav a[aria-current='page'] {
   background: var(--ds-accent-surface);
   color: var(--ds-primary);
   border-color: var(--rs-green-200);
   box-shadow: var(--rs-shadow-control);
 }
-.retail-ui .catalog-design .admin-card { box-shadow: var(--ds-card-shadow); }
-.retail-ui .catalog-design .admin-filters {
+.retail-ui :is(.catalog-design, .workspace-design, .auth-screen) .admin-card { box-shadow: var(--ds-card-shadow); }
+.retail-ui :is(.catalog-design, .workspace-design, .auth-screen) .admin-filters {
   padding: var(--ds-card-padding);
   gap: var(--rs-space-3);
   background: var(--ds-surface);
 }
-.retail-ui .catalog-design .form-field label,
-.retail-ui .catalog-design .product-store-picker legend {
+.retail-ui :is(.catalog-design, .workspace-design, .auth-screen) .form-field label,
+.retail-ui :is(.catalog-design, .workspace-design, .auth-screen) .product-store-picker legend {
   color: var(--ds-label-color);
   font-size: var(--rs-text-control);
   font-weight: var(--ds-label-strong-weight);
 }
-.retail-ui .catalog-design .form-field :is(input, select, textarea) {
+.retail-ui :is(.catalog-design, .workspace-design, .auth-screen) .form-field :is(input, select, textarea) {
   border-radius: var(--rs-radius-sm);
   font-size: var(--rs-text-control);
 }
-.retail-ui .catalog-design .form-field:has(> input:required, > select:required) > label::after {
+.retail-ui :is(.catalog-design, .workspace-design, .auth-screen) .form-field:has(> input:required, > select:required) > label::after {
   content: ' *';
   color: var(--ds-danger);
 }
-.retail-ui .catalog-design .form-field :is(input, select, textarea)[aria-invalid='true'] {
+.retail-ui :is(.catalog-design, .workspace-design, .auth-screen) .form-field :is(input, select, textarea)[aria-invalid='true'] {
   border-color: var(--ds-danger);
 }
-.retail-ui .catalog-design :is(input, select, textarea, button):disabled { cursor: not-allowed; }
-.retail-ui .catalog-design .admin-table { min-width: 640px; }
-.retail-ui .catalog-design .admin-table thead { background: var(--ds-accent-surface); }
-.retail-ui .catalog-design .admin-table :is(th, td) {
+.retail-ui :is(.catalog-design, .workspace-design, .auth-screen) :is(input, select, textarea, button):disabled { cursor: not-allowed; }
+.retail-ui :is(.catalog-design, .workspace-design, .auth-screen) .admin-table { min-width: 640px; }
+.retail-ui :is(.catalog-design, .workspace-design, .auth-screen) .admin-table thead { background: var(--ds-accent-surface); }
+.retail-ui :is(.catalog-design, .workspace-design, .auth-screen) .admin-table :is(th, td) {
   padding: var(--rs-space-3) var(--rs-space-4);
   font-size: var(--rs-text-control);
   line-height: 1.6;
 }
-.retail-ui .catalog-design .admin-table thead th {
+.retail-ui :is(.catalog-design, .workspace-design, .auth-screen) .admin-table thead th {
   color: var(--ds-label-color);
   font-weight: var(--ds-label-strong-weight);
   white-space: nowrap;
 }
-.retail-ui .catalog-design .admin-table tbody th {
+.retail-ui :is(.catalog-design, .workspace-design, .auth-screen) .admin-table tbody th {
   min-width: 200px;
   color: var(--ds-text);
   font-weight: var(--ds-label-strong-weight);
 }
-.retail-ui .catalog-design .admin-table tbody td { color: var(--ds-text); }
-.retail-ui .catalog-design .admin-table tbody tr:hover { background: var(--ds-bg); }
-.retail-ui .catalog-design .admin-cell-note {
+.retail-ui :is(.catalog-design, .workspace-design, .auth-screen) .admin-table tbody td { color: var(--ds-text); }
+.retail-ui :is(.catalog-design, .workspace-design, .auth-screen) .admin-table tbody tr:hover { background: var(--ds-bg); }
+.retail-ui :is(.catalog-design, .workspace-design, .auth-screen) .admin-cell-note {
   color: var(--ds-muted);
   font-size: var(--rs-text-sm);
   font-weight: 400;
 }
-.retail-ui .catalog-design .product-cell { gap: var(--rs-space-3); }
-.retail-ui .catalog-design .product-cell + .admin-cell-note { padding-left: 56px; }
-.retail-ui .catalog-design :is(.record-status, .catalog-state) {
+.retail-ui :is(.catalog-design, .workspace-design, .auth-screen) .product-cell { gap: var(--rs-space-3); }
+.retail-ui :is(.catalog-design, .workspace-design, .auth-screen) .product-cell + .admin-cell-note { padding-left: 56px; }
+.retail-ui :is(.catalog-design, .workspace-design, .auth-screen) :is(.record-status, .catalog-state) {
   border-radius: var(--rs-radius-pill);
   padding: var(--rs-space-1) var(--rs-space-2);
   font-size: var(--rs-text-sm);
   font-weight: var(--ds-label-weight);
   line-height: 1.5;
 }
-.retail-ui .catalog-design :is(.record-status.is-active, .catalog-state) {
+.retail-ui :is(.catalog-design, .workspace-design, .auth-screen) :is(.record-status.is-active, .catalog-state) {
   color: var(--ds-success);
   background: var(--ds-success-soft);
 }
-.retail-ui .catalog-design :is(.record-status.is-inactive, .catalog-state.is-inactive) {
+.retail-ui :is(.catalog-design, .workspace-design, .auth-screen) :is(.record-status.is-inactive, .catalog-state.is-inactive) {
   color: var(--ds-muted);
   background: var(--ds-subtle);
 }
-.retail-ui .catalog-design :is(.catalog-results-heading, .admin-pagination) {
+.retail-ui :is(.catalog-design, .workspace-design, .auth-screen) :is(.catalog-results-heading, .admin-pagination) {
   padding: var(--rs-space-4) var(--ds-card-padding);
   font-size: var(--rs-text-sm);
 }
-.retail-ui .catalog-design .segmented-control {
+.retail-ui :is(.catalog-design, .workspace-design, .auth-screen) .segmented-control {
   background: var(--ds-subtle);
   border-radius: var(--rs-radius-md);
 }
-.retail-ui .catalog-design .segmented-control button {
+.retail-ui :is(.catalog-design, .workspace-design, .auth-screen) .segmented-control button {
   border-radius: var(--rs-radius-sm);
   font-size: var(--rs-text-control);
 }
-.retail-ui .catalog-design .segmented-control button[aria-pressed='true'] {
+.retail-ui :is(.catalog-design, .workspace-design, .auth-screen) .segmented-control button[aria-pressed='true'] {
   background: var(--ds-surface);
   box-shadow: var(--rs-shadow-control);
 }
-.retail-ui .catalog-design .catalog-product-grid {
+.retail-ui :is(.catalog-design, .workspace-design, .auth-screen) .catalog-product-grid {
   padding: 0 var(--ds-card-padding) var(--ds-card-padding);
   gap: var(--rs-space-4);
 }
-.retail-ui .catalog-design .catalog-product-card { border-radius: var(--rs-radius-lg); }
-.retail-ui .catalog-design .catalog-product-body { padding: var(--rs-space-4); }
-.retail-ui .catalog-design .catalog-product-body h2 {
+.retail-ui :is(.catalog-design, .workspace-design, .auth-screen) .catalog-product-card { border-radius: var(--rs-radius-lg); }
+.retail-ui :is(.catalog-design, .workspace-design, .auth-screen) .catalog-product-body { padding: var(--rs-space-4); }
+.retail-ui :is(.catalog-design, .workspace-design, .auth-screen) .catalog-product-body h2 {
   font-size: var(--rs-text-section);
   font-weight: var(--ds-label-strong-weight);
   overflow-wrap: anywhere;
 }
-.retail-ui .catalog-design :is(.product-meta, .product-meta span:last-child, .product-facts) {
+.retail-ui :is(.catalog-design, .workspace-design, .auth-screen) :is(.product-meta, .product-meta span:last-child, .product-facts) {
   font-size: var(--rs-text-sm);
   overflow-wrap: anywhere;
 }
-.retail-ui .catalog-design .catalog-product-footer { border-color: var(--ds-border); }
-.retail-ui .catalog-design .catalog-product-footer small {
+.retail-ui :is(.catalog-design, .workspace-design, .auth-screen) .catalog-product-footer { border-color: var(--ds-border); }
+.retail-ui :is(.catalog-design, .workspace-design, .auth-screen) .catalog-product-footer small {
   color: var(--ds-label-color);
   font-size: var(--rs-text-sm);
   font-weight: var(--ds-label-weight);
 }
-.retail-ui .catalog-design .product-image { background: var(--ds-subtle); }
-.retail-ui .catalog-design .icon-button {
+.retail-ui :is(.catalog-design, .workspace-design, .auth-screen) .product-image { background: var(--ds-subtle); }
+.retail-ui :is(.catalog-design, .workspace-design, .auth-screen) .icon-button {
   color: var(--ds-primary);
   background: var(--ds-accent-surface);
   border-color: var(--rs-green-200);
   border-radius: var(--rs-radius-md);
 }
-.retail-ui .catalog-design .icon-button:hover { background: var(--ds-primary-soft); }
-.retail-ui .catalog-design .admin-dialog {
+.retail-ui :is(.catalog-design, .workspace-design, .auth-screen) .icon-button:hover { background: var(--ds-primary-soft); }
+.retail-ui :is(.catalog-design, .workspace-design, .auth-screen) .admin-dialog {
   padding: var(--rs-space-6);
   background: var(--ds-surface);
   border-radius: var(--rs-radius-lg);
   scroll-padding-block: var(--rs-space-6);
 }
-.retail-ui .catalog-design .admin-dialog:has(#product-title) { width: min(760px, calc(100% - 32px)); }
-.retail-ui .catalog-design .admin-dialog h2 { font-weight: 650; }
-.retail-ui .catalog-design .admin-form-grid { gap: var(--rs-space-4); }
-.retail-ui .catalog-design .catalog-form-hint {
+.retail-ui :is(.catalog-design, .workspace-design, .auth-screen) .admin-dialog:has(#product-title) { width: min(760px, calc(100% - 32px)); }
+.retail-ui :is(.catalog-design, .workspace-design, .auth-screen) .admin-dialog h2 { font-weight: 650; }
+.retail-ui :is(.catalog-design, .workspace-design, .auth-screen) .admin-form-grid { gap: var(--rs-space-4); }
+.retail-ui :is(.catalog-design, .workspace-design, .auth-screen) .catalog-form-hint {
   margin-bottom: var(--rs-space-4);
   color: var(--ds-muted);
   font-size: var(--rs-text-sm);
 }
-.retail-ui .catalog-design .catalog-form-section {
+.retail-ui :is(.catalog-design, .workspace-design, .auth-screen) .catalog-form-section {
   margin-top: var(--rs-space-3);
   padding-block: var(--rs-space-2);
   border-bottom: 1px solid var(--ds-border);
@@ -177,60 +177,60 @@
   font-size: var(--rs-text-section);
   font-weight: var(--ds-label-strong-weight);
 }
-.retail-ui .catalog-design .catalog-form-section:first-child { margin-top: 0; }
-.retail-ui .catalog-design .admin-fieldset .field-hint {
+.retail-ui :is(.catalog-design, .workspace-design, .auth-screen) .catalog-form-section:first-child { margin-top: 0; }
+.retail-ui :is(.catalog-design, .workspace-design, .auth-screen) .admin-fieldset .field-hint {
   margin-top: var(--rs-space-1);
   font-size: var(--rs-text-sm);
   line-height: 1.6;
 }
-.retail-ui .catalog-design .product-store-picker {
+.retail-ui :is(.catalog-design, .workspace-design, .auth-screen) .product-store-picker {
   padding: var(--rs-space-4);
   border-radius: var(--rs-radius-md);
   background: var(--ds-bg);
 }
-.retail-ui .catalog-design :is(.product-checkbox, .inventory-checkbox) {
+.retail-ui :is(.catalog-design, .workspace-design, .auth-screen) :is(.product-checkbox, .inventory-checkbox) {
   min-height: var(--rs-touch-height);
   font-size: var(--rs-text-control);
 }
-.retail-ui .catalog-design .product-checkbox input { accent-color: var(--ds-primary); }
-.retail-ui .catalog-design .product-image-field {
+.retail-ui :is(.catalog-design, .workspace-design, .auth-screen) .product-checkbox input { accent-color: var(--ds-primary); }
+.retail-ui :is(.catalog-design, .workspace-design, .auth-screen) .product-image-field {
   padding: var(--rs-space-4);
   border: 1px solid var(--ds-border);
   border-radius: var(--rs-radius-md);
 }
-.retail-ui .catalog-design .product-image-field input[type='file'] { padding: var(--rs-space-2); }
-.retail-ui .catalog-design .product-image-field summary { color: var(--ds-primary); }
-.retail-ui .catalog-design .admin-form-actions { gap: var(--rs-space-2); }
-.retail-ui .catalog-design .admin-form > [role='alert']:not(.form-error) {
+.retail-ui :is(.catalog-design, .workspace-design, .auth-screen) .product-image-field input[type='file'] { padding: var(--rs-space-2); }
+.retail-ui :is(.catalog-design, .workspace-design, .auth-screen) .product-image-field summary { color: var(--ds-primary); }
+.retail-ui :is(.catalog-design, .workspace-design, .auth-screen) .admin-form-actions { gap: var(--rs-space-2); }
+.retail-ui :is(.catalog-design, .workspace-design, .auth-screen) .admin-form > [role='alert']:not(.form-error) {
   padding: var(--rs-space-4);
   background: var(--ds-warning-soft);
   color: var(--ds-warning);
   border: 1px solid currentColor;
   border-radius: var(--rs-radius-md);
 }
-.retail-ui .catalog-design :is(.form-error, .form-success) {
+.retail-ui :is(.catalog-design, .workspace-design, .auth-screen) :is(.form-error, .form-success) {
   padding: var(--rs-space-3) var(--rs-space-4);
   border-radius: var(--rs-radius-md);
   font-size: var(--rs-text-control);
   line-height: 1.6;
 }
-.retail-ui .catalog-design .empty-state { padding: var(--rs-space-8) var(--rs-space-5); }
-.retail-ui .catalog-design .empty-state h2 { font-size: var(--rs-text-section); }
-.retail-ui .catalog-design .admin-loading { padding: var(--rs-space-8) var(--rs-space-5); }
+.retail-ui :is(.catalog-design, .workspace-design, .auth-screen) .empty-state { padding: var(--rs-space-8) var(--rs-space-5); }
+.retail-ui :is(.catalog-design, .workspace-design, .auth-screen) .empty-state h2 { font-size: var(--rs-text-section); }
+.retail-ui :is(.catalog-design, .workspace-design, .auth-screen) .admin-loading { padding: var(--rs-space-8) var(--rs-space-5); }
 @media (max-width: 639px) {
-  .retail-ui .catalog-design .page-heading { align-items: stretch; }
-  .retail-ui .catalog-design h1 { font-size: 28px; }
-  .retail-ui .catalog-design .catalog-nav { gap: var(--rs-space-1); }
-  .retail-ui .catalog-design .catalog-nav a { flex: 1 1 auto; justify-content: center; }
-  .retail-ui .catalog-design :is(.primary-button, .secondary-button, .danger-button, .text-button, .segmented-control button) {
+  .retail-ui :is(.catalog-design, .workspace-design, .auth-screen) .page-heading { align-items: stretch; }
+  .retail-ui :is(.catalog-design, .workspace-design, .auth-screen) h1 { font-size: 28px; }
+  .retail-ui :is(.catalog-design, .workspace-design, .auth-screen) .catalog-nav { gap: var(--rs-space-1); }
+  .retail-ui :is(.catalog-design, .workspace-design, .auth-screen) .catalog-nav a { flex: 1 1 auto; justify-content: center; }
+  .retail-ui :is(.catalog-design, .workspace-design, .auth-screen) :is(.primary-button, .secondary-button, .danger-button, .text-button, .segmented-control button) {
     min-height: var(--rs-touch-height);
   }
-  .retail-ui .catalog-design .icon-button { width: var(--rs-touch-height); height: var(--rs-touch-height); }
-  .retail-ui .catalog-design .admin-filters { padding: var(--rs-space-4); }
-  .retail-ui .catalog-design .form-field :is(input, select, textarea) { min-height: var(--rs-touch-height); font-size: 16px; }
-  .retail-ui .catalog-design .form-field input[type='checkbox'] { min-height: 18px; }
-  .retail-ui .catalog-design .admin-dialog { padding: var(--rs-space-4); }
-  .retail-ui .catalog-design .admin-form-grid { grid-template-columns: minmax(0, 1fr); }
-  .retail-ui .catalog-design :is(.catalog-results-heading, .admin-pagination) { padding: var(--rs-space-4); }
-  .retail-ui .catalog-design .catalog-product-grid { padding-inline: var(--rs-space-4); }
+  .retail-ui :is(.catalog-design, .workspace-design, .auth-screen) .icon-button { width: var(--rs-touch-height); height: var(--rs-touch-height); }
+  .retail-ui :is(.catalog-design, .workspace-design, .auth-screen) .admin-filters { padding: var(--rs-space-4); }
+  .retail-ui :is(.catalog-design, .workspace-design, .auth-screen) .form-field :is(input, select, textarea) { min-height: var(--rs-touch-height); font-size: 16px; }
+  .retail-ui :is(.catalog-design, .workspace-design, .auth-screen) .form-field input[type='checkbox'] { min-height: 18px; }
+  .retail-ui :is(.catalog-design, .workspace-design, .auth-screen) .admin-dialog { padding: var(--rs-space-4); }
+  .retail-ui :is(.catalog-design, .workspace-design, .auth-screen) .admin-form-grid { grid-template-columns: minmax(0, 1fr); }
+  .retail-ui :is(.catalog-design, .workspace-design, .auth-screen) :is(.catalog-results-heading, .admin-pagination) { padding: var(--rs-space-4); }
+  .retail-ui :is(.catalog-design, .workspace-design, .auth-screen) .catalog-product-grid { padding-inline: var(--rs-space-4); }
 }
