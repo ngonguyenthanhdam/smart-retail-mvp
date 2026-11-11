@@ -298,6 +298,10 @@
 }
 
 @theme inline {
+  --color-retail-primary: var(--ds-primary);
+  --color-retail-surface: var(--ds-surface);
+  --color-retail-muted: var(--ds-muted);
+  --color-retail-border: var(--ds-border);
   --font-sans: Arial, Helvetica, sans-serif;
   --color-ink: #243932;
   --color-muted: #67746f;

@@ -21,6 +21,7 @@ import {
   SlidersHorizontal,
   Store,
   TriangleAlert,
+  Trophy,
   Wallet,
 } from 'lucide-react';
 import { useAuth } from './auth-provider';
@@ -36,6 +37,8 @@ import { formatMoney, formatQuantity } from '@/lib/format';
 import { profitTone } from '@/lib/presentation-status';
 
 import { StatusBadge, StatusValue } from './status-value';
+import { MetricCard } from './ui/metric-card';
+import { SectionHeading } from './ui/section-heading';
 import styles from './dashboard/dashboard.module.css';
 
 function shiftDate(date: string, days: number) {
@@ -285,17 +288,24 @@ export function DashboardPage() {
               <ArrowRight size={15} aria-hidden="true" />
             </button>
           </form>
-          <div className={styles.filterFooter}>
+        </div>
+        <div className={styles.filterFooter}>
+          <span>
+            <CalendarDays size={14} aria-hidden="true" />
+            {c.rangeHint}
+          </span>
+          <div className={styles.sectionMeta}>
             <span>
-              <CalendarDays size={14} aria-hidden="true" />
-              {c.rangeHint}
+              <span className={styles.scopeDot} aria-hidden="true" />
+              {scope}
             </span>
-            {pending && (
-              <span className={styles.pending} role="status">
-                {d.pending}
-              </span>
-            )}
+            <span>{displayReportDate(filters.from)} — {displayReportDate(filters.to)}</span>
           </div>
+          {pending && (
+            <span className={styles.pending} role="status">
+              {d.pending}
+            </span>
+          )}
         </div>
         {storeError && (
           <p className={styles.inlineError} role="alert">
@@ -307,15 +317,6 @@ export function DashboardPage() {
         )}
       </section>
 
-      <div className={styles.sectionMeta}>
-        <span>
-          <span className={styles.scopeDot} aria-hidden="true" />
-          {scope}
-        </span>
-        <span>
-          {displayReportDate(filters.from)} — {displayReportDate(filters.to)}
-        </span>
-      </div>
       {error && (
         <div className={styles.error} role="alert">
           <TriangleAlert size={21} aria-hidden="true" />
@@ -333,24 +334,16 @@ export function DashboardPage() {
       {data && (
         <>
           <div className={styles.kpis} data-dashboard-metrics aria-label={d.periodSummary}>
-            {metrics.map(({ label, value, hint, icon: Icon, isProfit }, index) => (
-              <section
+            {metrics.map(({ label, value, hint, icon, isProfit }, index) => (
+              <MetricCard
                 key={label}
-                className={`${styles.kpi} ${index === 0 ? styles.primaryKpi : ''}`}
-              >
-                <div className={styles.kpiHeading}>
-                  <h2>{label}</h2>
-                  <span className={styles.kpiIcon}>
-                    <Icon size={18} aria-hidden="true" />
-                  </span>
-                </div>
-                <p
-                  className={isProfit ? styles[profitTone(value)] : undefined}
-                  data-status-tone={isProfit ? profitTone(value) : 'neutral'}
-                >
-                  {formatMoney(value)}
-                </p>
-                {isProfit && (
+                label={label}
+                value={formatMoney(value)}
+                hint={hint}
+                icon={icon}
+                tone={isProfit ? profitTone(value) : 'neutral'}
+                muted={index === 2}
+                badge={isProfit && (
                   <StatusBadge tone={profitTone(value)}>
                     {Number(value) < 0
                       ? statusCopy.negativeProfit
@@ -359,8 +352,7 @@ export function DashboardPage() {
                         : statusCopy.zeroProfit}
                   </StatusBadge>
                 )}
-                <span>{hint}</span>
-              </section>
+              />
             ))}
           </div>
 
@@ -369,16 +361,23 @@ export function DashboardPage() {
               className={`${styles.panel} ${styles.revenuePanel}`}
               aria-labelledby="revenue-title"
             >
-              <div className={styles.panelHeader}>
-                <div>
-                  <h2 id="revenue-title">{c.trend}</h2>
-                  <p>{d.snapshot}</p>
-                </div>
-                <span className={styles.periodBadge}>
-                  {displayReportDate(data.from)} – {displayReportDate(data.to)}
-                </span>
-              </div>
+              <SectionHeading
+                id="revenue-title"
+                title={c.trend}
+                description={d.snapshot}
+                icon={ChartNoAxesCombined}
+                action={
+                  <span className={styles.periodBadge}>
+                    <CalendarDays size={14} aria-hidden="true" />
+                    {displayReportDate(data.from)} – {displayReportDate(data.to)}
+                  </span>
+                }
+              />
               <dl className={styles.salesFacts}>
+                <div className={styles.highlightFact}>
+                  <dt>{c.revenue}</dt>
+                  <dd>{formatMoney(data.metrics.revenue)}</dd>
+                </div>
                 <div>
                   <dt>{c.invoices}</dt>
                   <dd>{formatQuantity(data.metrics.invoices)}</dd>
@@ -386,6 +385,10 @@ export function DashboardPage() {
                 <div>
                   <dt>{c.cogs}</dt>
                   <dd>{formatMoney(data.metrics.cogs)}</dd>
+                </div>
+                <div>
+                  <dt>{c.grossProfit}</dt>
+                  <dd>{formatMoney(data.metrics.grossProfit)}</dd>
                 </div>
               </dl>
               {!data.metrics.invoices && (
@@ -404,13 +407,12 @@ export function DashboardPage() {
               className={`${styles.panel} ${styles.inventoryPanel}`}
               aria-labelledby="inventory-title"
             >
-              <div className={styles.panelHeader}>
-                <div>
-                  <p className={styles.panelEyebrow}>{c.inventory}</p>
-                  <h2 id="inventory-title">{d.inventorySummary}</h2>
-                </div>
-                <Package size={20} aria-hidden="true" />
-              </div>
+              <SectionHeading
+                id="inventory-title"
+                title={d.inventorySummary}
+                description={c.inventory}
+                icon={Package}
+              />
               <p className={styles.inventoryDate}>
                 {d.stockDate} {displayReportDate(data.inventory.asOf)}
               </p>
@@ -478,16 +480,18 @@ export function DashboardPage() {
 
           <div className={`${styles.detailGrid} ${!admin ? styles.singleDetail : ''}`}>
             <section className={styles.panel} aria-labelledby="products-title">
-              <div className={styles.panelHeader}>
-                <div>
-                  <h2 id="products-title">{c.top}</h2>
-                  <p>{d.ranking}</p>
-                </div>
-                <Link href="/products" className={styles.textLink}>
-                  {d.products}
-                  <ArrowUpRight size={15} aria-hidden="true" />
-                </Link>
-              </div>
+              <SectionHeading
+                id="products-title"
+                title={c.top}
+                description={d.ranking}
+                icon={Trophy}
+                action={
+                  <Link href="/products" className={styles.textLink}>
+                    {d.products}
+                    <ArrowUpRight size={15} aria-hidden="true" />
+                  </Link>
+                }
+              />
               {!data.topProducts.length ? (
                 <div className={styles.empty}>
                   <Package size={28} aria-hidden="true" />
@@ -518,13 +522,12 @@ export function DashboardPage() {
 
             {admin && data.storeComparison && (
               <section className={styles.panel} aria-labelledby="stores-title">
-                <div className={styles.panelHeader}>
-                  <div>
-                    <h2 id="stores-title">{c.stores}</h2>
-                    <p>{d.storeScope}</p>
-                  </div>
-                  <Store size={19} aria-hidden="true" />
-                </div>
+                <SectionHeading
+                  id="stores-title"
+                  title={c.stores}
+                  description={d.storeScope}
+                  icon={Store}
+                />
                 {!data.storeComparison.length ? (
                   <div className={styles.empty}>
                     <Store size={28} aria-hidden="true" />

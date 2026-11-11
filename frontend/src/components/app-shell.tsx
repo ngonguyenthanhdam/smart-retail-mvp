@@ -44,7 +44,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="app-shell">
+    <div className={`app-shell${pathname === '/dashboard' ? ' dashboard-preview' : ['/products', '/products/categories', '/products/units', '/products/store-settings'].includes(pathname) ? ' catalog-design' : ''}`}>
       <a className="skip-link" href="#main-content">
         {vi.shell.skipToContent}
       </a>

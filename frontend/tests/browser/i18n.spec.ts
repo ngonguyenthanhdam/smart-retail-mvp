@@ -221,7 +221,8 @@ test('product form keeps user text and category when switching inside a modal', 
   await expect(dialog.locator('input[name="name"]')).toHaveValue('Tên nhập chưa lưu');
   await expect(dialog.locator('input[name="sku"]')).toHaveValue('KEEP-123');
   await expect(dialog.locator('select[name="categoryId"]')).toHaveValue(category.id);
-  await expect(dialog.getByRole('heading')).toContainText('Add product');
+  await expect(dialog.getByRole('heading', { level: 2 })).toHaveText('Add product');
+  await expect(dialog.getByRole('heading', { level: 3 })).toHaveCount(5);
   await page.screenshot({ path: '../.test-artifacts/i18n/product-modal-en.png', fullPage: true });
 });
 

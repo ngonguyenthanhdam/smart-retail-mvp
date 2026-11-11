@@ -13,6 +13,7 @@ export function RevenueChart({ trend }: { trend: Dashboard['trend'] }) {
   const [width, setWidth] = useState(600);
   const [selected, setSelected] = useState<number | null>(null);
   const helpId = useId();
+  const areaId = useId();
   useEffect(() => {
     const element = container.current;
     if (!element) return;
@@ -31,8 +32,8 @@ export function RevenueChart({ trend }: { trend: Dashboard['trend'] }) {
   const maximum = divisions * step;
   const left = Math.min(150, Math.max(92, formatMoney(maximum).length * 6));
   const right = width - 16;
-  const bottom = 202;
-  const top = 22;
+  const bottom = 164;
+  const top = 14;
   const x = (index: number) =>
     trend.length === 1
       ? (left + right) / 2
@@ -61,7 +62,7 @@ export function RevenueChart({ trend }: { trend: Dashboard['trend'] }) {
       </div>
       <div ref={container} className={styles.chartCanvas}>
         <svg
-          viewBox={`0 0 ${width} 235`}
+          viewBox={`0 0 ${width} 196`}
           role="img"
           aria-label={c.trend}
           onPointerMove={(event) => {
@@ -80,6 +81,12 @@ export function RevenueChart({ trend }: { trend: Dashboard['trend'] }) {
           }}
         >
           <title>{c.trend}</title>
+          <defs>
+            <linearGradient id={areaId} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="var(--ds-primary)" stopOpacity="0.2" />
+              <stop offset="100%" stopColor="var(--ds-primary)" stopOpacity="0.015" />
+            </linearGradient>
+          </defs>
           <desc>
             {d.chartUnit}.{' '}
             {trend.length
@@ -103,7 +110,7 @@ export function RevenueChart({ trend }: { trend: Dashboard['trend'] }) {
           {trend.length > 1 && (
             <polygon
               points={`${x(0)},${bottom} ${points} ${x(trend.length - 1)},${bottom}`}
-              className={styles.chartArea}
+              fill={`url(#${areaId})`}
             />
           )}
           <polyline points={points} fill="none" className={styles.chartLine} />
@@ -128,7 +135,7 @@ export function RevenueChart({ trend }: { trend: Dashboard['trend'] }) {
             <text
               key={index}
               x={x(index)}
-              y="226"
+              y="190"
               textAnchor={
                 trend.length === 1
                   ? 'middle'

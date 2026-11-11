@@ -112,6 +112,7 @@ export function StoreProductForm({
       )}
       <form className="admin-form" onSubmit={submit}>
         <fieldset className="admin-fieldset" disabled={busy || !products} hidden={!!pending}>
+          <p className="catalog-form-hint">{c.requiredFieldsHint}</p>
           <div className="admin-form-grid">
             <div className="form-field admin-span-full">
               <label htmlFor="store-product-select">{c.product}</label>

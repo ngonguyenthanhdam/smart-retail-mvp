@@ -79,6 +79,7 @@ function CategoryForm({
       )}
       <form className="admin-form" onSubmit={submit}>
         <fieldset className="admin-fieldset" disabled={busy || !parents} hidden={!!pending}>
+          <p className="catalog-form-hint">{c.requiredFieldsHint}</p>
           <div className="admin-form-grid">
             <div className="form-field">
               <label htmlFor="category-code">{c.code}</label>

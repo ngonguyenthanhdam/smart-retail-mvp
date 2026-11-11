@@ -48,6 +48,7 @@ function UnitForm({
       <h2 id="unit-title">{record ? c.editUnit : c.addUnit}</h2>
       <form className="admin-form" onSubmit={submit}>
         <fieldset className="admin-fieldset" disabled={busy}>
+          <p className="catalog-form-hint">{c.requiredFieldsHint}</p>
           <div className="admin-form-grid">
             <div className="form-field">
               <label htmlFor="unit-code">{c.code}</label>

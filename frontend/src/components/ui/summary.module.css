@@ -1,0 +1,81 @@
+.iconTile {
+  display: grid;
+  place-items: center;
+  flex: 0 0 var(--rs-icon-tile);
+  width: var(--rs-icon-tile);
+  height: var(--rs-icon-tile);
+  border-radius: var(--rs-radius-md);
+  background: var(--ds-accent-surface);
+  color: var(--ds-primary);
+}
+.sectionHeading {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--rs-space-3);
+  padding: var(--rs-space-4) var(--ds-card-padding);
+}
+.sectionCopy { flex: 1; min-width: 120px; }
+.sectionCopy h2 {
+  margin: 0;
+  color: var(--ds-text);
+  font-size: var(--rs-text-section);
+  font-weight: 700;
+  line-height: 1.4;
+  letter-spacing: -0.3px;
+}
+.sectionCopy p {
+  margin: var(--rs-space-1) 0 0;
+  color: var(--ds-muted);
+  font-size: var(--rs-text-sm);
+  line-height: 1.5;
+}
+.sectionAction { margin-left: auto; }
+.metricCard {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  min-width: 0;
+  padding: var(--rs-space-4) var(--ds-card-padding);
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius);
+  background: var(--ds-surface);
+  box-shadow: var(--ds-card-shadow);
+}
+.metricCard::after {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  pointer-events: none;
+  width: 70%;
+  height: 65px;
+  right: -12%;
+  bottom: -42px;
+  transform: rotate(-14deg);
+  border-radius: 50%;
+  background: linear-gradient(100deg, transparent, var(--rs-wave));
+}
+.mutedCard::after { background: linear-gradient(100deg, transparent, var(--rs-wave-quiet)); }
+.mutedCard .iconTile { background: var(--ds-subtle); }
+.metricHeading { display: flex; align-items: center; gap: var(--rs-space-3); min-height: var(--rs-icon-tile); }
+.metricHeading h2 { color: var(--ds-text); font-size: var(--rs-text-control); font-weight: 650; line-height: 1.4; }
+.metricCard .metricValue {
+  margin: var(--rs-space-2) 0;
+  font-size: clamp(23px, 1.8vw, 30px);
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.7px;
+  color: var(--ds-text);
+  overflow-wrap: anywhere;
+}
+.metricValue[data-status-tone='danger'] { color: var(--ds-danger); }
+.metricFoot { display: flex; align-items: center; flex-wrap: wrap; gap: var(--rs-space-1) var(--rs-space-2); }
+.metricFoot > span:first-child { color: var(--ds-muted); font-size: var(--rs-text-sm); line-height: 1.5; }
+.metricFoot :global(.semantic-badge) { padding: 2px 6px; font-size: 10px; }
+@media (max-width: 639px) {
+  .metricCard { padding: var(--rs-space-4); }
+  .metricCard .metricValue { font-size: 28px; }
+  .sectionHeading { padding: var(--rs-space-4); }
+  .sectionCopy h2 { font-size: 15px; }
+  .sectionCopy p { font-size: var(--rs-text-xs); }
+}

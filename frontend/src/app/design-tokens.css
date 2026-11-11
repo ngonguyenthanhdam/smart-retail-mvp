@@ -1,0 +1,87 @@
+/* RetailSense reference palette. Opt in per approved screen. */
+:root {
+  --rs-green-950: #022d24;
+  --rs-green-900: #043c30;
+  --rs-green-800: #00523a;
+  --rs-green-700: #006747;
+  --rs-green-600: #087b59;
+  --rs-green-200: #c8efdc;
+  --rs-green-100: #e7f5ee;
+  --rs-accent-soft: #e2f3eb;
+  --rs-accent-canvas: #f2f8f5;
+  --rs-label-ink: #354d43;
+  --rs-white: #fff;
+  --rs-canvas: #f4f8f7;
+  --rs-subtle: #f1f5f4;
+  --rs-ink: #111c24;
+  --rs-muted: #596773;
+  --rs-line: #dfe8e7;
+  --rs-control-line: #81958e;
+  --rs-warning: #a34c00;
+  --rs-warning-soft: #fff2e3;
+  --rs-danger: #b13b38;
+  --rs-danger-soft: #fff0ee;
+  --rs-sidebar-text: #f2faf6;
+  --rs-sidebar-muted: #b5d1c6;
+  --rs-sidebar-line: #ffffff18;
+  --rs-sidebar-hover: #ffffff0f;
+  --rs-wave: #bcebd494;
+  --rs-wave-quiet: #dfe7e980;
+  --rs-space-1: 4px;
+  --rs-space-2: 8px;
+  --rs-space-3: 12px;
+  --rs-space-4: 16px;
+  --rs-space-5: 20px;
+  --rs-space-6: 24px;
+  --rs-space-8: 32px;
+  --rs-space-10: 40px;
+  --rs-text-xs: 11px;
+  --rs-text-sm: 12px;
+  --rs-text-control: 13px;
+  --rs-text-base: 14px;
+  --rs-text-section: 16px;
+  --rs-text-title: 32px;
+  --rs-radius-sm: 8px;
+  --rs-radius-md: 10px;
+  --rs-radius-lg: 14px;
+  --rs-radius-pill: 999px;
+  --rs-shadow-card: 0 4px 16px #043c300a;
+  --rs-shadow-control: 0 1px 2px #043c300d;
+  --rs-sidebar-width: 224px;
+  --rs-header-height: 52px;
+  --rs-control-height: 40px;
+  --rs-touch-height: 44px;
+  --rs-icon-tile: 36px;
+}
+
+.dashboard-preview,
+.catalog-design {
+  --ds-primary: var(--rs-green-700);
+  --ds-primary-hover: var(--rs-green-800);
+  --ds-primary-soft: var(--rs-green-100);
+  /* Accent surfaces are separate from button and navigation interaction colors. */
+  --ds-accent-surface: var(--rs-accent-soft);
+  --ds-bg: var(--rs-accent-canvas);
+  --ds-label-color: var(--rs-label-ink);
+  --ds-label-weight: 600;
+  --ds-label-strong-weight: 650;
+  --ds-surface: var(--rs-white);
+  --ds-subtle: var(--rs-subtle);
+  --ds-text: var(--rs-ink);
+  --ds-muted: var(--rs-muted);
+  --ds-border: var(--rs-line);
+  --ds-control-border: var(--rs-control-line);
+  --ds-success: var(--rs-green-700);
+  --ds-success-soft: var(--ds-accent-surface);
+  --ds-warning: var(--rs-warning);
+  --ds-warning-soft: var(--rs-warning-soft);
+  --ds-danger: var(--rs-danger);
+  --ds-danger-soft: var(--rs-danger-soft);
+  --ds-radius: var(--rs-radius-lg);
+  --ds-focus: var(--rs-green-600);
+  --ds-card-shadow: var(--rs-shadow-card);
+  --ds-card-padding: var(--rs-space-5);
+  --ds-section-gap: var(--rs-space-4);
+  --border: var(--ds-border);
+  background: var(--ds-bg);
+}

@@ -1,5 +1,10 @@
 import type { DictionaryShape } from '../types';
 export const vi = {
+  requiredFieldsHint: 'Các trường có dấu * là bắt buộc.',
+  productInformation: 'Thông tin sản phẩm',
+  unitsAndTracking: 'Đơn vị tính & quản lý hàng',
+  sellingAndStores: 'Giá bán & phân bổ cửa hàng',
+  lifecycle: 'Hạn dùng & trạng thái',
   navigation: 'Danh mục sản phẩm',
   products: 'Sản phẩm',
   categories: 'Nhóm hàng',
@@ -86,6 +91,11 @@ export const vi = {
   noActiveStores: 'Chưa có cửa hàng đang hoạt động. Có thể chọn Tất cả cửa hàng để tự động gán về sau.',
 } as const;
 export const en = {
+  requiredFieldsHint: 'Fields marked * are required.',
+  productInformation: 'Product information',
+  unitsAndTracking: 'Units & stock tracking',
+  sellingAndStores: 'Pricing & store assignment',
+  lifecycle: 'Shelf life & status',
   navigation: 'Product catalog navigation',
   products: 'Products',
   categories: 'Categories',

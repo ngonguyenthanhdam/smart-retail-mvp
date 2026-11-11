@@ -152,7 +152,9 @@ export function ProductForm({
       {options && (
         <form className="admin-form" onSubmit={submit}>
           <fieldset className="admin-fieldset" disabled={busy || !ready} hidden={!!pending}>
+            <p className="catalog-form-hint">{c.requiredFieldsHint}</p>
             <div className="admin-form-grid">
+              <h3 className="catalog-form-section admin-span-full">{c.productInformation}</h3>
               <div className="form-field">
                 <label htmlFor="product-sku">{c.sku}</label>
                 <input
@@ -202,6 +204,7 @@ export function ProductForm({
                   ))}
                 </select>
               </div>
+              <h3 className="catalog-form-section admin-span-full">{c.unitsAndTracking}</h3>
               {(
                 [
                   ['baseUnitId', c.baseUnit],
@@ -263,6 +266,7 @@ export function ProductForm({
                   <option value="true">{c.yes}</option>
                 </select>
               </div>
+              <h3 className="catalog-form-section admin-span-full">{c.sellingAndStores}</h3>
               {([
                 ['defaultSellingPrice', c.defaultSellingPrice, '0.01'],
                 ['defaultMinStockLevel', c.defaultMinStock, '0.0001'],
@@ -300,6 +304,7 @@ export function ProductForm({
                   <p className="field-hint">{c.applyDefaultsHint}</p>
                 </>}
               </fieldset>
+              <h3 className="catalog-form-section admin-span-full">{c.image}</h3>
               <div className="form-field admin-span-full product-image-field">
                 <label htmlFor="product-image-upload">{c.image}</label>
                 <label htmlFor="product-image-upload" className="product-image-picker">
@@ -337,6 +342,7 @@ export function ProductForm({
                   if (input) input.value = '';
                 }}>{c.removeImage}</button>}
               </div>
+              <h3 className="catalog-form-section admin-span-full">{c.lifecycle}</h3>
               <div className="form-field">
                 <label htmlFor="product-shelf">
                   {c.shelfLife} {a.optional}
