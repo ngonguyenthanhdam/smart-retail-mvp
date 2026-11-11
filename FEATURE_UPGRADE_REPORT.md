@@ -4,7 +4,7 @@
 
 Đã nâng cấp theo kiến trúc thực tế: NestJS + Prisma/PostgreSQL, Next.js/React và các component/CSS hiện có. Không đổi framework hoặc thêm shadcn. ADMIN quản lý master product, giá/ngưỡng mặc định, chọn cửa hàng và All Stores; STORE_MANAGER chỉ chỉnh ba thông số của cửa hàng mình; STAFF là vai trò duy nhất tạo hóa đơn POS.
 
-Phần ảnh áp dụng **yêu cầu bổ sung mới nhất**: tái sử dụng `frontend/public/assets/`, giữ nguyên toàn bộ ảnh cũ; không có thư mục `public/image`, `image_products`, `image_store`. Không cần chuẩn bị thêm ảnh. Upload, preview, chọn ảnh có sẵn và Cloud Upload placeholder đã được triển khai và kiểm thử.
+Phần ảnh áp dụng **yêu cầu bổ sung mới nhất**: tái sử dụng `frontend/public/assets/`, giữ nguyên toàn bộ ảnh cũ; không có thư mục `public/image`, `image_products`, `image_store`. Không cần chuẩn bị thêm ảnh. Upload, preview và chọn ảnh có sẵn đã được triển khai và kiểm thử. Theo yêu cầu tiếp theo ngày 11/11/2026, sản phẩm thiếu/lỗi ảnh để trống vùng ảnh, không hiện icon placeholder.
 
 ## 2. Database và dữ liệu cũ
 
@@ -44,13 +44,13 @@ Tạo/kích hoạt lại cửa hàng tự gán các master global đang active. 
 
 Ngừng master hoặc bỏ cửa hàng còn tồn trả 409 `STOCK_REMAINS_CONFIRMATION_REQUIRED`, kèm số lượng theo địa điểm. Xác nhận dùng `confirmDiscontinue: true`; giữ nguyên lô tồn, hóa đơn và COGS. Nhận hàng của đơn mua đã có vẫn hoạt động sau khi master ngừng bán. Không đổi FEFO/FIFO hoặc phép tính snapshot.
 
-Upload kiểm tra phần mở rộng, MIME và giải mã đầy đủ PNG/JPEG/WebP bằng `sharp`, giới hạn 5 MB, 16 megapixels, ảnh tĩnh. Lưu nguyên bytes với tên UUID, không ghi đè ảnh cũ; JSON không được tự trỏ đến upload của sản phẩm khác. Nếu transaction thất bại, chỉ dọn upload mới chưa có tham chiếu. File thiếu trả 404 và frontend hiện placeholder.
+Upload kiểm tra phần mở rộng, MIME và giải mã đầy đủ PNG/JPEG/WebP bằng `sharp`, giới hạn 5 MB, 16 megapixels, ảnh tĩnh. Lưu nguyên bytes với tên UUID, không ghi đè ảnh cũ; JSON không được tự trỏ đến upload của sản phẩm khác. Nếu transaction thất bại, chỉ dọn upload mới chưa có tham chiếu. File thiếu trả 404 và frontend để trống vùng ảnh.
 
 ## 4. Frontend và hình ảnh
 
 Product Form bổ sung defaults, chọn nhiều cửa hàng, All Stores, lựa chọn chủ động áp dụng lại defaults, upload/preview/xóa liên kết ảnh/chọn thư viện ảnh có sẵn. Form gán một cửa hàng tự điền defaults khi chọn sản phẩm. Các trường và thông báo mới có VI/EN; đổi ngôn ngữ giữ dữ liệu đang nhập.
 
-`ProductImage` là resolver chung: ưu tiên `imagePath`, tương thích `imageKey` cũ, không suy đoán ảnh theo tên. Danh mục, cấu hình cửa hàng, POS, tồn kho, dự báo, cảnh báo và đề xuất nhập dùng chung resolver. Ảnh thiếu hoặc lỗi hiện Cloud Upload. Đổi tên sản phẩm không thay ảnh; cửa hàng dùng chung ảnh master. Icon trong Product Form của ADMIN mở chọn file; placeholder tại màn hình xem chỉ mang tính hiển thị.
+`ProductImage` là resolver chung: ưu tiên `imagePath`, tương thích `imageKey` cũ, không suy đoán ảnh theo tên. Danh mục, cấu hình cửa hàng, POS, tồn kho, dự báo, cảnh báo và đề xuất nhập dùng chung resolver. Ảnh thiếu hoặc lỗi để trống vùng ảnh. Đổi tên sản phẩm không thay ảnh; cửa hàng dùng chung ảnh master. Vùng chọn ảnh trong Product Form của ADMIN vẫn mở chọn file; các màn hình xem để trống khi chưa có ảnh.
 
 Ảnh thư viện giữ tại `frontend/public/assets/products/`; ảnh cửa hàng/hero hiện có không thay đổi. Upload mới lưu ở `backend/.local/product-images` với cấu hình mặc định khi backend chạy từ thư mục của nó. Có thể đặt `PRODUCT_UPLOAD_DIR` đến thư mục lưu trữ bền vững. Ảnh upload được phục vụ qua API có quyền truy cập, không đưa vào thư mục source công khai.
 
@@ -63,27 +63,27 @@ Seed forecasting v2 hỗ trợ 20 sản phẩm. Tám sản phẩm thêm:
 | SKU | Sản phẩm | Đơn vị | Giá demo (VND) | Ảnh hiện có / fallback |
 | --- | --- | --- | ---: | --- |
 | FC-13 | Cá phi lê | KG | 120.000 | `seafood.webp` |
-| FC-14 | Thịt gà | KG | 85.000 | Cloud Upload |
-| FC-15 | Sữa chua hộp | PCS | 7.000 | Cloud Upload |
-| FC-16 | Dầu ăn 1 lít | PCS | 45.000 | Cloud Upload |
+| FC-14 | Thịt gà | KG | 85.000 | Để trống |
+| FC-15 | Sữa chua hộp | PCS | 7.000 | Để trống |
+| FC-16 | Dầu ăn 1 lít | PCS | 45.000 | Để trống |
 | FC-17 | Nước rửa chén 750 ml | PCS | 32.000 | `household.webp` |
 | FC-18 | Táo | KG | 55.000 | `fruit.webp` |
-| FC-19 | Cà phê gói 250 g | PCS | 65.000 | Cloud Upload |
-| FC-20 | Khăn giấy hộp | PCS | 18.000 | Cloud Upload |
+| FC-19 | Cà phê gói 250 g | PCS | 65.000 | Để trống |
+| FC-20 | Khăn giấy hộp | PCS | 18.000 | Để trống |
 
-Các ảnh được chọn là minh họa nhóm hàng có sẵn; không tạo ảnh ngoài hoặc thay thế ảnh người dùng. Các ảnh không phù hợp với hàng mới được để placeholder.
+Các ảnh được chọn là minh họa nhóm hàng có sẵn; không tạo ảnh ngoài hoặc thay thế ảnh người dùng. Các ảnh không phù hợp với hàng mới được để trống.
 
 | Cửa hàng demo | Sản phẩm active | Số lượng |
 | --- | --- | ---: |
-| A / FC-ST1 | FC-1–FC-12 | 12 |
-| B / FC-ST2 | FC-1–FC-10, FC-13–FC-17 | 15 |
-| C / FC-ST3 | FC-1–FC-7, FC-18–FC-20 | 10 |
+| A / FC-ST01 | FC-01–FC-12 | 12 |
+| B / FC-ST02 | FC-01–FC-10, FC-13–FC-17 | 15 |
+| C / FC-ST03 | FC-01–FC-07, FC-18–FC-20 | 10 |
 
-Giữ cách đặt SKU cũ `FC-1` thay vì đổi mã thành `FC-01`. Demo không bật global để tránh tự gán vào cửa hàng nghiệp vụ khác. All Stores được kiểm tra riêng bằng integration tests.
+Giữ nguyên SKU hiện có `FC-01`–`FC-12`; bổ sung `FC-13`–`FC-20`. Demo không bật global để tránh tự gán vào cửa hàng nghiệp vụ khác. All Stores được kiểm tra riêng bằng integration tests.
 
 Seed mới có 37 cặp active. Nâng từ v1 giữ 36 liên kết cũ, ngừng 7 liên kết và thêm 8 liên kết mới: tổng 44 bản ghi, 37 active. Giữ nguyên hóa đơn/lô tồn/giá tùy chỉnh cũ; lịch sử mới có import job synthetic riêng và coverage chỉ dành cho cặp mới. Chạy lại không nhân đôi; xung đột provenance/ngày hoặc tồn cần xác nhận sẽ rollback toàn bộ.
 
-**Chưa chạy seed vào database ứng dụng:** `retailsense` có giao dịch vận hành và vẫn giữ 12 sản phẩm hiện tại. Bộ 20 sản phẩm và nâng cấp v1→v2 đã được chạy kiểm thử trên database test riêng. Đây là việc tách seed khỏi dữ liệu thực theo yêu cầu, không phải migration thiếu dữ liệu.
+**Đã áp dụng vào database ứng dụng ngày 11/11/2026 theo yêu cầu hiển thị đủ 20 sản phẩm.** Đã backup trước khi chạy tại `.local/backups/retailsense-before-product-upgrade-1794381961587.dump`. Danh mục hiện có 20 sản phẩm; A/B/C có 12/15/10 sản phẩm active. Seed thêm 174 hóa đơn và 632 dòng lịch sử synthetic có nhãn riêng cho các cặp mới; checksum các hóa đơn, dòng bán, lô tồn và đơn mua đã tồn tại không đổi. Không tạo tồn kho mới. Năm sản phẩm FC-14/15/16/19/20 chưa có ảnh nên để trống.
 
 ## 6. AI Forecasting
 
@@ -115,7 +115,7 @@ Log và bằng chứng cục bộ (được Git ignore): `.test-artifacts/backen
 
 ## 8. Việc cần thực hiện thủ công
 
-Không cần bổ sung ảnh hoặc chạy lại migration trên database hiện tại. Sau khi nhận thay đổi, khởi động lại các service đang mở để dùng bản code mới. Nếu triển khai sang máy khác: cài dependency theo lockfile, backup và chạy `npm run prisma:migrate` trong backend, build lại hai ứng dụng; giữ thư mục upload bền vững và backup cùng PostgreSQL. `.env.example` đã mô tả cấu hình tùy chọn.
+Không cần bổ sung ảnh, chạy lại migration hoặc seed trên database hiện tại: danh mục 20 sản phẩm đã có sẵn. Sau khi nhận thay đổi, khởi động lại các service đang mở để dùng bản code mới. Nếu triển khai sang máy khác: cài dependency theo lockfile, backup và chạy `npm run prisma:migrate` trong backend, build lại hai ứng dụng; giữ thư mục upload bền vững và backup cùng PostgreSQL. `.env.example` đã mô tả cấu hình tùy chọn.
 
 Chỉ khi muốn bổ sung **dữ liệu demo** vào một database demo đã chọn, chạy từ `backend/`:
 
@@ -194,3 +194,7 @@ Danh sách bên dưới chỉ gồm file của lượt nâng cấp, không gồm
 - `frontend/tests/browser/i18n.spec.ts`
 - `frontend/tests/browser/product-upgrade.spec.ts`
 - `README.md`
+
+## Kiểm tra sau yêu cầu hiển thị đủ 20 sản phẩm
+
+Build backend/frontend production, lint và TypeScript frontend đạt. Ba browser test về ảnh thiếu/lỗi và ảnh cũ đạt. ProductsService đọc database ứng dụng trả đủ 20/20 sản phẩm trên trang đầu. Kiểm tra render bằng dữ liệu này xác nhận 20 dòng, 20 thẻ, 15 ảnh tải được, 5 vùng ảnh trống và không tràn ngang ở 390px. Phiên render dùng auth fixture chỉ đọc vì mật khẩu bootstrap không còn đăng nhập được; không thay đổi tài khoản hoặc mật khẩu. Kết quả lưu trong .test-artifacts/show-20-ui-result.json; bản cập nhật đang được phục vụ tại localhost:3000.

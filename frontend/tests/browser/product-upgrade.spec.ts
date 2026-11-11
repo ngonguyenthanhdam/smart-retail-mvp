@@ -20,14 +20,14 @@ for (const role of ['ADMIN', 'STORE_MANAGER']) {
   });
 }
 
-test('STAFF keeps POS and sales history with a decorative missing-image placeholder', async ({ page }) => {
+test('STAFF keeps POS and sales history with blank areas for missing images', async ({ page }) => {
   await mockApi(page, { role: 'STAFF' });
   await page.goto('/sales');
   await english(page);
   await expect(page.locator('nav a[href="/sales"]')).toBeVisible();
   await expect(page.getByRole('button', { name: new RegExp(`Add ${product.name}`) })).toBeVisible();
   await expect(page.locator('.product-image img')).toHaveCount(0);
-  await expect(page.locator('.product-image .lucide-cloud-upload').first()).toBeVisible();
+  await expect(page.locator('.product-image').first()).toBeEmpty();
   await expect(page.locator('input[type="file"]')).toHaveCount(0);
   await page.goto('/sales/history');
   await expect(page.getByRole('heading', { level: 1, name: 'Sales history' })).toBeVisible();
@@ -141,11 +141,11 @@ for (const width of [375, 1440]) {
   });
 }
 
-test('A missing static product image falls back without a broken image', async ({ page }) => {
+test('A missing static product image leaves a blank area without a broken image', async ({ page }) => {
   await mockApi(page);
   await page.route('**/products?**', async (route) => route.fulfill({ json: { items: [{ ...product, imagePath: '/assets/products/missing.jpg' }], total: 1, page: 1, pageSize: 20 } }));
   await page.goto('/products');
-  await expect(page.locator('.admin-table .product-image .lucide-cloud-upload')).toBeVisible();
+  await expect(page.locator('.admin-table .product-image')).toBeEmpty();
   await expect(page.locator('.admin-table .product-image img')).toHaveCount(0);
 });
 

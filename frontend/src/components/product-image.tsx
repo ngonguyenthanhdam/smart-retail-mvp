@@ -1,6 +1,5 @@
 'use client';
 import Image from 'next/image';
-import { CloudUpload } from 'lucide-react';
 import { useState } from 'react';
 import { apiUrl } from '@/lib/api';
 
@@ -36,9 +35,7 @@ export function ProductImage({ name, imagePath, imageKey, previewUrl, className 
   const [failed, setFailed] = useState<string | null>(null);
   return (
     <div className={`product-image ${bundled ? `product-image-${imageKey}` : ''} ${className}`}>
-      {!src || failed === src ? (
-        <span role="img" aria-label={name}><CloudUpload size={36} aria-hidden="true" /></span>
-      ) : (
+      {src && failed !== src && (
         <Image unoptimized src={src} width={320} height={240} alt={name} onError={() => setFailed(src)} />
       )}
     </div>
