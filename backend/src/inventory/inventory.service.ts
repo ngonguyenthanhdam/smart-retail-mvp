@@ -19,6 +19,8 @@ type BalanceRow = {
   categoryName: string | null;
   baseUnitCode: string | null;
   imageKey: string | null;
+  imagePath: string | null;
+  isActive: boolean;
   currentQuantity: string;
   sellableQuantity: string;
   sellingPrice: string | null;
@@ -76,7 +78,7 @@ export class InventoryService {
       async (tx) => {
         const rows = await tx.$queryRaw<BalanceRow[]>(Prisma.sql`SELECT
         l.id AS "locationId", l.code AS "locationCode", l.name AS "locationName", l.location_type AS "locationType",
-        p.id AS "productId", p.sku, p.name AS "productName", p.image_key AS "imageKey", p.category_id AS "categoryId", c.name AS "categoryName", u.code AS "baseUnitCode",
+        p.id AS "productId", p.sku, p.name AS "productName", p.image_key AS "imageKey", p.image_path AS "imagePath", (COALESCE(sp.is_active,false) AND COALESCE(p.is_active,false)) AS "isActive", p.category_id AS "categoryId", c.name AS "categoryName", u.code AS "baseUnitCode",
         COALESCE(b.current_quantity,0)::text AS "currentQuantity", sp.selling_price::text AS "sellingPrice", sp.safety_stock::text AS "safetyStock", sp.min_stock_level::text AS "minStockLevel",
         (SELECT COALESCE(SUM(il.quantity_on_hand),0)::text FROM inventory_lots il
          WHERE il.location_id=l.id AND il.product_id=p.id AND il.quantity_on_hand>0

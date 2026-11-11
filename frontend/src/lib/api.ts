@@ -5,13 +5,14 @@ export class ApiRequestError extends Error {
     readonly status: number,
     message: string,
     readonly code?: string,
+    readonly details?: unknown,
   ) {
     super(translateMessage(message, status, code));
     this.name = 'ApiRequestError';
   }
 }
 
-const apiUrl = (process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001').replace(/\/$/, '');
+export const apiUrl = (process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001').replace(/\/$/, '');
 
 export async function downloadCsv(path: string, filename: string) {
   const response = await fetch(`${apiUrl}${path}`, {
@@ -61,7 +62,7 @@ export async function apiRequest<T>(
       body !== null && typeof body === 'object' && 'code' in body && typeof body.code === 'string'
         ? body.code
         : undefined;
-    throw new ApiRequestError(response.status, detail, code);
+    throw new ApiRequestError(response.status, detail, code, body);
   }
 
   return response.json() as Promise<T>;

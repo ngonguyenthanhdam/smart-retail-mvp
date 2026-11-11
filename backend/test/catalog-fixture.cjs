@@ -133,6 +133,7 @@ async function catalogFixture(t) {
         where: { purchaseOrderId: { in: ids.purchaseOrder } },
       });
       await prisma.saleItem.deleteMany({ where: { saleId: { in: ids.sale } } });
+      await prisma.storeProduct.deleteMany({ where: { OR: [{ productId: { in: ids.product } }, { locationId: { in: ids.location } }] } });
       for (const model of [
         'inventoryLot',
         'purchaseOrderItem',

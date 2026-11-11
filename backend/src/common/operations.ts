@@ -12,6 +12,7 @@ export const operationProductSelect = {
   sku: true,
   name: true,
   imageKey: true,
+      imagePath: true,
   trackExpiry: true,
   baseUnit: { select: { code: true, name: true, allowFraction: true } },
   purchaseUnit: { select: { code: true, name: true } },

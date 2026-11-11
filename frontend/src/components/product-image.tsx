@@ -1,79 +1,45 @@
 'use client';
-import { useDynamic } from '@/i18n/dynamic';
-
 import Image from 'next/image';
-import { Package } from 'lucide-react';
+import { CloudUpload } from 'lucide-react';
 import { useState } from 'react';
+import { apiUrl } from '@/lib/api';
 
-export const imageCategories = [
-  'vegetables',
-  'fruit',
-  'meat',
-  'seafood',
-  'milk',
-  'drinks',
-  'rice',
-  'noodles',
-  'canned',
-  'eggs',
-  'bakery',
-  'household',
-] as const;
-export type ImageCategory = (typeof imageCategories)[number];
-export function productImageKey(
-  name: string,
-  category?: string | null,
-  key?: string | null,
-): ImageCategory {
-  if (imageCategories.includes(key as ImageCategory)) return key as ImageCategory;
-  const text = `${name} ${category ?? ''}`
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/đ/g, 'd')
-    .toLowerCase();
-  const match: [ImageCategory, RegExp][] = [
-    ['eggs', /\beggs?\b|\btrung\b/],
-    ['canned', /canned|dong hop|ca hop|dau hop/],
-    ['milk', /milk|sua|yogurt|cheese/],
-    ['rice', /rice|gao/],
-    ['noodles', /noodle|mi goi|mi an lien|bun|pho/],
-    ['bakery', /bread|bakery|banh|pastry/],
-    ['seafood', /fish|seafood|tom|ca tuoi|hai san/],
-    ['meat', /meat|thit|chicken|pork|beef/],
-    ['fruit', /fruit|banana|apple|orange|chuoi|tao|cam|trai cay/],
-    ['drinks', /water|soda|drink|nuoc|do uong|coffee|tea/],
-    ['vegetables', /vegetable|tomato|carrot|potato|rau|cu qua|ca chua|khoai|hanh/],
-  ];
-  return match.find(([, pattern]) => pattern.test(text))?.[0] ?? 'household';
-}
+// Explicitly verified bundled files. The mapping never depends on a product's display name.
+export const productIllustrations = {
+  vegetables: '/assets/products/vegetables.webp',
+  fruit: '/assets/products/fruit.webp',
+  meat: '/assets/products/meat.webp',
+  seafood: '/assets/products/seafood.webp',
+  milk: '/assets/products/milk.webp',
+  drinks: '/assets/products/drinks.webp',
+  rice: '/assets/products/rice.webp',
+  noodles: '/assets/products/noodles.webp',
+  canned: '/assets/products/canned.webp',
+  eggs: '/assets/products/eggs.webp',
+  bakery: '/assets/products/bakery.webp',
+  household: '/assets/products/household.webp',
+} as const;
 
-export function ProductImage({
-  name,
-  category,
-  imageKey,
-  className = '',
-}: {
+export function ProductImage({ name, imagePath, imageKey, previewUrl, className = '' }: {
   name: string;
+  imagePath?: string | null;
+  previewUrl?: string;
   category?: string | null;
   imageKey?: string | null;
   className?: string;
 }) {
-  const dynamic = useDynamic();
-  const key = productImageKey(name, category, imageKey);
+  const bundled = imageKey && Object.hasOwn(productIllustrations, imageKey)
+    ? productIllustrations[imageKey as keyof typeof productIllustrations] : null;
+  const src = previewUrl ?? (imagePath?.startsWith('/assets/products/')
+    ? imagePath
+    : imagePath?.startsWith('/products/images/') ? `${apiUrl}${imagePath}` : imagePath ? null : bundled);
   const [failed, setFailed] = useState<string | null>(null);
   return (
-    <div className={`product-image product-image-${key} ${className}`}>
-      {failed === key ? (
-        <Package size={36} aria-hidden="true" />
+    <div className={`product-image ${bundled ? `product-image-${imageKey}` : ''} ${className}`}>
+      {!src || failed === src ? (
+        <span role="img" aria-label={name}><CloudUpload size={36} aria-hidden="true" /></span>
       ) : (
-        <Image
-          unoptimized
-          src={`/assets/products/${key}.webp`}
-          width={320}
-          height={240}
-          alt={dynamic.illustration(name)}
-          onError={() => setFailed(key)}
-        />
+        <Image unoptimized src={src} width={320} height={240} alt={name} onError={() => setFailed(src)} />
       )}
     </div>
   );

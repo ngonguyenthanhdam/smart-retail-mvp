@@ -1,4 +1,5 @@
 'use client';
+import { ProductImage } from './product-image';
 import { useFormatters } from '@/i18n/formatters';
 import { Feedback } from '@/i18n/feedback';
 import { useMessages, useScreen } from '@/i18n/provider';
@@ -76,7 +77,7 @@ export function StoreProductsPage() {
           <h1>{admin ? c.storeProducts : c.products}</h1>
           <p className="page-description">{admin ? c.storeDescription : c.ownProducts}</p>
         </div>
-        {canEdit && (
+        {admin && (
           <button
             className="primary-button"
             disabled={!locationId}
@@ -236,7 +237,7 @@ export function StoreProductsPage() {
                       {data.items.map((row) => (
                         <tr key={row.id}>
                           <th scope="row">
-                            {row.product.name}
+                            <div className="product-cell"><ProductImage name={row.product.name} imagePath={row.product.imagePath} imageKey={row.product.imageKey} /><span>{row.product.name}</span></div>
                             <span className="admin-cell-note">
                               {row.product.sku} ·{' '}
                               {row.product.baseUnit?.symbol ?? row.product.baseUnit?.code}

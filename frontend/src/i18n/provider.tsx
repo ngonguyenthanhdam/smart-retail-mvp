@@ -45,6 +45,7 @@ export function LocaleProvider({
       '/products/categories': vi.catalog.categories,
       '/products/units': vi.catalog.units,
       '/products/store-settings': vi.catalog.storeProducts,
+      '/sales/history': vi.shell.salesHistory,
       ...Object.fromEntries(
         Object.entries(vi.sections).map(([key, value]) => [`/${key}`, value.label]),
       ),

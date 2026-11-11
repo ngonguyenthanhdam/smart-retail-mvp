@@ -134,7 +134,7 @@ test('Atomic purchase receiving and source linkage', async (t) => {
     );
   });
   await t.test(
-    'Staff, foreign-store manager, inactive product and cancelled order cannot receive',
+    'Staff and foreign stores cannot receive; discontinued products preserve outstanding orders',
     async () => {
       const other = await draft(payload(addDays(today, 20), f.storeB.id), admin);
       assert.equal((await receive(other.id)).status, 404);
@@ -143,7 +143,8 @@ test('Atomic purchase receiving and source linkage', async (t) => {
       await f.request(`/purchases/${cancelled.id}/cancel`, manager, 'POST', {});
       assert.equal((await receive(cancelled.id)).status, 409);
       await f.prisma.product.update({ where: { id: product.id }, data: { isActive: false } });
-      assert.equal((await receive(other.id, admin)).status, 400);
+      assert.equal((await receive(other.id, admin)).status, 201);
+      assert.equal(await f.prisma.inventoryLot.count({ where: { purchaseOrderItemId: other.items[0].id } }), 1);
     },
   );
 });

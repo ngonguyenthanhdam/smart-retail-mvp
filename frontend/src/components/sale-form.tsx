@@ -369,7 +369,7 @@ export function SaleForm({
                 <ProductImage
                   name={row.product.name}
                   category={row.product.category?.name}
-                  imageKey={row.product.imageKey}
+                  imageKey={row.product.imageKey} imagePath={row.product.imagePath}
                 />
                 {selected && (
                   <span className="product-selected-count">
@@ -481,7 +481,7 @@ export function SaleForm({
               <article className="cart-line" key={line.productId}>
                 <ProductImage
                   name={row.product.name}
-                  imageKey={row.product.imageKey}
+                  imageKey={row.product.imageKey} imagePath={row.product.imagePath}
                   category={row.product.category?.name}
                 />
                 <div className="cart-line-content">

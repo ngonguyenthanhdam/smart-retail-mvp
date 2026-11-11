@@ -32,6 +32,7 @@ const include = {
       sku: true,
       name: true,
       imageKey: true,
+      imagePath: true,
       purchaseToBaseRatio: true,
       baseUnit: { select: { code: true, name: true, symbol: true, allowFraction: true } },
       purchaseUnit: { select: { code: true, name: true, symbol: true } },

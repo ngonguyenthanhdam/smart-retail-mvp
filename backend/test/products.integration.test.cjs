@@ -20,6 +20,7 @@ test('Global products, precision and category dependencies', async (t) => {
     purchaseUnitId: unit.id,
     purchaseToBaseRatio: '24',
     defaultCost: '1.25',
+    defaultSellingPrice: '2.50',
     ...extra,
   });
   let product;

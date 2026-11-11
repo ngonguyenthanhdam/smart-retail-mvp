@@ -1,4 +1,5 @@
 'use client';
+import { ProductImage } from './product-image';
 import { useFormatters } from '@/i18n/formatters';
 import { Feedback } from '@/i18n/feedback';
 import { useMessages } from '@/i18n/provider';
@@ -241,10 +242,11 @@ export function InventoryPage() {
                   {data.items.map((row) => (
                     <tr key={`${row.locationId}-${row.productId}`}>
                       <th scope="row">
-                        {row.productName}
-                        <span className="admin-cell-note">
-                          {row.sku} · {row.categoryName}
-                        </span>
+                        <div className="product-cell">
+                          <ProductImage name={row.productName} imagePath={row.imagePath} imageKey={row.imageKey} />
+                          <span>{row.productName}<span className="admin-cell-note">{row.sku} · {row.categoryName}</span>
+                          {row.locationType === 'STORE' && row.isActive === false && <span className="record-status is-inactive">{c.productInactive}</span>}</span>
+                        </div>
                       </th>
                       <td>
                         {row.locationName}

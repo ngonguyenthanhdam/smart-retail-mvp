@@ -19,7 +19,7 @@ export function RecommendationOverview({ record: r }: { record: Recommendation }
   return (
     <>
       <div className="planning-product">
-        <ProductImage name={r.product.name} imageKey={r.product.imageKey} />
+        <ProductImage name={r.product.name} imageKey={r.product.imageKey} imagePath={r.product.imagePath} />
         <div>
           <small>{r.product.sku}</small>
           <h2>{r.product.name}</h2>

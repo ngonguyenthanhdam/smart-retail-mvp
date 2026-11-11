@@ -13,9 +13,16 @@ export class StoreProductsController {
     return this.service.list(query, user);
   }
   @Post()
+  @Roles('ADMIN')
   @Header('Cache-Control', 'no-store')
   create(@Body() body: unknown, @CurrentUser() user: AuthenticatedUser) {
     return this.service.create(body, user);
+  }
+  @Post('batch')
+  @Roles('ADMIN')
+  @Header('Cache-Control', 'no-store')
+  batch(@Body() body: unknown, @CurrentUser() user: AuthenticatedUser) {
+    return this.service.batch(body, user);
   }
   @Patch(':id')
   @Header('Cache-Control', 'no-store')

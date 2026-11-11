@@ -1,6 +1,7 @@
 import type { DictionaryShape } from '../types';
 export const vi = {
   workspace: 'Không gian làm việc',
+  salesHistory: 'Lịch sử bán hàng',
   subtitle: 'Cửa hàng trong tầm tay',
   preview: 'Xem trước',
   previewNote: 'Theo dõi hoạt động cửa hàng tại đây.',
@@ -17,6 +18,7 @@ export const vi = {
 } as const;
 export const en = {
   workspace: 'Retail workspace',
+  salesHistory: 'Sales history',
   subtitle: 'Operations & planning',
   preview: 'Preview',
   previewNote: 'Monitor store operations here.',

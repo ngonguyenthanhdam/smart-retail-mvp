@@ -95,7 +95,7 @@ export function AlertsPage() {
           <span className="planning-badge">{resolved ? p.resolved : c.severities[r.severity]}</span>
         </div>
         <div className="planning-product">
-          <ProductImage name={r.product.name} imageKey={r.product.imageKey} />
+          <ProductImage name={r.product.name} imageKey={r.product.imageKey} imagePath={r.product.imagePath} />
           <div>
             <small>{r.product.sku}</small>
             <h3>{r.product.name}</h3>

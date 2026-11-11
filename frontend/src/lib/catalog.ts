@@ -19,6 +19,12 @@ export type Product = {
   name: string;
   categoryId: string | null;
   imageKey?: string | null;
+  imagePath?: string | null;
+  defaultSellingPrice?: string | null;
+  defaultMinStockLevel?: string;
+  defaultSafetyStock?: string;
+  isGlobalAllStores?: boolean;
+  storeProducts?: { locationId: string; isActive: boolean | null }[];
   baseUnitId: string | null;
   purchaseUnitId: string | null;
   purchaseToBaseRatio: string | null;
@@ -43,6 +49,8 @@ export type StoreProduct = {
 };
 export type ExpiryStatus = 'NORMAL' | 'EXPIRING_SOON' | 'EXPIRED' | 'NOT_TRACKED' | 'NO_EXPIRY';
 export type InventoryRow = {
+  imagePath?: string | null;
+  isActive?: boolean;
   locationId: string;
   locationCode: string;
   locationName: string;
@@ -96,6 +104,14 @@ export function saveRecord<T>(path: string, values: object, id?: string) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(values),
   });
+}
+export type RemainingStock = { locationId: string; locationName: string; quantity: string };
+export function remainingStock(error: unknown): RemainingStock[] | null {
+  if (error instanceof ApiRequestError && error.code === 'STOCK_REMAINS_CONFIRMATION_REQUIRED') {
+    const data = error.details as { stock?: RemainingStock[] } | undefined;
+    return data?.stock ?? [];
+  }
+  return null;
 }
 export async function allOptions<T>(path: string, signal?: AbortSignal): Promise<T[]> {
   const items: T[] = [];

@@ -62,6 +62,7 @@ export const saleDetailSelect = (costs: boolean) =>
 export class SalesService {
   constructor(private readonly prisma: PrismaService) {}
   async create(input: unknown, user: AuthenticatedUser) {
+    if (user.role !== 'STAFF') throw new ForbiddenException('Only staff can create POS sales.');
     const body = bodyObject(input, [
       'locationId',
       'discountAmount',
@@ -92,6 +93,7 @@ export class SalesService {
       return await this.prisma.$transaction(
         async (tx) => {
           const actor = await writeActor(tx, user, true);
+          if (actor.role !== 'STAFF') throw new ForbiddenException('Only staff can create POS sales.');
           const locationId = await activeLocation(tx, actor, requested, true);
           const requestHash = createHash('sha256')
             .update(
@@ -146,7 +148,7 @@ export class SalesService {
                 },
               },
             });
-            if (!setting?.product)
+            if (!setting?.product || !setting.sellingPrice.greaterThan(0))
               throw new BadRequestException({
                 code: 'PRODUCT_NOT_AVAILABLE_AT_STORE',
                 message: 'Each product must be active and enabled at this store.',

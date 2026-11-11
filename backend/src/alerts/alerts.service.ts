@@ -19,6 +19,7 @@ const alertInclude = {
       name: true,
       sku: true,
       imageKey: true,
+      imagePath: true,
       baseUnit: { select: { code: true, name: true, symbol: true, allowFraction: true } },
     },
   },

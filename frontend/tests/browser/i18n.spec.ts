@@ -271,7 +271,7 @@ test('forecast quantities, revenue and daily chart use product metadata in VI an
 test('sales cart and quantities survive locale changes with the same request values', async ({
   page,
 }) => {
-  const api = await mockApi(page);
+  const api = await mockApi(page, { role: 'STAFF' });
   await page.goto('/sales');
   await page.getByRole('button', { name: /Thêm Cà phê nguyên chất/ }).click();
   const quantity = page.getByRole('spinbutton', { name: 'Số lượng Cà phê nguyên chất' });

@@ -267,10 +267,11 @@ export class PurchasesService {
             const product =
               item.productId &&
               (await tx.product.findFirst({
-                where: { id: item.productId, isActive: true, deletedAt: null },
+                // Existing orders remain receivable after a product is discontinued.
+                where: { id: item.productId, deletedAt: null },
               }));
             if (!product)
-              throw new BadRequestException('All purchase items must reference active products.');
+              throw new BadRequestException('All purchase items must reference existing products.');
             if (
               (product.trackExpiry && !item.expiryDate) ||
               (item.expiryDate && item.expiryDate < today)

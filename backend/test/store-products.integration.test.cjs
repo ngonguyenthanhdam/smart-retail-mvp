@@ -19,6 +19,7 @@ test('Store configuration scope and cost visibility', async (t) => {
       baseUnitId: unit.id,
       purchaseUnitId: unit.id,
       defaultCost: '4.25',
+        defaultSellingPrice: '8.50',
       createdAt: new Date(),
     });
   }
@@ -33,7 +34,7 @@ test('Store configuration scope and cost visibility', async (t) => {
   });
   let own;
   let away;
-  await t.test('Admin configures any store; manager creates in own inferred store', async () => {
+  await t.test('Admin configures stores idempotently; manager cannot assign', async () => {
     let r = await f.create(
       '/store-products',
       'storeProduct',
@@ -42,7 +43,8 @@ test('Store configuration scope and cost visibility', async (t) => {
     );
     assert.equal(r.status, 201);
     away = r.body;
-    r = await f.create('/store-products', 'storeProduct', manager, values());
+    assert.equal((await f.create('/store-products', 'storeProduct', manager, values())).status, 403);
+    r = await f.create('/store-products', 'storeProduct', admin, values({ locationId: f.storeA.id }));
     assert.equal(r.status, 201);
     own = r.body;
     assert.equal(own.locationId, f.storeA.id);
@@ -56,7 +58,7 @@ test('Store configuration scope and cost visibility', async (t) => {
           values({ locationId: f.storeA.id }),
         )
       ).status,
-      409,
+      201,
     );
   });
   await t.test(
@@ -142,8 +144,8 @@ test('Store configuration scope and cost visibility', async (t) => {
           await f.create(
             '/store-products',
             'storeProduct',
-            manager,
-            values({ productId: other.id }),
+            admin,
+            values({ productId: other.id, locationId: f.storeA.id }),
           )
         ).status,
         400,
@@ -172,8 +174,9 @@ test('Store configuration scope and cost visibility', async (t) => {
   await t.test('Deactivation hides product from staff while manager can still edit', async () => {
     assert.equal(
       (await f.request(`/store-products/${own.id}`, manager, 'PATCH', { isActive: false })).status,
-      200,
+      403,
     );
+    assert.equal((await f.request(`/store-products/${own.id}`, admin, 'PATCH', { isActive: false })).status, 200);
     const rows = await (await f.request('/store-products', staff)).json();
     assert.equal(rows.total, 0);
     assert.equal((await f.request(`/products/${p.id}`, staff)).status, 404);

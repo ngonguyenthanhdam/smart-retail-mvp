@@ -45,7 +45,7 @@ export type ForecastDetail = ForecastRun & {
       id: string;
       sku: string;
       name: string;
-      imageKey?: string | null;
+      imageKey?: string | null; imagePath?: string | null;
       baseUnit: {
         code: string;
         name?: string;

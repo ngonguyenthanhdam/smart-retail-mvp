@@ -83,10 +83,10 @@ test('Monthly forecasting pipeline, confirmed sample history and role/store scop
     'Seed is reproducible, idempotent, labelled and never modifies inventory',
     async () => {
       assert.equal(manifest.stores, 3);
-      assert.equal(manifest.products, 12);
+      assert.equal(manifest.products, 20);
       assert.equal(manifest.coveredCalendarDays, 90);
-      assert.equal(manifest.saleItems, 2652);
-      assert.equal(manifest.zeroSalesPairDays, 363);
+      assert.equal(manifest.saleItems, 2865);
+      assert.equal(manifest.zeroSalesPairDays, 392);
       assert.equal(buildForecastDemo('2026-09-26').hash, manifest.hash);
       await f.prisma.product.update({
         where: { id: id(200) },
@@ -113,8 +113,8 @@ test('Monthly forecasting pipeline, confirmed sample history and role/store scop
     async () => {
       const snapshot = await history.snapshot();
       const selected = seriesAt(snapshot);
-      assert.equal(selected.eligible.length, 33);
-      assert.equal(selected.skipped.length, 3);
+      assert.equal(selected.eligible.length, 36);
+      assert.equal(selected.skipped.length, 1);
       assert.ok(selected.skipped.every((s) => s.reason === 'INSUFFICIENT_HISTORY'));
       assert.ok(selected.eligible.some((p) => p.history.some((d) => d.quantity === 0)));
       assert.ok(
@@ -185,15 +185,15 @@ test('Monthly forecasting pipeline, confirmed sample history and role/store scop
       assert.equal(response.status, 201);
       globalRun = response.body;
       assert.equal(globalRun.status, 'COMPLETED');
-      assert.equal(globalRun.forecasts.length, 33);
-      assert.equal(globalRun.skipped.length, 3);
+      assert.equal(globalRun.forecasts.length, 36);
+      assert.equal(globalRun.skipped.length, 1);
       assert.equal(requestBody.usage_mode, 'STORE_HISTORY');
-      assert.equal(requestBody.series.length, 33);
+      assert.equal(requestBody.series.length, 36);
       assert.equal(globalRun.periodKind, 'CALENDAR_MONTH');
       assert.equal(globalRun.dataSource, 'SYNTHETIC');
       assert.equal(globalRun.modelVersion, 'quantity-test-v2');
       assert.equal(globalRun.algorithm, 'RollingMean28');
-      assert.equal(globalRun.dailySeries.length, 33);
+      assert.equal(globalRun.dailySeries.length, 36);
       assert.equal(globalRun.dailySeries[0].daily.length, 35);
       for (const series of requestBody.series) {
         assert.deepEqual(Object.keys(series).sort(), ['history', 'product_id', 'store_id']);

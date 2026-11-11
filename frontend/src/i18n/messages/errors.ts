@@ -1,6 +1,8 @@
 import { vi as forecastsVi, en as forecastsEn } from './forecastCopy';
 export const vi = {
   codes: {
+    DEFAULT_PRICE_REQUIRED: 'Bổ sung giá bán mặc định lớn hơn 0 trước khi gán sản phẩm cho cửa hàng.',
+    STOCK_REMAINS_CONFIRMATION_REQUIRED: 'Sản phẩm còn tồn kho. Xác nhận ngừng bán để tiếp tục; tồn kho và lịch sử được giữ nguyên.',
     ...forecastsVi.errors,
     INSUFFICIENT_STOCK:
       'Không đủ hàng còn hạn để bán. Kiểm tra tồn khả dụng và điều chỉnh số lượng.',
@@ -27,6 +29,8 @@ export const vi = {
 export const en = {
   codes: {
     ...forecastsEn.errors,
+    DEFAULT_PRICE_REQUIRED: 'Set a positive default selling price before assigning the product to a store.',
+    STOCK_REMAINS_CONFIRMATION_REQUIRED: 'Stock remains. Confirm discontinuation to continue; inventory and history are preserved.',
     ...{
       INSUFFICIENT_STOCK:
         'There is not enough unexpired stock. Check available stock and adjust the quantity.',

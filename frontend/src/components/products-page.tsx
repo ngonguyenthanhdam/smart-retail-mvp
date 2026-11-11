@@ -1,4 +1,5 @@
 'use client';
+import { ProductImage } from './product-image';
 import { useFormatters } from '@/i18n/formatters';
 import { Feedback } from '@/i18n/feedback';
 
@@ -195,7 +196,7 @@ export function ProductsPage() {
                       {data.items.map((row) => (
                         <tr key={row.id}>
                           <th scope="row">
-                            {row.name}
+                            <div className="product-cell"><ProductImage name={row.name} imagePath={row.imagePath} imageKey={row.imageKey} /><span>{row.name}</span></div>
                             <span className="admin-cell-note">
                               {row.sku}
                               {row.barcode ? ` · ${row.barcode}` : ''}

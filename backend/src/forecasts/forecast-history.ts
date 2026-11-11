@@ -2,7 +2,7 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { Prisma } from '../../generated/prisma/client';
 import { PrismaService } from '../database/prisma.service';
 import { addDays, businessDate } from '../inventory/expiry';
-import { DEMO_JOB_ID, DEMO_SOURCE } from './demo-source';
+import { DEMO_JOB_ID, DEMO_UPGRADE_JOB_ID, DEMO_SOURCE } from './demo-source';
 
 export type DailyRow = {
   locationId: string;
@@ -89,7 +89,7 @@ export class ForecastHistory {
         const daily = await tx.$queryRaw<DailyRow[]>(Prisma.sql`
         SELECT s.location_id AS "locationId", i.product_id AS "productId",
           (s.sold_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date::text AS date,
-          SUM(i.quantity)::text AS quantity, BOOL_AND(COALESCE(s.import_job_id = ${DEMO_JOB_ID}::uuid, false)) AS synthetic
+          SUM(i.quantity)::text AS quantity, BOOL_AND(COALESCE(s.import_job_id IN (${DEMO_JOB_ID}::uuid, ${DEMO_UPGRADE_JOB_ID}::uuid), false)) AS synthetic
         FROM sales s JOIN sale_items i ON i.sale_id = s.id
         JOIN store_products sp ON sp.location_id=s.location_id AND sp.product_id=i.product_id
         JOIN products p ON p.id=i.product_id JOIN locations l ON l.id=s.location_id

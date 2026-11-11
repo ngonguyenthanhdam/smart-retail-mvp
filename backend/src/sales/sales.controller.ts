@@ -7,6 +7,7 @@ import { SalesService } from './sales.service';
 export class SalesController {
   constructor(private readonly service: SalesService) {}
   @Post()
+  @Roles('STAFF')
   @Header('Cache-Control', 'no-store')
   create(@Body() body: unknown, @CurrentUser() user: AuthenticatedUser) {
     return this.service.create(body, user);

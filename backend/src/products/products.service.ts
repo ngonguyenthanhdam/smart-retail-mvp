@@ -7,7 +7,9 @@ import {
 } from '@nestjs/common';
 import { Prisma } from '../../generated/prisma/client';
 import { PrismaService } from '../database/prisma.service';
-import { databaseError } from '../common/database-errors';
+import { databaseError, serializable } from '../common/database-errors';
+import { assignmentOptions, confirmRemainingStock, productDefaults, syncAssignments } from '../store-products/assignment';
+import { ProductImages } from './product-images';
 import { listQuery, uuidValue } from '../common/validation';
 import { parseProduct } from './product.dto';
 import type { AuthenticatedUser } from '../auth/auth.types';
@@ -19,6 +21,11 @@ export const productSelect = {
   barcode: true,
   name: true,
   imageKey: true,
+  imagePath: true,
+  defaultSellingPrice: true,
+  defaultMinStockLevel: true,
+  defaultSafetyStock: true,
+  isGlobalAllStores: true,
   categoryId: true,
   baseUnitId: true,
   purchaseUnitId: true,
@@ -35,7 +42,19 @@ export const productSelect = {
 
 @Injectable()
 export class ProductsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService, private readonly images: ProductImages) {}
+  async image(filename: string, user: AuthenticatedUser) {
+    const locationId = resolveLocationScope(user);
+    const path = `/products/images/${filename}`;
+    const product = await this.prisma.product.findFirst({
+      where: { imagePath: path, deletedAt: null,
+        ...(user.role === 'STAFF' ? { isActive: true } : {}),
+        ...(user.role !== 'ADMIN' ? { storeProducts: { some: { locationId, ...(user.role === 'STAFF' ? { isActive: true } : {}) } } } : {}),
+      }, select: { id: true },
+    });
+    if (!product) throw new NotFoundException('Image not found.');
+    return this.images.read(path);
+  }
   async list(input: unknown, user: AuthenticatedUser) {
     const { query, search, status, page, pageSize } = listQuery(input, ['categoryId', 'available']);
     if (query.available !== undefined && query.available !== 'true')
@@ -107,7 +126,9 @@ export class ProductsService {
           : {}),
         ...(user.role === 'STAFF' ? { isActive: true } : {}),
       },
-      select: { ...productSelect, ...(user.role !== 'STAFF' ? { defaultCost: true } : {}) },
+      select: { ...productSelect, ...(user.role !== 'STAFF' ? { defaultCost: true } : {}),
+        ...(user.role === 'ADMIN' ? { storeProducts: { select: { locationId: true, isActive: true } } } : {}),
+      },
     });
     if (!row) throw new NotFoundException('Product not found.');
     return row;
@@ -131,28 +152,35 @@ export class ProductsService {
         throw new BadRequestException('Select valid base and purchase units.');
     }
   }
-  async create(input: unknown) {
+  async create(input: unknown, file?: Express.Multer.File) {
     const data = parseProduct(input, false);
+    const options = assignmentOptions(input as Record<string, unknown>);
+    if (!data.defaultSellingPrice) throw new BadRequestException({ code: 'DEFAULT_PRICE_REQUIRED', message: 'A positive default selling price is required.' });
+    const image = file ? await this.images.save(file) : undefined;
     try {
-      return await this.prisma.$transaction(
+      return await serializable(this.prisma,
         async (tx) => {
           await this.validateRelations(tx, data);
-          return tx.product.create({
-            data: { ...data, sku: data.sku!, name: data.name!, createdAt: new Date() },
-            select: { ...productSelect, defaultCost: true },
+          const product = await tx.product.create({
+            data: { ...data, ...(image ? { imagePath: image.path } : {}), sku: data.sku!, name: data.name!, createdAt: new Date() },
           });
+          if (product.isGlobalAllStores || options.storeIds?.length)
+            await syncAssignments(tx, product, options);
+          return tx.product.findUniqueOrThrow({ where: { id: product.id }, select: { ...productSelect, defaultCost: true } });
         },
-        { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
       );
     } catch (error) {
+      if (image) await this.images.removeUncommitted(image.path);
       databaseError(error, 'This SKU or barcode is already in use.');
     }
   }
-  async update(rawId: string, input: unknown) {
+  async update(rawId: string, input: unknown, file?: Express.Multer.File) {
     const id = uuidValue(rawId);
     const data = parseProduct(input, true);
+    const options = assignmentOptions(input as Record<string, unknown>);
+    const image = file ? await this.images.save(file) : undefined;
     try {
-      return await this.prisma.$transaction(
+      return await serializable(this.prisma,
         async (tx) => {
           const current = await tx.product.findFirst({ where: { id, deletedAt: null } });
           if (!current) throw new NotFoundException('Product not found.');
@@ -185,15 +213,25 @@ export class ProductsService {
             );
           }
           await this.validateRelations(tx, { ...current, ...data });
-          return tx.product.update({
+          if (data.isGlobalAllStores ?? current.isGlobalAllStores)
+            productDefaults({ ...current, ...data });
+          if (current.isActive && data.isActive === false)
+            await confirmRemainingStock(tx, id, undefined, options.confirmDiscontinue);
+          const product = await tx.product.update({
             where: { id },
-            data,
-            select: { ...productSelect, defaultCost: true },
+            data: { ...data, ...(image ? { imagePath: image.path } : {}) },
           });
+          if (product.isActive && (options.storeIds !== undefined || data.isGlobalAllStores !== undefined ||
+              (product.isGlobalAllStores && !current.isActive))) {
+            await syncAssignments(tx, product, options);
+          } else if (!product.isActive && (options.storeIds?.length || data.isGlobalAllStores === true)) {
+            throw new BadRequestException('Only active products can be assigned.');
+          }
+          return tx.product.findUniqueOrThrow({ where: { id }, select: { ...productSelect, defaultCost: true } });
         },
-        { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
       );
     } catch (error) {
+      if (image) await this.images.removeUncommitted(image.path);
       databaseError(error, 'This SKU or barcode is already in use.');
     }
   }

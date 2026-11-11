@@ -23,7 +23,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [signingOut, setSigningOut] = useState(false);
   const [signOutError, setSignOutError] = useState(false);
   const activeSection = findSection(pathname.split('/')[1]);
-  const currentTitle = activeSection ? vi.sections[activeSection.id].label : vi.notFound.title;
+  const currentTitle = activeSection?.id === 'sales' && (user?.role !== 'STAFF' || pathname === '/sales/history')
+    ? vi.shell.salesHistory : activeSection ? vi.sections[activeSection.id].label : vi.notFound.title;
 
   if (!user) return null;
 
@@ -95,12 +96,12 @@ export function AppShell({ children }: { children: ReactNode }) {
                           <li key={item.id}>
                             <Link
                               className={`nav-link${isActive ? ' is-active' : ''}`}
-                              href={`/${item.id}`}
+                              href={item.id === 'sales' && user.role !== 'STAFF' ? '/sales/history' : `/${item.id}`}
                               aria-current={isActive ? 'page' : undefined}
                               onClick={() => setMenuOpen(false)}
                             >
                               <Icon size={19} strokeWidth={1.75} aria-hidden="true" />
-                              <span>{vi.sections[item.id].label}</span>
+                              <span>{item.id === 'sales' && user.role !== 'STAFF' ? vi.shell.salesHistory : vi.sections[item.id].label}</span>
                               {isActive && <span className="nav-active-dot" aria-hidden="true" />}
                             </Link>
                           </li>

@@ -4,11 +4,12 @@ import { PrismaPg } from '@prisma/adapter-pg';
 import { Prisma, PrismaClient } from '../generated/prisma/client';
 import { addDays, businessDate } from '../src/inventory/expiry';
 import { dateValue } from '../src/common/operations';
-import { demoForecastId as id, DEMO_JOB_ID, DEMO_SOURCE } from '../src/forecasts/demo-source';
+import { demoForecastId as id, DEMO_JOB_ID, DEMO_SOURCE, DEMO_UPGRADE_JOB_ID } from '../src/forecasts/demo-source';
 import '../src/common/decimal';
+import { confirmRemainingStock } from '../src/store-products/assignment';
 
 export const DEMO_SEED = 20260927;
-const products = [
+export const forecastDemoProducts = [
   ['Nước khoáng có ga 330 ml', 'CAN', 7000],
   ['Nước cam có ga 330 ml', 'CAN', 10000],
   ['Sữa tươi 250 ml', 'PCS', 9000],
@@ -21,9 +22,34 @@ const products = [
   ['Trứng đóng hộp', 'PCS', 32000],
   ['Đậu đóng hộp', 'CAN', 22000],
   ['Khoai tây', 'KG', 26000],
+  ['Cá phi lê', 'KG', 120000],
+  ['Thịt gà', 'KG', 85000],
+  ['Sữa chua hộp', 'PCS', 7000],
+  ['Dầu ăn 1 lít', 'PCS', 45000],
+  ['Nước rửa chén 750 ml', 'PCS', 32000],
+  ['Táo', 'KG', 55000],
+  ['Cà phê gói 250 g', 'PCS', 65000],
+  ['Khăn giấy hộp', 'PCS', 18000],
 ] as const;
 
-export function buildForecastDemo(endDate: string) {
+// Reuse suitable existing category illustrations; no replacement images are generated.
+export const forecastDemoImageKeys = [
+  'drinks', 'drinks', 'milk', 'rice', 'noodles', 'bakery', 'fruit',
+  'vegetables', 'vegetables', 'eggs', 'canned', 'vegetables',
+  'seafood', null, null, null, 'household', 'fruit', null, null,
+] as const;
+
+export const forecastDemoAssortments = [
+  Array.from({ length: 12 }, (_, p) => p),
+  [...Array.from({ length: 10 }, (_, p) => p), 12, 13, 14, 15, 16],
+  [...Array.from({ length: 7 }, (_, p) => p), 17, 18, 19],
+];
+export const forecastDemoPairs = forecastDemoAssortments.flatMap((assortment, store) => assortment.map((p) => ({ store, p })));
+export const forecastDemoSettingId = (store: number, p: number) => id(p < 12 ? 1000 + store * 12 + p : 2000 + store * 20 + p);
+
+// Legacy generation is retained only to verify an existing v1 seed before a non-destructive upgrade.
+export function buildForecastDemo(endDate: string, legacy = false) {
+  const products = legacy ? forecastDemoProducts.slice(0, 12) : forecastDemoProducts;
   dateValue(endDate, 'Demo end date');
   const startDate = addDays(endDate, -89);
   let state = DEMO_SEED;
@@ -41,6 +67,7 @@ export function buildForecastDemo(endDate: string) {
       const lines: Prisma.SaleItemCreateManyInput[] = [];
       for (let p = 0; p < products.length; p++) {
         const noise = random();
+        if (!legacy && !forecastDemoAssortments[store]!.includes(p)) continue;
         const firstDay = p === 11 ? 76 : 0;
         if (day < firstDay) continue;
         const [, unit, basePrice] = products[p]!;
@@ -62,7 +89,7 @@ export function buildForecastDemo(endDate: string) {
             : new Prisma.Decimal(Math.max(1, Math.round(value)));
         const price = new Prisma.Decimal(basePrice + store * 500);
         lines.push({
-          id: id(20000 + store * 1500 + day * 12 + p),
+          id: id(p < 12 ? 20000 + store * 1500 + day * 12 + p : 60000 + store * 1000 + day * 8 + p - 12),
           saleId: id(10000 + store * 100 + day),
           productId: id(200 + p),
           quantity,
@@ -123,10 +150,10 @@ export function buildForecastDemo(endDate: string) {
     startDate,
     endDate,
     stores: 3,
-    products: 12,
-    configurations: 36,
-    fullHistoryPairs: 33,
-    shortHistoryPairs: 3,
+    products: legacy ? 12 : 20,
+    configurations: legacy ? 36 : 37,
+    fullHistoryPairs: legacy ? 33 : 36,
+    shortHistoryPairs: legacy ? 3 : 1,
     shortHistoryDays: 14,
     coveredCalendarDays: 90,
     zeroSalesPairDays: zeroDays,
@@ -143,6 +170,7 @@ export function buildForecastDemo(endDate: string) {
 export async function seedForecastDemo(
   prisma: PrismaClient,
   endDate = addDays(businessDate(), -1),
+  options: { upgradeExisting?: boolean; confirmDiscontinue?: boolean } = {},
 ) {
   if (endDate >= businessDate())
     throw new Error('Demo history must end before the current business date.');
@@ -151,11 +179,18 @@ export async function seedForecastDemo(
     async (tx) => {
       const existing = await tx.importJob.findUnique({ where: { id: DEMO_JOB_ID } });
       if (existing) {
-        if (existing.fileHash !== data.hash || existing.status !== 'COMPLETED')
-          throw new Error(
-            'A different demo already exists. Rerun with its original end date; records will not be replaced.',
-          );
-        return { ...data.manifest, hash: data.hash, alreadyPresent: true };
+        if (existing.fileHash === data.hash && existing.status === 'COMPLETED')
+          return { ...data.manifest, hash: data.hash, alreadyPresent: true };
+        const legacy = buildForecastDemo(endDate, true);
+        if (existing.fileHash !== legacy.hash || existing.status !== 'COMPLETED')
+          throw new Error('A different demo already exists. Use its original end date; records will not be replaced.');
+        const upgrade = await tx.importJob.findUnique({ where: { id: DEMO_UPGRADE_JOB_ID } });
+        if (upgrade?.fileHash === data.hash && upgrade.status === 'COMPLETED')
+          return { ...data.manifest, hash: data.hash, alreadyPresent: true, upgraded: true };
+        if (!options.upgradeExisting)
+          throw new Error('A legacy demo exists. Use --upgrade-existing with its original end date to retain old history and append new demo pairs.');
+        if (upgrade) throw new Error('Conflicting demo upgrade marker. No data was changed.');
+        return upgradeForecastDemo(tx, data, existing.createdBy!, options.confirmDiscontinue ?? false);
       }
       const admin = await tx.user.findFirst({
         where: { role: { code: 'ADMIN' }, isActive: true, deletedAt: null },
@@ -194,40 +229,30 @@ export async function seedForecastDemo(
         })),
       });
       await tx.product.createMany({
-        data: products.map(([name, unit, price], n) => ({
+        data: forecastDemoProducts.map(([name, unit, price], n) => ({
           id: id(200 + n),
           sku: `FC-${String(n + 1).padStart(2, '0')}`,
           name,
-          imageKey: [
-            'drinks',
-            'drinks',
-            'milk',
-            'rice',
-            'noodles',
-            'bakery',
-            'fruit',
-            'vegetables',
-            'vegetables',
-            'eggs',
-            'canned',
-            'vegetables',
-          ][n],
+          imageKey: forecastDemoImageKeys[n],
           categoryId: id(1),
           baseUnitId: id(10 + units.indexOf(unit)),
           purchaseUnitId: id(10 + units.indexOf(unit)),
           purchaseToBaseRatio: 1,
           defaultCost: new Prisma.Decimal(price).mul('0.65'),
+          defaultSellingPrice: price,
+          defaultMinStockLevel: 2,
+          defaultSafetyStock: 5,
           externalSource: DEMO_SOURCE,
           externalId: String(n + 1),
           createdAt,
         })),
       });
       await tx.storeProduct.createMany({
-        data: Array.from({ length: 36 }, (_, n) => ({
-          id: id(1000 + n),
-          locationId: id(100 + Math.floor(n / 12)),
-          productId: id(200 + (n % 12)),
-          sellingPrice: products[n % 12]![2] + Math.floor(n / 12) * 500,
+        data: forecastDemoPairs.map(({ store, p }) => ({
+          id: forecastDemoSettingId(store, p),
+          locationId: id(100 + store),
+          productId: id(200 + p),
+          sellingPrice: forecastDemoProducts[p]![2] + store * 500,
           safetyStock: 5,
           minStockLevel: 2,
         })),
@@ -236,7 +261,7 @@ export async function seedForecastDemo(
         data: {
           id: DEMO_JOB_ID,
           importType: 'SALE',
-          fileName: `SYNTHETIC_forecast_v1_${endDate}.seed`,
+          fileName: `SYNTHETIC_forecast_v2_${endDate}.seed`,
           fileHash: data.hash,
           status: 'COMPLETED',
           totalRows: data.items.length,
@@ -252,10 +277,10 @@ export async function seedForecastDemo(
       });
       await tx.saleItem.createMany({ data: data.items });
       await tx.salesHistoryCoverage.createMany({
-        data: Array.from({ length: 36 }, (_, n) => ({
-          locationId: id(100 + Math.floor(n / 12)),
-          productId: id(200 + (n % 12)),
-          periodStart: new Date(addDays(data.manifest.startDate, n % 12 === 11 ? 76 : 0)),
+        data: forecastDemoPairs.map(({ store, p }) => ({
+          locationId: id(100 + store),
+          productId: id(200 + p),
+          periodStart: new Date(addDays(data.manifest.startDate, p === 11 ? 76 : 0)),
           periodEnd: new Date(endDate),
           source: 'SYNTHETIC',
           note: 'Lịch sử mô phỏng có đủ ngày theo bộ sinh dữ liệu cố định.',
@@ -268,27 +293,97 @@ export async function seedForecastDemo(
   );
 }
 
+async function upgradeForecastDemo(
+  tx: Prisma.TransactionClient, data: ReturnType<typeof buildForecastDemo>, adminId: string, confirm: boolean,
+) {
+  // Never adopt unrelated records that happen to share reserved SKU/code values.
+  const oldProducts = await tx.product.findMany({ where: { id: { in: Array.from({ length: 12 }, (_, p) => id(200 + p)) } } });
+  const stores = await tx.location.findMany({ where: { id: { in: [100, 101, 102].map(id) } } });
+  if (oldProducts.length !== 12 || stores.length !== 3 ||
+      oldProducts.some((p) => p.externalSource !== DEMO_SOURCE || p.deletedAt) ||
+      stores.some((s) => s.externalSource !== DEMO_SOURCE || !s.isActive || s.deletedAt))
+    throw new Error('Legacy demo ownership or active stores could not be verified.');
+  for (const product of oldProducts) {
+    const p = Number(product.externalId) - 1;
+    if (id(200 + p) !== product.id || product.sku !== `FC-${String(p + 1).padStart(2, '0')}`)
+      throw new Error('Legacy product identifiers changed. No records were replaced.');
+    // Only fill the newly-added fields; never overwrite a business edit.
+    if (product.defaultSellingPrice === null)
+      await tx.product.update({ where: { id: product.id }, data: { defaultSellingPrice: forecastDemoProducts[p]![2] } });
+  }
+  const units = ['CAN', 'PCS', 'KG'];
+  const createdAt = new Date(`${data.manifest.startDate}T00:00:00Z`);
+  for (let p = 12; p < 20; p++) {
+    const [name, unit, price] = forecastDemoProducts[p]!;
+    await tx.product.create({ data: {
+      id: id(200 + p), sku: `FC-${p + 1}`, name, imageKey: forecastDemoImageKeys[p],
+      categoryId: id(1), baseUnitId: id(10 + units.indexOf(unit)), purchaseUnitId: id(10 + units.indexOf(unit)),
+      purchaseToBaseRatio: 1, defaultCost: new Prisma.Decimal(price).mul('0.65'),
+      defaultSellingPrice: price, defaultSafetyStock: 5, defaultMinStockLevel: 2,
+      externalSource: DEMO_SOURCE, externalId: String(p + 1), createdAt,
+    } });
+  }
+  for (let store = 0; store < 3; store++) {
+    for (let p = 0; p < 12; p++) {
+      if (forecastDemoAssortments[store]!.includes(p)) continue;
+      const setting = await tx.storeProduct.findUnique({ where: { id: forecastDemoSettingId(store, p) } });
+      if (!setting || setting.productId !== id(200 + p) || setting.locationId !== id(100 + store))
+        throw new Error('Legacy store assignment ownership could not be verified.');
+      await confirmRemainingStock(tx, id(200 + p), [id(100 + store)], confirm);
+      await tx.storeProduct.update({ where: { id: setting.id }, data: { isActive: false } });
+    }
+  }
+  const newPairs = forecastDemoPairs.filter(({ p }) => p >= 12);
+  await tx.storeProduct.createMany({ data: newPairs.map(({ store, p }) => ({
+    id: forecastDemoSettingId(store, p), locationId: id(100 + store), productId: id(200 + p),
+    sellingPrice: forecastDemoProducts[p]![2] + store * 500, safetyStock: 5, minStockLevel: 2,
+  })) });
+  const newProductIds = new Set(newPairs.map(({ p }) => id(200 + p)));
+  const items = data.items.filter((item) => newProductIds.has(item.productId!));
+  const sales = data.sales.flatMap((sale) => {
+    const lines = items.filter((item) => item.saleId === sale.id);
+    if (!lines.length) return [];
+    const subtotal = lines.reduce((sum, line) => sum.add(String(line.lineTotal)), new Prisma.Decimal(0));
+    const saleId = id(80000 + Number(sale.id!.slice(-12)));
+    for (const line of lines) line.saleId = saleId;
+    return [{ ...sale, id: saleId, invoiceNumber: sale.invoiceNumber.replace('SYN-FC-', 'SYN-FC2-'),
+      importJobId: DEMO_UPGRADE_JOB_ID, subtotal, totalAmount: subtotal, createdBy: adminId }];
+  });
+  await tx.importJob.create({ data: {
+    id: DEMO_UPGRADE_JOB_ID, importType: 'SALE', fileName: `SYNTHETIC_forecast_v2_upgrade_${data.manifest.endDate}.seed`,
+    fileHash: data.hash, status: 'COMPLETED', totalRows: items.length, successRows: items.length,
+    failedRows: 0, createdBy: adminId, createdAt: new Date(), completedAt: new Date(),
+  } });
+  await tx.sale.createMany({ data: sales });
+  await tx.saleItem.createMany({ data: items });
+  await tx.salesHistoryCoverage.createMany({ data: newPairs.map(({ store, p }) => ({
+    locationId: id(100 + store), productId: id(200 + p),
+    periodStart: new Date(data.manifest.startDate), periodEnd: new Date(data.manifest.endDate),
+    source: 'SYNTHETIC', note: 'Synthetic v2 upgrade: new demo pairs only; legacy history preserved.', confirmedBy: adminId,
+  })) });
+  return { ...data.manifest, hash: data.hash, alreadyPresent: false, upgraded: true, addedInvoices: sales.length, addedSaleItems: items.length };
+}
+
 async function main() {
   const args = process.argv.slice(2);
-  if (args.length && (args.length !== 2 || args[0] !== '--end-date'))
-    throw new Error('Use --end-date YYYY-MM-DD.');
-  if (!process.env.DATABASE_URL) throw new Error('DATABASE_URL is required.');
-  const prisma = new PrismaClient({
-    adapter: new PrismaPg({
-      connectionString: process.env.DATABASE_URL,
-      options: '-c timezone=UTC',
-    }),
-  });
-  try {
-    console.log(JSON.stringify(await seedForecastDemo(prisma, args[1]), null, 2));
-  } finally {
-    await prisma.$disconnect();
+  if (!args.includes('--confirm-demo') || process.env.NODE_ENV === 'production')
+    throw new Error('Demo insertion requires --confirm-demo and a non-production database.');
+  const flags = new Set(['--confirm-demo', '--upgrade-existing', '--confirm-discontinue-stock']);
+  let endDate: string | undefined;
+  for (let i = 0; i < args.length; i++) {
+    if (args[i] === '--end-date') { endDate = args[++i]; if (!endDate) throw new Error('Provide --end-date YYYY-MM-DD.'); }
+    else if (!flags.has(args[i]!)) throw new Error('Unknown demo option.');
   }
+  if (!process.env.DATABASE_URL) throw new Error('DATABASE_URL is required.');
+  const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL, options: '-c timezone=UTC' }) });
+  try {
+    console.log(JSON.stringify(await seedForecastDemo(prisma, endDate, {
+      upgradeExisting: args.includes('--upgrade-existing'), confirmDiscontinue: args.includes('--confirm-discontinue-stock'),
+    }), null, 2));
+  } finally { await prisma.$disconnect(); }
 }
 if (require.main === module)
-  void main().catch(() => {
-    console.error(
-      'Synthetic demo seed failed. Check migrations, the original end date and reserved DEMO-FC records. No partial seed was committed.',
-    );
+  void main().catch((error: unknown) => {
+    console.error(error instanceof Error ? error.message : 'Synthetic seed failed; no partial seed committed.');
     process.exitCode = 1;
   });

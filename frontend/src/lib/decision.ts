@@ -22,7 +22,7 @@ export type Recommendation = {
     id: string;
     name: string;
     sku: string;
-    imageKey?: string | null;
+    imageKey?: string | null; imagePath?: string | null;
     purchaseToBaseRatio: string | null;
     baseUnit: DisplayUnit | null;
     purchaseUnit: DisplayUnit | null;
@@ -50,7 +50,7 @@ export type InventoryAlert = {
   productId: string;
   demandForecastId: string | null;
   location: { name: string; code: string };
-  product: { name: string; sku: string; imageKey?: string | null; baseUnit: DisplayUnit | null };
+  product: { name: string; sku: string; imageKey?: string | null; imagePath?: string | null; baseUnit: DisplayUnit | null };
   lot: { lotNumber: string | null; expiryDate: string | null; quantityOnHand: string } | null;
 };
 export { formatQuantity as quantity } from './format';

@@ -382,7 +382,7 @@ export function ForecastsPage() {
                         <tr key={p.id}>
                           <th scope="row">
                             <div className="table-product">
-                              <ProductImage name={p.product.name} imageKey={p.product.imageKey} />
+                              <ProductImage name={p.product.name} imageKey={p.product.imageKey} imagePath={p.product.imagePath} />
                               <span>
                                 {p.product.name}
                                 <small>{p.product.sku}</small>

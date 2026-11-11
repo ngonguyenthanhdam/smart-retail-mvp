@@ -45,7 +45,7 @@ export function CatalogCard({
         <ProductImage
           name={product.name}
           category={product.category?.name}
-          imageKey={product.imageKey}
+          imageKey={product.imageKey} imagePath={product.imagePath}
         />
         <span className={`catalog-state ${isActive ? '' : 'is-inactive'}`}>
           {isActive ? t.availableForSale : t.discontinued}

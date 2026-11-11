@@ -5,10 +5,13 @@ import { useMessages } from '@/i18n/provider';
 
 import { useEffect, useState, type FormEvent } from 'react';
 import { AdminDialog } from '@/components/admin-dialog';
+import { useAuth } from '@/components/auth-provider';
 import {
   catalogError,
   allOptions,
   saveRecord,
+  remainingStock,
+  type RemainingStock,
   type Product,
   type StoreProduct,
 } from '@/lib/catalog';
@@ -26,13 +29,22 @@ export function StoreProductForm({
 }) {
   const { unitLabel } = useFormatters();
   const { c, a } = usePageCopy();
+  const { user } = useAuth();
+  const admin = user?.role === 'ADMIN';
   const [products, setProducts] = useState<Product[] | null>(record ? [record.product] : null);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [pending, setPending] = useState<object | null>(null);
+  const [stock, setStock] = useState<RemainingStock[]>([]);
   const [revision, setRevision] = useState(0);
   const [selectedProduct, setSelectedProduct] = useState(record?.productId ?? '');
-  const productUnit = products?.find((product) => product.id === selectedProduct)?.baseUnit;
+  const product = products?.find((item) => item.id === selectedProduct);
+  const productUnit = product?.baseUnit;
+  const defaults = {
+    sellingPrice: product?.defaultSellingPrice ?? '',
+    safetyStock: product?.defaultSafetyStock ?? '0',
+    minStockLevel: product?.defaultMinStockLevel ?? '0',
+  };
   useEffect(() => {
     if (record) return;
     const abort = new AbortController();
@@ -53,7 +65,9 @@ export function StoreProductForm({
       onSaved();
     } catch (e) {
       setBusy(false);
-      setError(catalogError(e));
+      const remaining = remainingStock(e);
+      if (remaining) { setPending(values); setStock(remaining); }
+      else setError(catalogError(e));
     }
   }
   function submit(event: FormEvent<HTMLFormElement>) {
@@ -65,10 +79,9 @@ export function StoreProductForm({
       sellingPrice: v('sellingPrice'),
       safetyStock: v('safetyStock'),
       minStockLevel: v('minStockLevel'),
-      isActive: v('isActive') === 'true',
+      ...(admin ? { isActive: v('isActive') === 'true' } : {}),
     };
-    if (record?.isActive && !values.isActive) setPending(values);
-    else void save(values);
+    void save(values);
   }
   return (
     <AdminDialog titleId="store-product-title" busy={busy} onClose={onClose}>
@@ -130,18 +143,19 @@ export function StoreProductForm({
                   {label} ({field === 'sellingPrice' ? 'VND' : unitLabel(productUnit)})
                 </label>
                 <input
+                  key={`${field}-${selectedProduct}`}
                   id={`store-${field}`}
                   name={field}
                   type="number"
                   required
-                  min="0"
+                  min={field === 'sellingPrice' ? '0.01' : '0'}
                   max={step === '0.01' ? '999999999999.99' : '9999999999.9999'}
                   step={step}
-                  defaultValue={record?.[field] ?? '0'}
+                  defaultValue={record?.[field] ?? defaults[field]}
                 />
               </div>
             ))}
-            <div className="form-field">
+            {admin && <div className="form-field">
               <label htmlFor="store-product-status">{a.status}</label>
               <select
                 id="store-product-status"
@@ -151,10 +165,10 @@ export function StoreProductForm({
                 <option value="true">{a.active}</option>
                 <option value="false">{a.inactive}</option>
               </select>
-            </div>
+            </div>}
           </div>
         </fieldset>
-        {pending && <p>{c.deactivateStoreHint}</p>}
+        {pending && <div role="alert"><p>{c.stockWarning}</p><ul>{stock.map((s) => <li key={s.locationId}>{s.locationName}: {s.quantity}</li>)}</ul></div>}
         <div className="admin-form-actions">
           <button
             type="button"
@@ -169,7 +183,7 @@ export function StoreProductForm({
               type="button"
               className="danger-button"
               disabled={busy}
-              onClick={() => void save(pending)}
+              onClick={() => void save({ ...pending, confirmDiscontinue: true })}
             >
               {busy ? a.saving : a.deactivate}
             </button>

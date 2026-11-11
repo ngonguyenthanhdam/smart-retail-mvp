@@ -51,6 +51,7 @@ const forecastSelect = {
       sku: true,
       name: true,
       imageKey: true,
+      imagePath: true,
       baseUnit: { select: { code: true, name: true, symbol: true, allowFraction: true } },
     },
   },

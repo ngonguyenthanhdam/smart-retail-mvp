@@ -14,6 +14,14 @@ export function parseProduct(input: unknown, partial: boolean) {
     'barcode',
     'name',
     'imageKey',
+    'imagePath',
+    'defaultSellingPrice',
+    'defaultMinStockLevel',
+    'defaultSafetyStock',
+    'isGlobalAllStores',
+    'storeIds',
+    'confirmDiscontinue',
+    'applyDefaultsToExisting',
     'categoryId',
     'baseUnitId',
     'purchaseUnitId',
@@ -46,6 +54,14 @@ export function parseProduct(input: unknown, partial: boolean) {
   }
   if (partial && !Object.keys(body).length)
     throw new BadRequestException('Provide at least one field.');
+  // Runtime paths can only be set by the upload handler, never by arbitrary JSON.
+  if (body.imagePath !== undefined && body.imagePath !== null &&
+      (typeof body.imagePath !== 'string' || body.imagePath.length > 500 ||
+       !/^\/assets\/products\/[^/\\?#%]+\.(png|jpe?g|webp)$/i.test(body.imagePath) ||
+       [...body.imagePath].some((char) => char.charCodeAt(0) < 32 || char.charCodeAt(0) === 127) ||
+       body.imagePath.includes('..'))) {
+    throw new BadRequestException('Use a PNG, JPG or WebP path in /assets/products/, or upload an image.');
+  }
   if (
     body.shelfLifeDays !== undefined &&
     body.shelfLifeDays !== null &&
@@ -60,6 +76,11 @@ export function parseProduct(input: unknown, partial: boolean) {
     ...(!partial || body.sku !== undefined ? { sku: requiredText(body.sku, 'SKU', 50) } : {}),
     ...(!partial || body.name !== undefined ? { name: requiredText(body.name, 'Name', 200) } : {}),
     ...(body.imageKey !== undefined ? { imageKey: body.imageKey as string | null } : {}),
+    ...(body.imagePath !== undefined ? { imagePath: body.imagePath as string | null } : {}),
+    ...(body.defaultSellingPrice !== undefined ? { defaultSellingPrice: decimalValue(body.defaultSellingPrice, 'Default selling price', 2, true) } : {}),
+    ...(body.defaultMinStockLevel !== undefined ? { defaultMinStockLevel: decimalValue(body.defaultMinStockLevel, 'Default minimum stock', 4) } : {}),
+    ...(body.defaultSafetyStock !== undefined ? { defaultSafetyStock: decimalValue(body.defaultSafetyStock, 'Default safety stock', 4) } : {}),
+    ...(body.isGlobalAllStores !== undefined ? { isGlobalAllStores: booleanValue(body.isGlobalAllStores) } : {}),
     ...(body.barcode !== undefined ? { barcode: optionalText(body.barcode, 'Barcode', 100) } : {}),
     ...(!partial || body.categoryId !== undefined
       ? { categoryId: uuidValue(body.categoryId) }

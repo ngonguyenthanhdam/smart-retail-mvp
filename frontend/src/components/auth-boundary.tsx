@@ -20,15 +20,16 @@ export function AuthBoundary({ children }: { children: ReactNode }) {
   const section = findSection(pathname.split('/')[1]);
   const masterPage =
     pathname.startsWith('/products/categories') || pathname.startsWith('/products/units');
+  const deniedPos = user !== null && user.role !== 'STAFF' && pathname === '/sales';
   const denied =
     user !== null &&
     ((section !== undefined && !canAccessSection(user.role, section.id)) ||
-      (masterPage && user.role !== 'ADMIN'));
+      (masterPage && user.role !== 'ADMIN') || deniedPos);
 
   useEffect(() => {
     if (status === 'unauthenticated' && !isLogin && !isRecovery) router.replace('/login');
-    if (user && (isLogin || denied)) router.replace(defaultRoute(user.role));
-  }, [status, user, isLogin, isRecovery, denied, router]);
+    if (user && (isLogin || denied)) router.replace(deniedPos ? '/sales/history' : defaultRoute(user.role));
+  }, [status, user, isLogin, isRecovery, denied, deniedPos, router]);
 
   if (isRecovery)
     return (

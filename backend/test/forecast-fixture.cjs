@@ -1,5 +1,5 @@
 const assert = require('node:assert/strict');
-const { seedForecastDemo } = require('../dist/prisma/forecast-demo.js');
+const { seedForecastDemo, forecastDemoPairs, forecastDemoSettingId } = require('../dist/prisma/forecast-demo.js');
 const { demoForecastId: id, DEMO_JOB_ID } = require('../dist/src/forecasts/demo-source.js');
 
 async function forecastSeedFixture(f) {
@@ -12,13 +12,14 @@ async function forecastSeedFixture(f) {
     category: [1],
     unit: [10, 11, 12],
     location: [100, 101, 102],
-    product: Array.from({ length: 12 }, (_, i) => 200 + i),
-    storeProduct: Array.from({ length: 36 }, (_, i) => 1000 + i),
+    product: Array.from({ length: 20 }, (_, i) => 200 + i),
+    storeProduct: [],
     importJob: [900],
   };
   for (const [model, numbers] of Object.entries(owned)) {
     assert.equal(await f.prisma[model].count({ where: { id: { in: numbers.map(id) } } }), 0);
   }
+  f.ids.storeProduct.push(...forecastDemoPairs.map(({store, p}) => forecastDemoSettingId(store, p)));
   const result = await seedForecastDemo(f.prisma, '2026-09-26');
   for (const [model, numbers] of Object.entries(owned)) f.ids[model].push(...numbers.map(id));
   const sales = await f.prisma.sale.findMany({

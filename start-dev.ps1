@@ -149,7 +149,7 @@ if ($Service) {
             & (Join-Path $ProjectRoot 'ml-service\.venv\Scripts\python.exe') -m uvicorn app:app --host 127.0.0.1 --port 8000
         }
         elseif ($Service -eq 'Mailpit') {
-            & (Join-Path $LocalDirectory 'mailpit/mailpit.exe') --smtp 127.0.0.1:1025 --listen 127.0.0.1:8025 --allowed-hosts localhost, 127.0.0.1 --database (Join-Path $LocalDirectory 'mailpit/mailpit.db') --disable-version-check --smtp-disable-rdns
+            & (Join-Path $LocalDirectory 'mailpit/mailpit.exe') --smtp 127.0.0.1:1025 --listen 127.0.0.1:8025 --allowed-hosts localhost,127.0.0.1 --database (Join-Path $LocalDirectory 'mailpit/mailpit.db') --disable-version-check --smtp-disable-rdns
         }
         else {
             Use-ProjectNode $ProjectRoot

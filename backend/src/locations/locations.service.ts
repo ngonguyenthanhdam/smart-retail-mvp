@@ -1,7 +1,8 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '../../generated/prisma/client';
 import { PrismaService } from '../database/prisma.service';
-import { databaseError } from '../common/database-errors';
+import { databaseError, serializable } from '../common/database-errors';
+import { assignGlobalProducts } from '../store-products/assignment';
 import { uuidValue } from '../common/validation';
 import { locationQuery, parseLocation } from './location.dto';
 
@@ -95,15 +96,17 @@ export class LocationsService {
   async create(input: unknown) {
     const data = parseLocation(input);
     try {
-      return await this.prisma.$transaction(
+      return await serializable(this.prisma,
         async (tx) => {
           await this.requireSingleWarehouse(tx, data.locationType, data.isActive);
-          return tx.location.create({
+          const location = await tx.location.create({
             data: { ...data, createdAt: new Date() },
             select: locationSelect,
           });
+          if (location.locationType === 'STORE' && location.isActive)
+            await assignGlobalProducts(tx, location.id);
+          return location;
         },
-        { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
       );
     } catch (error) {
       databaseError(error);
@@ -114,7 +117,7 @@ export class LocationsService {
     const id = uuidValue(rawId);
     const data = parseLocation(input, true);
     try {
-      return await this.prisma.$transaction(
+      return await serializable(this.prisma,
         async (tx) => {
           const current = await tx.location.findFirst({ where: { id, deletedAt: null } });
           if (!current) throw new NotFoundException('Location not found.');
@@ -147,9 +150,11 @@ export class LocationsService {
               'Transfer the manager and staff accounts before changing this location to a warehouse.',
             );
           await this.requireSingleWarehouse(tx, type, active, id);
-          return tx.location.update({ where: { id }, data, select: locationSelect });
+          const location = await tx.location.update({ where: { id }, data, select: locationSelect });
+          if (active && type === 'STORE' && (!current.isActive || current.locationType !== 'STORE'))
+            await assignGlobalProducts(tx, id);
+          return location;
         },
-        { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
       );
     } catch (error) {
       databaseError(error);

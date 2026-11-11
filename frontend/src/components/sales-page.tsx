@@ -8,6 +8,8 @@ import { History, ShoppingBasket, CheckCircle2 } from 'lucide-react';
 import { OperationList } from './operation-list';
 import { SaleDetail } from './sale-detail';
 import { SaleForm } from './sale-form';
+import { useAuth } from './auth-provider';
+import Link from 'next/link';
 import { apiRequest } from '@/lib/api';
 import { type Sale, type SaleDetail as Detail } from '@/lib/operations';
 import { formatMoney } from '@/lib/format';
@@ -15,10 +17,12 @@ import { formatMoney } from '@/lib/format';
 import { StatusBadge } from './status-value';
 import { operationTone } from '@/lib/presentation-status';
 
-export function SalesPage() {
+export function SalesPage({ historyOnly = false }: { historyOnly?: boolean }) {
   const { displayDate } = useFormatters();
   const { t, o, a } = usePageCopy();
-  const [mode, setMode] = useState<'pos' | 'history'>('pos');
+  const { user } = useAuth();
+  const canSell = user?.role === 'STAFF' && !historyOnly;
+  const [mode, setMode] = useState<'pos' | 'history'>(historyOnly ? 'history' : 'pos');
   const [revision, setRevision] = useState(0);
   const [success, setSuccess] = useState(false);
   const [detail, setDetail] = useState<Detail | null>(null);
@@ -40,10 +44,10 @@ export function SalesPage() {
       <div className="page-heading">
         <div>
           <p className="eyebrow">{t.storeTransactions}</p>
-          <h1>{t.sales}</h1>
-          <p className="page-description">{t.selectProductsReviewTheCartAndComplete}</p>
+          <h1>{canSell ? t.sales : t.salesHistory}</h1>
+          <p className="page-description">{canSell ? t.selectProductsReviewTheCartAndComplete : t.lookUpRecordedStoreInvoices}</p>
         </div>
-        <div className="segmented-control" aria-label={t.salesMode}>
+        {canSell && <div className="segmented-control" aria-label={t.salesMode}>
           <button
             aria-pressed={mode === 'pos'}
             onClick={() => {
@@ -62,7 +66,8 @@ export function SalesPage() {
           >
             <History size={17} /> {t.history}
           </button>
-        </div>
+        </div>}
+        {historyOnly && user?.role === 'STAFF' && <Link className="primary-button" href="/sales">{t.pointOfSale}</Link>}
       </div>
       {error && (
         <p className="form-error" role="alert">
@@ -78,7 +83,7 @@ export function SalesPage() {
           </button>
         </p>
       )}
-      <div hidden={mode !== 'pos'}>
+      {canSell && <div hidden={mode !== 'pos'}>
         <SaleForm
           key={revision}
           onClose={() => setMode('history')}
@@ -88,8 +93,8 @@ export function SalesPage() {
             setRevision((value) => value + 1);
           }}
         />
-      </div>
-      {mode === 'history' && (
+      </div>}
+      {(!canSell || mode === 'history') && (
         <OperationList<Sale>
           embedded
           path="/sales"
@@ -97,7 +102,7 @@ export function SalesPage() {
           description={t.lookUpRecordedStoreInvoices}
           revision={revision}
           createLabel={o.newSale}
-          onCreate={() => setMode('pos')}
+          onCreate={canSell ? () => setMode('pos') : undefined}
           statuses={['COMPLETED', 'VOIDED']}
           columns={[o.invoiceNumber, o.location, o.soldAt, a.status, o.total, a.actions]}
           row={(sale) => (

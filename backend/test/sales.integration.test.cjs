@@ -83,24 +83,24 @@ test('Atomic sales, FEFO/FIFO and historical pricing', async (t) => {
       const newest = await lot(p, 5, 8, -1, 1);
       const oldest = await lot(p, 2, 2, -5, 20);
       const expired = await lot(p, 100, 1, -10, -1);
-      const r = await sell(payload(p, '3'), manager);
+      const r = await sell(payload(p, '3'));
       assert.equal(r.status, 201);
-      assert.equal(r.body.items[0].costOfGoodsSold, '12');
+      assert.equal((await (await f.request(`/sales/${r.body.id}`, manager)).json()).items[0].costOfGoodsSold, '12');
       assert.equal(await remaining(oldest), 0);
       assert.equal(await remaining(newest), 4);
       assert.equal(await remaining(expired), 100);
     },
   );
   await t.test(
-    'Fractional quantities, line rounding and full invoice discount are supported',
+    'Staff fractional quantities and line rounding preserve COGS',
     async () => {
       const p = await product(false, '1.01');
       await lot(p, '2', '0.99');
-      const r = await sell(payload(p, '0.5', '0.51'), manager);
+      const r = await sell(payload(p, '0.5'));
       assert.equal(r.status, 201);
       assert.equal(r.body.subtotal, '0.51');
-      assert.equal(r.body.totalAmount, '0');
-      assert.equal(r.body.items[0].costOfGoodsSold, '0.5');
+      assert.equal(r.body.totalAmount, '0.51');
+      assert.equal((await (await f.request(`/sales/${r.body.id}`, manager)).json()).items[0].costOfGoodsSold, '0.5');
     },
   );
   await t.test(
@@ -108,7 +108,7 @@ test('Atomic sales, FEFO/FIFO and historical pricing', async (t) => {
     async () => {
       const p = await product();
       const l = await lot(p, 5, 3);
-      const r = await sell(payload(p), manager);
+      const r = await sell(payload(p));
       assert.equal(r.status, 201);
       await f.prisma.storeProduct.updateMany({
         where: { productId: p.id },
@@ -162,17 +162,17 @@ test('Atomic sales, FEFO/FIFO and historical pricing', async (t) => {
     },
   );
   await t.test(
-    'Admin may select a store; managers/staff cannot choose other stores or warehouse',
+    'Admin and manager cannot create sales; staff cannot choose another store',
     async () => {
       const p = await product(false, '10', f.storeB.id);
       const l = await lot(p, 5, 3, -1, null, f.storeB.id);
       for (const cookie of [manager, staff])
         assert.equal((await sell(payload(p, '1', '0', f.storeB.id), cookie)).status, 403);
-      assert.equal((await sell(payload(p, '1', '0', f.storeB.id), admin)).status, 201);
-      assert.equal(await remaining(l), 4);
+      assert.equal((await sell(payload(p, '1', '0', f.storeB.id), admin)).status, 403);
+      assert.equal(await remaining(l), 5);
       assert.equal(
         (await sell({ items: [{ productId: p.id, quantity: '1' }] }, admin)).status,
-        400,
+        403,
       );
       const warehouse = await f.fixture('location', {
         code: f.code(),
@@ -180,7 +180,7 @@ test('Atomic sales, FEFO/FIFO and historical pricing', async (t) => {
         locationType: 'CENTRAL_WAREHOUSE',
         createdAt: new Date(),
       });
-      assert.equal((await sell(payload(p, '1', '0', warehouse.id), admin)).status, 400);
+      assert.equal((await sell(payload(p, '1', '0', warehouse.id), admin)).status, 403);
     },
   );
   await t.test(
@@ -204,7 +204,7 @@ test('Atomic sales, FEFO/FIFO and historical pricing', async (t) => {
         'PRODUCT_NOT_AVAILABLE_AT_STORE',
       );
       await f.prisma.location.update({ where: { id: f.storeB.id }, data: { isActive: false } });
-      assert.equal((await sell(payload(p, '1', '0', f.storeB.id), admin)).status, 400);
+      assert.equal((await sell(payload(p, '1', '0', f.storeB.id), admin)).status, 403);
     },
   );
   await t.test(
@@ -235,7 +235,7 @@ test('Atomic sales, FEFO/FIFO and historical pricing', async (t) => {
     },
   );
   await t.test(
-    'Only managers authorize manual discounts; rejected staff checkout leaves stock unchanged',
+    'Manual discounts remain unavailable to staff; managers cannot bypass POS restrictions',
     async () => {
       const p = await product();
       const l = await lot(p, 3);
@@ -243,7 +243,7 @@ test('Atomic sales, FEFO/FIFO and historical pricing', async (t) => {
       assert.equal(rejected.status, 403);
       assert.equal(rejected.body.code, 'DISCOUNT_REQUIRES_MANAGER');
       assert.equal(await remaining(l), 3);
-      assert.equal((await sell(payload(p, '1', '5'), manager)).body.totalAmount, '5');
+      assert.equal((await sell(payload(p, '1', '5'), manager)).status, 403);
     },
   );
   await t.test(
@@ -276,7 +276,7 @@ test('Atomic sales, FEFO/FIFO and historical pricing', async (t) => {
       assert.equal(changed.status, 409);
       assert.equal(changed.body.code, 'SALE_REQUEST_CONFLICT');
       const anotherActor = await sell(body, manager);
-      assert.equal(anotherActor.status, 409);
+      assert.equal(anotherActor.status, 403);
       assert.equal(await remaining(l), 8);
     },
   );
