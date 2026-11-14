@@ -45,7 +45,7 @@ const sample: Recommendation = {
 };
 
 for (const locale of ['vi', 'en']) {
-  test(`replenishment compact summary keeps exact review and decision values: ${locale}`, async ({
+  test(`replenishment starts adjustment with a whole quantity and keeps exact calculations: ${locale}`, async ({
     page,
   }) => {
     const records = [
@@ -84,8 +84,9 @@ for (const locale of ['vi', 'en']) {
       .click();
     const dialog = page.getByRole('dialog');
     await expect(dialog.locator('.planning-quantity strong')).toHaveText('≈ 108 kg');
-    await expect(dialog.locator('#adjust-quantity')).toHaveValue('108.4096');
-    await expect(dialog.locator('form')).toContainText('108,4096 kg');
+    await expect(dialog.locator('#adjust-quantity')).toHaveValue('108');
+    await expect(dialog.locator('form')).toContainText('108 kg');
+    await expect(dialog.locator('form')).not.toContainText(/108,4096|≈/);
     await dialog.locator('.planning-calculation summary').click();
     await expect(dialog.locator('.decision-values')).toContainText('108,4096');
     await expect(dialog.locator('.decision-values')).toContainText('103,4096');

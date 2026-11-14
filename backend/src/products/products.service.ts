@@ -97,7 +97,7 @@ export class ProductsService {
           where,
           select: {
             ...productSelect,
-            ...(user.role === 'ADMIN' || (user.role === 'STORE_MANAGER' && !available)
+            ...(user.role !== 'STAFF'
               ? { defaultCost: true }
               : {}),
           },
@@ -109,7 +109,17 @@ export class ProductsService {
       ],
       { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead },
     );
-    return { items, total, page, pageSize };
+    const options = available ? items.map(({ defaultCost, ...product }) => {
+      const cost = defaultCost != null && product.purchaseToBaseRatio != null
+        ? defaultCost.mul(product.purchaseToBaseRatio).toDecimalPlaces(2, Prisma.Decimal.ROUND_HALF_UP)
+        : null;
+      return {
+        ...product,
+        ...(user.role === 'ADMIN' ? { defaultCost } : {}),
+        suggestedUnitCost: cost?.lte('999999999999.99') ? cost.toString() : null,
+      };
+    }) : items;
+    return { items: options, total, page, pageSize };
   }
   async detail(rawId: string, user: AuthenticatedUser) {
     const locationId = resolveLocationScope(user);

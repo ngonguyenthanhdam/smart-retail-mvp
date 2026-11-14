@@ -41,6 +41,81 @@ start-dev.ps1       Launcher checks and service consoles
 
 ## Local setup
 
+### Clone và khôi phục đầy đủ bản demo trên máy khác
+
+Repository chứa source, Prisma schema, **18 migrations**, model suy luận đã đóng gói, toàn bộ `frontend/public/assets/` và [snapshot demo đã ẩn danh](datasets/demo/README.md). Snapshot giữ số liệu và quan hệ của **4 cửa hàng, 20 sản phẩm, 441 hóa đơn/3.287 dòng bán hàng, 3 phiếu nhập/3 lô tồn kho, 5 lần dự báo/143 kết quả, 66 đề xuất và 36 cảnh báo**. Ngày giao dịch và số liệu được giữ nguyên; đây là dữ liệu giả lập đã được chủ dự án xác nhận.
+
+```sh
+git clone --branch smart-retail-mvp --single-branch https://github.com/ngonguyenthanhdam/smart-retail-mvp.git
+cd smart-retail-mvp
+```
+
+**Windows, cách tự động:**
+
+1. Chạy `Setup-SmartRetail.bat` để cài dependencies, tạo PostgreSQL, cấu hình `.env` riêng, áp dụng migrations và tạo ADMIN mới. Mật khẩu nằm trong `.local/first-login.txt` của máy mới.
+2. Chạy **`Restore-Demo.bat`** một lần. Script kiểm tra checksum, chỉ nhận database trống hoặc chỉ có một ADMIN khởi tạo, áp dụng schema còn thiếu và nhập snapshot trong một transaction. Mọi dòng dữ liệu được đọc lại để đối chiếu trước khi commit. Nếu database có dữ liệu, script **từ chối**; không reset, xóa hay cập nhật đè.
+3. Chạy `Start-SmartRetail.bat`, đăng nhập bằng ADMIN của máy mới. Ba tài khoản manager/staff đã ẩn danh có mật khẩu ngẫu nhiên mới trong `.local/demo-accounts-*.json`; không đưa file này lên GitHub.
+4. Nếu muốn dùng chatbot Ollama, chạy thêm `Setup-AI.bat`. Model Ollama và các công cụ cài đặt được tải riêng, không chứa trong Git.
+
+Không chạy thêm `seed:demo` hoặc `seed:forecast-demo` lên database đã khôi phục snapshot; đây là các cách tạo bộ demo thay thế.
+
+**Cài thủ công trên Windows/macOS/Linux:**
+
+1. Cài Node.js 22.13+ thuộc nhánh 22.x, Python 3.11 và PostgreSQL 17. Tạo role/database riêng bằng các lệnh ở phần [PostgreSQL](#1-postgresql) bên dưới.
+2. Sao chép `backend/.env.example` thành `backend/.env`, `frontend/.env.example` thành `frontend/.env.local`. Dùng `Copy-Item` trên PowerShell hoặc `cp` trên macOS/Linux; chỉ sao chép nếu file đích chưa tồn tại. Điền `DATABASE_URL`, `JWT_SECRET` và `INITIAL_ADMIN_*` bằng thông tin mới của máy đích. `ml-service/.env.example` giải thích FastAPI hiện không yêu cầu secret hay file `.env`.
+3. Cài và khôi phục backend:
+
+   ```sh
+   cd backend
+   npm ci
+   npm run demo:restore
+   npm run demo:check
+   cd ..
+   ```
+
+   `demo:restore` build Prisma/backend, kiểm tra database, chạy migrations, tạo ADMIN từ `INITIAL_ADMIN_*` khi chưa có, rồi khôi phục snapshot. ADMIN hiện có không bị đổi mật khẩu. Nếu bị từ chối vì database đã có dữ liệu, hãy tạo database mới và trỏ `DATABASE_URL` sang đó; không xóa database cũ.
+
+4. Cài frontend và FastAPI:
+
+   ```sh
+   cd frontend
+   npm ci
+   npm run build
+   cd ../ml-service
+   python -m venv .venv
+   # Windows:
+   .venv\Scripts\python.exe -m pip install -r requirements-inference.txt -r requirements-training.txt
+   # macOS/Linux: .venv/bin/python -m pip install -r requirements-inference.txt -r requirements-training.txt
+   ```
+
+5. Mở ba terminal, từ thư mục tương ứng:
+
+   | Service | Lệnh | Địa chỉ |
+   | --- | --- | --- |
+   | Backend (`backend/`) | `npm run dev` | `http://localhost:3001/health` |
+   | Frontend (`frontend/`) | `npm run dev` | `http://localhost:3000` |
+   | FastAPI (`ml-service/`) | `.venv\Scripts\python.exe -m uvicorn app:app --host 127.0.0.1 --port 8000` | `http://localhost:8000/health` |
+
+   Trên macOS/Linux dùng `.venv/bin/python` cho FastAPI. Backend và frontend phải dùng cùng hostname cho cookie; các mẫu môi trường dùng `localhost`.
+
+Snapshot lưu ngày lịch sử gốc (bán hàng từ **29/06/2026 đến 16/10/2026**), không tự dời ngày hoặc bổ sung tồn kho. Chọn khoảng ngày tương ứng khi xem báo cáo; bộ lọc "gần đây" có thể không có giao dịch. Tài khoản gốc, password hash, reset token, email/địa chỉ cá nhân, ghi chú tự do, lịch sử chat, file tải lên và workspace AI riêng **không nằm trong snapshot công khai**. AI Center vẫn hoạt động với model đóng gói; có thể nhập lại các CSV giả lập trong `datasets/ai-center/` và `datasets/chatbot-business/` để tạo workspace mới.
+
+**Sau `git pull`:** Git chỉ đồng bộ file, không đồng bộ PostgreSQL. Trên máy đang có dữ liệu, sao lưu riêng rồi chạy `npm run prisma:migrate` trong `backend/` để cập nhật schema. Không chạy khôi phục snapshot vào database đang dùng. Muốn xem phiên bản demo mới, tạo database mới rồi chạy `npm run demo:restore`; giữ database cũ để quay lại khi cần.
+
+**Sao lưu riêng và kiểm chứng:**
+
+```sh
+cd backend
+npm run db:backup
+# Chỉ sau khi xác nhận số liệu nguồn đều là giả lập:
+npm run demo:export -- --confirmed-synthetic
+npm run demo:check
+```
+
+`db:backup` tạo archive PostgreSQL đầy đủ và bản sao file phụ trợ trong `.local/backups/`, kiểm tra archive bằng `pg_restore --list`. Đây là bản riêng có thể chứa dữ liệu nhạy cảm, **không commit**. Export công khai chỉ đọc database trong transaction `REPEATABLE READ READ ONLY`, lọc theo danh sách trường cho phép, ẩn danh và tạo manifest checksum. Luôn review snapshot/manifest mới trước khi commit.
+
+Để kiểm chứng khôi phục, tạo một database mới có tên kết thúc `_test`, đặt `RESTORE_VERIFY_DATABASE_URL` trong môi trường riêng và chạy `node scripts/verify-demo-restore.cjs` từ root. Script đối chiếu dữ liệu, kiểm tra API/đăng nhập, thử khôi phục lần hai phải bị từ chối, và xác nhận database nguồn không đổi. Database thử nghiệm được giữ lại để kiểm tra; script không drop database nào.
+
 ### Automatic setup on Windows 10/11 (64-bit Intel/AMD)
 
 1. Clone or download and **extract the complete repository** to a writable local folder, for example `D:\RetailSense`. Keep the project in that folder after installation; Python virtual environments and local database paths are tied to it.
@@ -123,7 +198,7 @@ npm run prisma:seed
 npm run dev
 ```
 
-The seventeen migrations maintain 19 business tables: `roles`, `locations`, `users`, `categories`, `units`, `products`, `store_products`, `inventory_lots`, `purchase_orders`, `purchase_order_items`, `sales`, `sale_items`, `expenses`, `import_jobs`, `forecast_runs`, `demand_forecasts`, `replenishment_recommendations`, `sales_history_coverage`, and `inventory_alerts`, plus the `v_inventory_balance` and `v_sales_daily_facts` views and Prisma's migration history. AI Center adds seven separate metadata tables: `ai_datasets`, `ai_dataset_files`, `ai_training_jobs`, `ai_deployments`, `ai_chat_sessions`, `ai_chat_messages`, and `ai_audit_events`. The authentication seed creates the three roles and one ADMIN with a bcrypt password hash. Running it again preserves the existing administrator and password; changing the bootstrap identity does not create another administrator. It does not create stores or staff accounts. Application and seed connections use UTC; screens and business-date filters use Vietnam time.
+The eighteen migrations maintain 19 business tables: `roles`, `locations`, `users`, `categories`, `units`, `products`, `store_products`, `inventory_lots`, `purchase_orders`, `purchase_order_items`, `sales`, `sale_items`, `expenses`, `import_jobs`, `forecast_runs`, `demand_forecasts`, `replenishment_recommendations`, `sales_history_coverage`, and `inventory_alerts`, plus the `v_inventory_balance` and `v_sales_daily_facts` views and Prisma's migration history. AI Center adds seven separate metadata tables: `ai_datasets`, `ai_dataset_files`, `ai_training_jobs`, `ai_deployments`, `ai_chat_sessions`, `ai_chat_messages`, and `ai_audit_events`. The authentication seed creates the three roles and one ADMIN with a bcrypt password hash. Running it again preserves the existing administrator and password; changing the bootstrap identity does not create another administrator. It does not create stores or staff accounts. Application and seed connections use UTC; screens and business-date filters use Vietnam time.
 
 ### Products and inventory demo
 
@@ -639,4 +714,4 @@ The local handover was verified on Windows with Node.js 22.17.0, npm 10.5.2, Pyt
 
 Executed acceptance checks: **218 backend tests, 28 Python tests and 96 Chrome browser checks across eight groups**, plus lint/typecheck/build, seven clean-install/recovery groups, five restored-application checks and six original-application smoke groups. Desktop and 390px mobile layouts were checked. These are local functional results, not load testing, an external deployment certification or evidence of real-world forecasting accuracy. Other operating systems have setup instructions but were not exercised in this handover.
 
-Maintainer: **phamhuuluan** — **huu12026@gmail.com**.
+Maintained by the RetailSense contributors. Use the repository for project discussion.

@@ -1,0 +1,243 @@
+{
+  "version": 1,
+  "createdAt": "2026-11-14T09:42:54.553Z",
+  "sha256": "beb247e79640bf664cfaff96c0484d8a9d156c99295b0551f57876b8d5f6c7de",
+  "schemaSha256": "b8758f51cfa650c8d3e9432ebd2a76f879bca01dec33807a19f4d42db5a143d2",
+  "migrations": [
+    {
+      "name": "20260924000000_auth_rbac",
+      "sha256": "81096cc024be6e567713e7c29e29af7e7511a4ccb90c4f76dbc6438b3a7ebccc"
+    },
+    {
+      "name": "20260924010000_password_reset",
+      "sha256": "f9ce6e6f3277f058d8cf0172ca08a2b90b7419fbe14571632f3d4e1159f06c49"
+    },
+    {
+      "name": "20260925010000_categories",
+      "sha256": "9dd1b47bff7990ef4bfb97dead0eca487e6033e8531d12c806d9188a6ab2acde"
+    },
+    {
+      "name": "20260925020000_units",
+      "sha256": "24ebd6c3c1bde62899c51007292ee924ca5df7d1d929322c91994f797c57a713"
+    },
+    {
+      "name": "20260925030000_products",
+      "sha256": "9468d429b60bc0eec714cd71e810f6c77f4e4decf4a494248d34961d768d951c"
+    },
+    {
+      "name": "20260925040000_store_products",
+      "sha256": "0c54c0643436a311201127b62a88c32bdec7d4dc53a00808c33fe89d6c25e046"
+    },
+    {
+      "name": "20260925050000_inventory_lots",
+      "sha256": "118d0fdef46142d3d6c95d4073db4ec53456b08e656816a127ef1dc69dc5e869"
+    },
+    {
+      "name": "20260925060000_retail_operations",
+      "sha256": "21ec4345133b00a3b1cbe3e562d9f197fa8220377b734efc675cd74136b37c50"
+    },
+    {
+      "name": "20260926010000_import_jobs",
+      "sha256": "42f0e2705174fb9c1b0dfe07579b00349a63bd49ced93a677da2cf6c9450b7d8"
+    },
+    {
+      "name": "20260926020000_sales_daily_facts",
+      "sha256": "aee986b1d13336cb028b3649e357adbcff38d248ccec8b565b2e7131af27826b"
+    },
+    {
+      "name": "20260927010000_forecasts",
+      "sha256": "0be42e501cc31e1fad81bf00470b23b22db24995275cd8b5d4670b7b6d580aad"
+    },
+    {
+      "name": "20260927020000_decision_support",
+      "sha256": "8da15c1c8e80a3038a9876f0b7a064ea9f2e4a6b8cf852fd40f9f6fd82cf9c0b"
+    },
+    {
+      "name": "20261006010000_operational_forecasts",
+      "sha256": "ef0ef91face144144f246a1e01b05e9072f2d61ff4ae1f391af3a7ecc801482e"
+    },
+    {
+      "name": "20261006020000_catalog_labels",
+      "sha256": "d45b2351fd3d3f2e7e791a2900e28cfb550ee18796913ce0da188f81e53d00fc"
+    },
+    {
+      "name": "20261018010000_ai_center",
+      "sha256": "8fc4c146787430e26230291c9485c84b87522ca0918d3b297dfd74a32e162932"
+    },
+    {
+      "name": "20261019010000_import_history_visibility",
+      "sha256": "8ecc4d66fe31fd9a05ad668690a8903d7e092f437c80523c78d0ac09469edd9f"
+    },
+    {
+      "name": "20261111010000_product_defaults_assignment_images",
+      "sha256": "19d7251881545e06d86704b4945f60a30558cd0b3ce1e06ec811dfc8213cd7cf"
+    },
+    {
+      "name": "20261114010000_product_catalog_photos",
+      "sha256": "8a3a782e7226a0ff863bdcc1d5829927b22f743ac6bd3c0c1261100790f75590"
+    }
+  ],
+  "counts": {
+    "locations": 4,
+    "categories": 1,
+    "units": 3,
+    "products": 20,
+    "store_products": 44,
+    "import_jobs": 6,
+    "forecast_runs": 5,
+    "demand_forecasts": 143,
+    "replenishment_recommendations": 66,
+    "purchase_orders": 3,
+    "purchase_order_items": 3,
+    "inventory_lots": 3,
+    "sales": 441,
+    "sale_items": 3287,
+    "expenses": 0,
+    "sales_history_coverage": 44,
+    "inventory_alerts": 36
+  },
+  "anonymizedAccounts": 3,
+  "excludedPrivateTables": {
+    "ai_datasets": 8,
+    "ai_dataset_files": 24,
+    "ai_training_jobs": 3,
+    "ai_deployments": 0,
+    "ai_chat_sessions": 10,
+    "ai_chat_messages": 22,
+    "ai_audit_events": 82
+  },
+  "assets": [
+    {
+      "path": "frontend/public/assets/products/01_nuoc_khoang_co_ga_330ml.png",
+      "sha256": "b52eeec8362b84957a08a44e4830e505f855c999a9c3e77a0a3f0c20f1187d19"
+    },
+    {
+      "path": "frontend/public/assets/products/02_nuoc_cam_co_ga_330ml.png",
+      "sha256": "371376aea33ef9c2263bc0b88dcd42b7a60dd2d430f42e824de0f71922b26414"
+    },
+    {
+      "path": "frontend/public/assets/products/03_sua_tuoi_250ml.png",
+      "sha256": "f68b76b2276c8b6cf289a83981983af35b733b04202bba6db429d0b713643ca2"
+    },
+    {
+      "path": "frontend/public/assets/products/04_gao_tui_1kg.png",
+      "sha256": "d79210eb143e8960e8de28375f48b743a29347720816481374da811bdc433d99"
+    },
+    {
+      "path": "frontend/public/assets/products/05_mi_an_lien.png",
+      "sha256": "c2d55c07e6652ead790752cc6fa2e82720c3fb74eafd5e57d3ca000ab6af8ab1"
+    },
+    {
+      "path": "frontend/public/assets/products/06_banh_mi.png",
+      "sha256": "9a3f3bf97ddaad6439e5a7d59d616f9d284601d6e77d118fe0c0d5bbc2b248a0"
+    },
+    {
+      "path": "frontend/public/assets/products/07_chuoi.png",
+      "sha256": "9b4fbb6e6f34caa622470e00a9b126c6ef406d3553f25d30694010278cad92e0"
+    },
+    {
+      "path": "frontend/public/assets/products/08_ca_chua.png",
+      "sha256": "9237bedc2b3f58b4534aad11f652f9ebfb62e7c3f92cddaa66d337e986124b28"
+    },
+    {
+      "path": "frontend/public/assets/products/09_ca_rot.png",
+      "sha256": "de3e5f4b3d4bdb3d9502e9b696437da9b902d08ede1fff9b498ec8d23f64723d"
+    },
+    {
+      "path": "frontend/public/assets/products/10_trung_dong_hop.png",
+      "sha256": "da54f83ba9eb395f2069d90464d7c3500a04585ad925b6ae1558c39428e6ba7e"
+    },
+    {
+      "path": "frontend/public/assets/products/11_dau_phong_dong_hop.png",
+      "sha256": "2c5c8c83418b967293b3e5112c8d7eda5a4c7dfe2a9f922203602baa9f7f0e9d"
+    },
+    {
+      "path": "frontend/public/assets/products/12_khoai_tay.png",
+      "sha256": "bc05ebccdff8d1916cde0e88a774822b258fda67ada978ac40b23889e7ed7aea"
+    },
+    {
+      "path": "frontend/public/assets/products/13_ca_phi_le.png",
+      "sha256": "71b0a804d8381c6510bb472173e3254f71d8d9846572d7a11630255cd08908d8"
+    },
+    {
+      "path": "frontend/public/assets/products/14_thit_ga.png",
+      "sha256": "3b90caa5c74e355923e45770d638abbb03431e61408e9da673a062bf966f7f36"
+    },
+    {
+      "path": "frontend/public/assets/products/15_sua_chua.png",
+      "sha256": "201b5aa2db1c7888dce459c69f3c34fe6afdc94eefcd1b46e9826cbee44a6a01"
+    },
+    {
+      "path": "frontend/public/assets/products/16_dau_an_1_lit.png",
+      "sha256": "74c39f6d72cffac92e18504c50f690f99b4da7d4459480877feda5c1ada1c8cd"
+    },
+    {
+      "path": "frontend/public/assets/products/17_nuoc_rua_chen_750_ml.png",
+      "sha256": "9930aee26724d9575805fe4abd88824bf510f3ea2db6a617ee6ecb84da4239c6"
+    },
+    {
+      "path": "frontend/public/assets/products/18_tao.png",
+      "sha256": "ab23421a1f4baa5b7d031ef87c6171907325c12cc409b0987a0913ade446873e"
+    },
+    {
+      "path": "frontend/public/assets/products/19_ca_phe_goi_250_g.png",
+      "sha256": "6391656d95aff0b95df6af882a79d2568f62564bcb8c342255a813d90c214358"
+    },
+    {
+      "path": "frontend/public/assets/products/20_khan_giay_hop.png",
+      "sha256": "56467ee903638ca36cf5234146f197bd25d719143867ab6da6e9541317f9b0f3"
+    },
+    {
+      "path": "frontend/public/assets/products/bakery.webp",
+      "sha256": "2ba4025f00d2d18833ca476e6037ad60f515235a593c360fe4ebcc5cc920f1a4"
+    },
+    {
+      "path": "frontend/public/assets/products/canned.webp",
+      "sha256": "33e24add584a0045fb0adf2923f3a1043ee7f22f23536b8b73ce382a50875176"
+    },
+    {
+      "path": "frontend/public/assets/products/drinks.webp",
+      "sha256": "9592ea572f56d93e2238402bff0b31d13a5e08d03025b1224ae4932d1864fa02"
+    },
+    {
+      "path": "frontend/public/assets/products/eggs.webp",
+      "sha256": "d787ca86d7851fe7dfd80f529041c2c3531dcfca539fa95ceca25583bf5eab23"
+    },
+    {
+      "path": "frontend/public/assets/products/fruit.webp",
+      "sha256": "27589fc0b448499cdd519de51ca29a745ecf5888ba1cc1185e500d298fb5b21f"
+    },
+    {
+      "path": "frontend/public/assets/products/household.webp",
+      "sha256": "f44e05a08149a733baddd8a2d7adb712ec145b19d988e1a777574d8df9e81550"
+    },
+    {
+      "path": "frontend/public/assets/products/meat.webp",
+      "sha256": "19c52031e30da5387d4e3a3fedc7336efb9e187039d173decc4a2ca28f2e0598"
+    },
+    {
+      "path": "frontend/public/assets/products/milk.webp",
+      "sha256": "b178ce66ea3cd0e40c7961f316b2355fd913c6073e1f5900c68e64deb660e920"
+    },
+    {
+      "path": "frontend/public/assets/products/noodles.webp",
+      "sha256": "a6caf8ba566e719fbd5a8d639ad56ad0fc01a12bfe9a33a2e594a32191a04e1c"
+    },
+    {
+      "path": "frontend/public/assets/products/rice.webp",
+      "sha256": "8682542647d2059c2c275bc0aad89d4b76b9ad9f04570456c36b8cd063a585b1"
+    },
+    {
+      "path": "frontend/public/assets/products/seafood.webp",
+      "sha256": "3b1a3f51aba7a17ee5ff720c3cd2e3759d1a1d05bd9452d62727c93da1d235c2"
+    },
+    {
+      "path": "frontend/public/assets/products/vegetables.webp",
+      "sha256": "351c00d5580abc4db1441f65fd0efbb7a14e732317bb11e9e81de8b90c7c7250"
+    },
+    {
+      "path": "frontend/public/assets/retail-hero.webp",
+      "sha256": "2f5c5c0c81ee22f7df6d7ef67729158500b9243dbfbdf9fa7f06cfe10081540f"
+    }
+  ]
+}

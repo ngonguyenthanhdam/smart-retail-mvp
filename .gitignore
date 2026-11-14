@@ -61,6 +61,20 @@ tmp/
 .cache/
 .test-artifacts/
 .local/
+backups/
+*.dump
+*.backup
+*.bak
+*.sql.gz
+*.sql.zip
+*.password
+*.pem
+*.p12
+
+# Only the reviewed, sanitized demo package belongs in Git.
+# Raw exports, uploaded datasets and locally generated account passwords stay private.
+exports/
+demo-accounts-*.json
 
 # Editor and OS files
 .DS_Store

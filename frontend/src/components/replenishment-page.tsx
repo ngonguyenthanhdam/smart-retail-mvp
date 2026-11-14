@@ -22,6 +22,7 @@ import { apiRequest } from '@/lib/api';
 import { catalogError, saveRecord } from '@/lib/catalog';
 import type { ForecastRun } from '@/lib/forecasts';
 import { quantity, type Recommendation, type DecisionStatus } from '@/lib/decision';
+import { isForecastValue } from '@/lib/forecast-format';
 
 export function ReplenishmentPage() {
   const params = useSearchParams();
@@ -49,6 +50,9 @@ function ReplenishmentContent({ location, search }: { location: string; search: 
   const [success, setSuccess] = useState('');
   const [purchaseConfirm, setPurchaseConfirm] = useState(false);
   const locationId = state.query.locationId;
+  const adjustmentQuantity = isForecastValue(detail?.recommendedQuantity)
+    ? String(Math.round(Number(detail?.recommendedQuantity)))
+    : '';
   useEffect(() => {
     const abort = new AbortController();
     apiRequest<{ items: ForecastRun[] }>(
@@ -367,7 +371,7 @@ function ReplenishmentContent({ location, search }: { location: string; search: 
                     <p>
                       {c.recommended}:{' '}
                       <strong>
-                        {quantity(detail.recommendedQuantity)} {unitLabel(detail.product.baseUnit)}
+                        {adjustmentQuantity || '—'} {unitLabel(detail.product.baseUnit)}
                       </strong>
                     </p>
                     {choice === 'ADJUSTED' && (
@@ -382,7 +386,7 @@ function ReplenishmentContent({ location, search }: { location: string; search: 
                           min="0"
                           step={detail.product.baseUnit?.allowFraction === false ? '1' : '0.0001'}
                           required
-                          defaultValue={detail.recommendedQuantity}
+                          defaultValue={adjustmentQuantity}
                           disabled={busy}
                         />
                       </div>

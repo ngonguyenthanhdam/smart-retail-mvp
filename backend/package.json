@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "description": "RetailSense backend service",
-  "author": "phamhuuluan <huu12026@gmail.com>",
+  "author": "RetailSense contributors",
   "license": "UNLICENSED",
   "engines": {
     "node": ">=22.13.0 <23"
@@ -23,6 +23,10 @@
     "prisma:seed": "npm run build && prisma db seed",
     "seed:demo": "npm run build && node dist/prisma/demo.js",
     "seed:forecast-demo": "npm run build && node dist/prisma/forecast-demo.js",
+    "db:backup": "node ../scripts/backup-database.cjs",
+    "demo:export": "npm run build && node ../scripts/demo-snapshot.cjs export",
+    "demo:check": "node ../scripts/demo-snapshot.cjs check",
+    "demo:restore": "npm run build && node ../scripts/demo-snapshot.cjs restore",
     "forecast:backtest": "npm run build && node dist/prisma/forecast-backtest.js",
     "test": "npm run build && node --test --test-concurrency=1 test/*.test.cjs",
     "prisma:migrate:test": "node test/migrate-test.cjs"

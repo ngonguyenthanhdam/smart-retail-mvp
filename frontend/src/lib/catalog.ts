@@ -29,6 +29,7 @@ export type Product = {
   purchaseUnitId: string | null;
   purchaseToBaseRatio: string | null;
   defaultCost?: string | null;
+  suggestedUnitCost?: string | null;
   trackExpiry: boolean | null;
   shelfLifeDays: number | null;
   isActive: boolean | null;

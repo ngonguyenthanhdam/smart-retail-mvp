@@ -21,8 +21,8 @@ type Line = {
 const newLine = (): Line => ({
   key: crypto.randomUUID(),
   productId: '',
-  purchaseQuantity: '1',
-  unitCost: '0',
+  purchaseQuantity: '',
+  unitCost: '',
   lotNumber: '',
   expiryDate: '',
 });
@@ -74,7 +74,13 @@ export function PurchaseForm({
     return () => abort.abort();
   }, [admin, revision]);
   function update(key: string, field: keyof Line, value: string) {
-    setLines(lines.map((line) => (line.key === key ? { ...line, [field]: value } : line)));
+    setLines((current) => current.map((line) => (line.key === key ? { ...line, [field]: value } : line)));
+  }
+  function selectProduct(key: string, productId: string) {
+    const product = products?.find((p) => p.id === productId);
+    setLines((current) => current.map((line) => line.key === key
+      ? { ...line, productId, unitCost: product?.suggestedUnitCost ?? '' }
+      : line));
   }
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -200,7 +206,7 @@ export function PurchaseForm({
                           required
                           disabled={!!record?.replenishmentRecommendationId}
                           value={line.productId}
-                          onChange={(e) => update(line.key, 'productId', e.target.value)}
+                          onChange={(e) => selectProduct(line.key, e.target.value)}
                         >
                           <option value="">{c.choose}</option>
                           {products?.map((p) => (

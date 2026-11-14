@@ -39,6 +39,29 @@ export const forecastDemoImageKeys = [
   'seafood', null, null, null, 'household', 'fruit', null, null,
 ] as const;
 
+export const forecastDemoImagePaths = [
+  '01_nuoc_khoang_co_ga_330ml.png',
+  '02_nuoc_cam_co_ga_330ml.png',
+  '03_sua_tuoi_250ml.png',
+  '04_gao_tui_1kg.png',
+  '05_mi_an_lien.png',
+  '06_banh_mi.png',
+  '07_chuoi.png',
+  '08_ca_chua.png',
+  '09_ca_rot.png',
+  '10_trung_dong_hop.png',
+  '11_dau_phong_dong_hop.png',
+  '12_khoai_tay.png',
+  '13_ca_phi_le.png',
+  '14_thit_ga.png',
+  '15_sua_chua.png',
+  '16_dau_an_1_lit.png',
+  '17_nuoc_rua_chen_750_ml.png',
+  '18_tao.png',
+  '19_ca_phe_goi_250_g.png',
+  '20_khan_giay_hop.png',
+].map((filename) => `/assets/products/${filename}`);
+
 export const forecastDemoAssortments = [
   Array.from({ length: 12 }, (_, p) => p),
   [...Array.from({ length: 10 }, (_, p) => p), 12, 13, 14, 15, 16],
@@ -234,6 +257,7 @@ export async function seedForecastDemo(
           sku: `FC-${String(n + 1).padStart(2, '0')}`,
           name,
           imageKey: forecastDemoImageKeys[n],
+          imagePath: forecastDemoImagePaths[n],
           categoryId: id(1),
           baseUnitId: id(10 + units.indexOf(unit)),
           purchaseUnitId: id(10 + units.indexOf(unit)),
@@ -310,6 +334,8 @@ async function upgradeForecastDemo(
     // Only fill the newly-added fields; never overwrite a business edit.
     if (product.defaultSellingPrice === null)
       await tx.product.update({ where: { id: product.id }, data: { defaultSellingPrice: forecastDemoProducts[p]![2] } });
+    if (!product.imagePath)
+      await tx.product.update({ where: { id: product.id }, data: { imagePath: forecastDemoImagePaths[p] } });
   }
   const units = ['CAN', 'PCS', 'KG'];
   const createdAt = new Date(`${data.manifest.startDate}T00:00:00Z`);
@@ -317,6 +343,7 @@ async function upgradeForecastDemo(
     const [name, unit, price] = forecastDemoProducts[p]!;
     await tx.product.create({ data: {
       id: id(200 + p), sku: `FC-${p + 1}`, name, imageKey: forecastDemoImageKeys[p],
+      imagePath: forecastDemoImagePaths[p],
       categoryId: id(1), baseUnitId: id(10 + units.indexOf(unit)), purchaseUnitId: id(10 + units.indexOf(unit)),
       purchaseToBaseRatio: 1, defaultCost: new Prisma.Decimal(price).mul('0.65'),
       defaultSellingPrice: price, defaultSafetyStock: 5, defaultMinStockLevel: 2,

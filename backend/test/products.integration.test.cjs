@@ -44,6 +44,31 @@ test('Global products, precision and category dependencies', async (t) => {
     ).json();
     assert.equal(result.total, 1);
   });
+  await t.test('Purchase options suggest a cost per purchase unit for admins and managers', async () => {
+    for (const role of ['ADMIN', 'STORE_MANAGER']) {
+      const response = await f.request(`/products?available=true&search=${product.sku}`, f.cookies[role]);
+      assert.equal(response.status, 200);
+      const { items } = await response.json();
+      assert.equal(items[0].suggestedUnitCost, '30');
+      assert.equal('defaultCost' in items[0], role === 'ADMIN');
+    }
+    const regular = await (await f.request(`/products?search=${product.sku}`, admin)).json();
+    assert.equal('suggestedUnitCost' in regular.items[0], false);
+    for (const [defaultCost, purchaseToBaseRatio, expected] of [
+      ['0.01', '1.5', '0.02'],
+      ['0', '24', '0'],
+      [null, '1', null],
+      ['999999999999.99', '24', null],
+    ]) {
+      const row = await f.fixture('product', {
+        sku: f.code(), name: 'Purchase cost suggestion',
+        baseUnitId: unit.id, purchaseUnitId: unit.id, defaultCost, purchaseToBaseRatio,
+        createdAt: new Date(),
+      });
+      const result = await (await f.request(`/products?available=true&search=${row.sku}`, admin)).json();
+      assert.equal(result.items[0].suggestedUnitCost, expected);
+    }
+  });
   await t.test(
     'SKU and non-null barcode must be unique; multiple null barcodes allowed',
     async () => {
